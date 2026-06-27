@@ -1,14 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  CATS_KEY,
+  NOTES_KEY,
   Note,
   NoteStatus,
   STATUS_LABEL,
+  UNCATEGORIZED,
   loadCategories,
   loadNotes,
   nextStatus,
   saveCategories,
   saveNotes,
 } from "@/lib/notes-storage";
+import { exportBackup, importBackupFile } from "@/lib/backup";
+import { exportNotesPdf } from "@/lib/pdf-export";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,24 +28,42 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Archive,
   ArchiveRestore,
   CalendarDays,
+  Check,
+  Download,
+  FileDown,
+  FolderCog,
   Pencil,
   Plus,
   Search,
+  Settings2,
   Trash2,
+  Upload,
   X,
   AlertTriangle,
   Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type SortKey = "created" | "due";
 type StatusFilter = "all" | NoteStatus;
@@ -103,10 +126,14 @@ export default function NotesApp() {
   const [sort, setSort] = useState<SortKey>("created");
   const [showArchived, setShowArchived] = useState(false);
 
-  // edit / new cat dialogs
+  // dialogs
   const [editing, setEditing] = useState<Note | null>(null);
-  const [newCat, setNewCat] = useState("");
-  const [catDialog, setCatDialog] = useState(false);
+  const [manageCats, setManageCats] = useState(false);
+  const [pendingImport, setPendingImport] = useState<{
+    notes: Note[];
+    categories: string[];
+  } | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const c = loadCategories();
@@ -123,6 +150,12 @@ export default function NotesApp() {
     if (hydrated) saveCategories(cats);
   }, [cats, hydrated]);
 
+  const allCatsForFilter = useMemo(() => {
+    const set = new Set(cats);
+    notes.forEach((n) => set.add(n.category));
+    return Array.from(set);
+  }, [cats, notes]);
+
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return notes
@@ -132,7 +165,6 @@ export default function NotesApp() {
       .filter((n) => (q ? n.text.toLowerCase().includes(q) : true))
       .sort((a, b) => {
         if (sort === "created") return b.createdAt - a.createdAt;
-        // due asc, nulls last
         if (!a.dueDate && !b.dueDate) return b.createdAt - a.createdAt;
         if (!a.dueDate) return 1;
         if (!b.dueDate) return -1;
@@ -190,24 +222,98 @@ export default function NotesApp() {
     setEditing(null);
   }
 
-  function addCategory() {
-    const v = newCat.trim();
-    if (!v || cats.includes(v)) return;
-    setCats((p) => [...p, v]);
-    setNewCat("");
-    setCatDialog(false);
+  function renameCategory(oldName: string, newName: string) {
+    const v = newName.trim();
+    if (!v || v === oldName) return;
+    if (cats.includes(v)) {
+      toast.error("Cette catégorie existe déjà");
+      return;
+    }
+    setCats((p) => p.map((c) => (c === oldName ? v : c)));
+    setNotes((p) =>
+      p.map((n) => (n.category === oldName ? { ...n, category: v } : n)),
+    );
+    if (filterCat === oldName) setFilterCat(v);
+    if (formCat === oldName) setFormCat(v);
+    toast.success(`Catégorie renommée en "${v}"`);
   }
-  function removeCategory(c: string) {
-    if (cats.length <= 1) return;
-    setCats((p) => p.filter((x) => x !== c));
-    if (filterCat === c) setFilterCat("all");
-    if (formCat === c) setFormCat(cats.find((x) => x !== c) ?? "");
+
+  function addCategoryName(name: string) {
+    const v = name.trim();
+    if (!v) return false;
+    if (cats.includes(v)) {
+      toast.error("Cette catégorie existe déjà");
+      return false;
+    }
+    setCats((p) => [...p, v]);
+    return true;
+  }
+
+  function deleteCategory(name: string, mode: "uncategorize" | "delete-notes") {
+    if (mode === "delete-notes") {
+      setNotes((p) => p.filter((n) => n.category !== name));
+    } else {
+      setNotes((p) =>
+        p.map((n) =>
+          n.category === name ? { ...n, category: UNCATEGORIZED } : n,
+        ),
+      );
+    }
+    setCats((p) => p.filter((c) => c !== name));
+    if (filterCat === name) setFilterCat("all");
+    if (formCat === name) {
+      const remaining = cats.filter((c) => c !== name);
+      setFormCat(remaining[0] ?? "");
+    }
+    toast.success(`Catégorie "${name}" supprimée`);
+  }
+
+  function handleExportBackup() {
+    exportBackup();
+    toast.success("Sauvegarde téléchargée");
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const data = await importBackupFile(file);
+      setPendingImport({ notes: data.notes, categories: data.categories });
+    } catch (err) {
+      toast.error("Fichier invalide");
+    }
+  }
+
+  function confirmImport() {
+    if (!pendingImport) return;
+    setNotes(pendingImport.notes);
+    setCats(
+      pendingImport.categories.length > 0
+        ? pendingImport.categories
+        : ["Perso"],
+    );
+    setFilterCat("all");
+    setFormCat(pendingImport.categories[0] ?? "");
+    // Also write raw to be safe
+    localStorage.setItem(NOTES_KEY, JSON.stringify(pendingImport.notes));
+    localStorage.setItem(CATS_KEY, JSON.stringify(pendingImport.categories));
+    setPendingImport(null);
+    toast.success("Sauvegarde restaurée");
+  }
+
+  function handleExportPdf() {
+    if (visible.length === 0) {
+      toast.error("Aucune note à exporter");
+      return;
+    }
+    exportNotesPdf(visible);
   }
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/60 backdrop-blur sticky top-0 z-20">
-        <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between gap-4">
+        <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold">
               DP
@@ -221,13 +327,47 @@ export default function NotesApp() {
               </p>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="secondary">{stats.total} actives</Badge>
-            {stats.late > 0 && (
-              <Badge className="bg-destructive text-destructive-foreground">
-                <AlertTriangle className="size-3 mr-1" /> {stats.late} en retard
-              </Badge>
-            )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground mr-2">
+              <Badge variant="secondary">{stats.total} actives</Badge>
+              {stats.late > 0 && (
+                <Badge className="bg-destructive text-destructive-foreground">
+                  <AlertTriangle className="size-3 mr-1" /> {stats.late} en retard
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1 rounded-md border bg-background/60 px-1 py-1">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground px-1.5 hidden sm:inline">
+                Sauvegarde
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 gap-1 text-xs"
+                onClick={handleExportBackup}
+                title="Exporter les données (.json)"
+              >
+                <Download className="size-3.5" />
+                <span className="hidden sm:inline">Exporter</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 gap-1 text-xs"
+                onClick={() => importInputRef.current?.click()}
+                title="Importer une sauvegarde (.json)"
+              >
+                <Upload className="size-3.5" />
+                <span className="hidden sm:inline">Importer</span>
+              </Button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -291,29 +431,15 @@ export default function NotesApp() {
           <section className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold">Catégories</h2>
-              <Dialog open={catDialog} onOpenChange={setCatDialog}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="h-7 px-2">
-                    <Plus className="size-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Nouvelle catégorie</DialogTitle>
-                  </DialogHeader>
-                  <Input
-                    placeholder="Ex. Chantier 3"
-                    value={newCat}
-                    onChange={(e) => setNewCat(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addCategory()}
-                  />
-                  <DialogFooter>
-                    <Button onClick={addCategory} disabled={!newCat.trim()}>
-                      Ajouter
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 gap-1 text-xs"
+                onClick={() => setManageCats(true)}
+              >
+                <FolderCog className="size-3.5" />
+                Gérer
+              </Button>
             </div>
             <ul className="space-y-1">
               {cats.map((c) => {
@@ -323,23 +449,15 @@ export default function NotesApp() {
                 return (
                   <li
                     key={c}
-                    className="group flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                    className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
                   >
                     <span className="flex items-center gap-2">
                       <span className="size-2 rounded-full bg-primary/70" />
                       {c}
-                      <span className="text-xs text-muted-foreground">
-                        {count}
-                      </span>
                     </span>
-                    <button
-                      onClick={() => removeCategory(c)}
-                      disabled={cats.length <= 1}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive disabled:opacity-0"
-                      aria-label={`Supprimer ${c}`}
-                    >
-                      <X className="size-3.5" />
-                    </button>
+                    <span className="text-xs text-muted-foreground">
+                      {count}
+                    </span>
                   </li>
                 );
               })}
@@ -371,7 +489,7 @@ export default function NotesApp() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes catégories</SelectItem>
-                {cats.map((c) => (
+                {allCatsForFilter.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
                   </SelectItem>
@@ -410,6 +528,15 @@ export default function NotesApp() {
               <Archive className="size-4" />
               {showArchived ? "Archivées" : "Actives"}
             </Button>
+            <Button
+              size="sm"
+              onClick={handleExportPdf}
+              className="gap-1 ml-auto bg-slate-800 hover:bg-slate-900 text-white"
+              title="Exporter les notes affichées en PDF"
+            >
+              <FileDown className="size-4" />
+              Exporter en PDF
+            </Button>
           </div>
 
           {visible.length === 0 ? (
@@ -446,6 +573,40 @@ export default function NotesApp() {
           onSave={saveEdit}
         />
       )}
+
+      <CategoryManagerDialog
+        open={manageCats}
+        onOpenChange={setManageCats}
+        cats={cats}
+        notes={notes}
+        onAdd={addCategoryName}
+        onRename={renameCategory}
+        onDelete={deleteCategory}
+      />
+
+      <AlertDialog
+        open={!!pendingImport}
+        onOpenChange={(o) => !o && setPendingImport(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restaurer la sauvegarde ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action va <strong>écraser toutes les données actuelles</strong>{" "}
+              ({notes.length} note(s), {cats.length} catégorie(s)) et les
+              remplacer par le contenu du fichier ({pendingImport?.notes.length}{" "}
+              note(s), {pendingImport?.categories.length} catégorie(s)). Cette
+              opération est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmImport}>
+              Restaurer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -655,5 +816,233 @@ function EditDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CategoryManagerDialog({
+  open,
+  onOpenChange,
+  cats,
+  notes,
+  onAdd,
+  onRename,
+  onDelete,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  cats: string[];
+  notes: Note[];
+  onAdd: (name: string) => boolean;
+  onRename: (oldName: string, newName: string) => void;
+  onDelete: (name: string, mode: "uncategorize" | "delete-notes") => void;
+}) {
+  const [newCat, setNewCat] = useState("");
+  const [editingCat, setEditingCat] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteMode, setDeleteMode] =
+    useState<"uncategorize" | "delete-notes">("uncategorize");
+
+  const counts = useMemo(() => {
+    const m: Record<string, number> = {};
+    notes.forEach((n) => {
+      m[n.category] = (m[n.category] ?? 0) + 1;
+    });
+    return m;
+  }, [notes]);
+
+  function handleAdd() {
+    if (onAdd(newCat)) setNewCat("");
+  }
+
+  function startEdit(c: string) {
+    setEditingCat(c);
+    setEditValue(c);
+  }
+
+  function commitEdit() {
+    if (editingCat) onRename(editingCat, editValue);
+    setEditingCat(null);
+  }
+
+  const deletingCount = deleting ? counts[deleting] ?? 0 : 0;
+  const canDelete = cats.length > 1; // keep at least one
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="size-4" /> Gérer les catégories
+            </DialogTitle>
+            <DialogDescription>
+              Renommez ou supprimez vos catégories. Les notes associées seront
+              mises à jour automatiquement.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex gap-2">
+            <Input
+              placeholder="Nouvelle catégorie"
+              value={newCat}
+              onChange={(e) => setNewCat(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            />
+            <Button onClick={handleAdd} disabled={!newCat.trim()}>
+              <Plus className="size-4" />
+            </Button>
+          </div>
+
+          <ul className="space-y-1 max-h-[50vh] overflow-y-auto pr-1">
+            {cats.map((c) => {
+              const count = counts[c] ?? 0;
+              const isEditing = editingCat === c;
+              return (
+                <li
+                  key={c}
+                  className="flex items-center gap-2 rounded-md border bg-card px-2 py-1.5"
+                >
+                  {isEditing ? (
+                    <>
+                      <Input
+                        autoFocus
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") commitEdit();
+                          if (e.key === "Escape") setEditingCat(null);
+                        }}
+                        className="h-8"
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2"
+                        onClick={commitEdit}
+                      >
+                        <Check className="size-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2"
+                        onClick={() => setEditingCat(null)}
+                      >
+                        <X className="size-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex-1 text-sm flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-primary/70" />
+                        {c}
+                        <span className="text-xs text-muted-foreground">
+                          {count} note{count > 1 ? "s" : ""}
+                        </span>
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2"
+                        onClick={() => startEdit(c)}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setDeleting(c);
+                          setDeleteMode("uncategorize");
+                        }}
+                        disabled={!canDelete}
+                        title={
+                          !canDelete
+                            ? "Impossible : il doit rester au moins une catégorie"
+                            : "Supprimer la catégorie"
+                        }
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={!!deleting}
+        onOpenChange={(o) => !o && setDeleting(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Supprimer la catégorie « {deleting} » ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingCount > 0
+                ? `${deletingCount} note(s) sont associées à cette catégorie. Choisissez ce qu'il faut en faire :`
+                : "Aucune note n'est associée à cette catégorie."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {deletingCount > 0 && (
+            <div className="space-y-2 py-2">
+              <label className="flex items-start gap-2 rounded-md border p-2 cursor-pointer hover:bg-accent">
+                <input
+                  type="radio"
+                  name="del-mode"
+                  className="mt-1"
+                  checked={deleteMode === "uncategorize"}
+                  onChange={() => setDeleteMode("uncategorize")}
+                />
+                <span className="text-sm">
+                  <strong>Conserver les notes</strong> — les basculer vers «{" "}
+                  {UNCATEGORIZED} »
+                </span>
+              </label>
+              <label className="flex items-start gap-2 rounded-md border p-2 cursor-pointer hover:bg-accent">
+                <input
+                  type="radio"
+                  name="del-mode"
+                  className="mt-1"
+                  checked={deleteMode === "delete-notes"}
+                  onChange={() => setDeleteMode("delete-notes")}
+                />
+                <span className="text-sm">
+                  <strong className="text-destructive">
+                    Supprimer aussi les notes
+                  </strong>{" "}
+                  — action irréversible
+                </span>
+              </label>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleting) onDelete(deleting, deleteMode);
+                setDeleting(null);
+              }}
+            >
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
