@@ -10,10 +10,11 @@ export interface Note {
   archived: boolean;
 }
 
-const NOTES_KEY = "dp-notes-v1";
-const CATS_KEY = "dp-categories-v1";
+export const NOTES_KEY = "dp-notes-v1";
+export const CATS_KEY = "dp-categories-v1";
 
 const DEFAULT_CATS = ["Chantier 1", "Chantier 2", "Perso"];
+export const UNCATEGORIZED = "Sans catégorie";
 
 export function loadNotes(): Note[] {
   if (typeof window === "undefined") return [];
