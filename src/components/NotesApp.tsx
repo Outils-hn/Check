@@ -552,9 +552,9 @@ export default function NotesApp() {
               </p>
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="rounded-xl border bg-card shadow-sm divide-y overflow-hidden">
               {visible.map((n) => (
-                <NoteCard
+                <NoteRow
                   key={n.id}
                   note={n}
                   onCycle={() => cycleStatus(n.id)}
@@ -564,6 +564,7 @@ export default function NotesApp() {
                 />
               ))}
             </ul>
+
           )}
         </section>
       </main>
@@ -640,7 +641,7 @@ function StatCard({
   );
 }
 
-function NoteCard({
+function NoteRow({
   note,
   onCycle,
   onEdit,
@@ -660,62 +661,60 @@ function NoteCard({
   return (
     <li
       className={cn(
-        "rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3 transition",
-        overdue && "border-destructive/50",
-        note.status === "done" && "opacity-75",
+        "group flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
+        overdue && "bg-destructive/5",
+        note.status === "done" && "opacity-70",
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <Badge variant="outline" className="text-[11px]">
-          {note.category}
-        </Badge>
-        <button
-          onClick={onCycle}
-          className={cn(
-            "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
-            STATUS_CLASSES[note.status],
-          )}
-          title="Cliquer pour changer de statut"
-        >
-          {STATUS_LABEL[note.status]}
-        </button>
-      </div>
+      {/* Category badge — fixed light grey */}
+      <span className="shrink-0 inline-flex items-center rounded-md bg-muted text-muted-foreground px-2 py-0.5 text-[11px] font-medium border">
+        {note.category}
+      </span>
 
+      {/* Status — clickable */}
+      <button
+        onClick={onCycle}
+        className={cn(
+          "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium transition",
+          STATUS_CLASSES[note.status],
+        )}
+        title="Cliquer pour changer de statut"
+      >
+        {STATUS_LABEL[note.status]}
+      </button>
+
+      {/* Note text — flex-1 */}
       <p
         className={cn(
-          "text-sm whitespace-pre-wrap break-words",
+          "flex-1 min-w-0 truncate sm:whitespace-normal sm:break-words basis-full sm:basis-auto order-last sm:order-none",
           note.status === "done" && "line-through text-muted-foreground",
         )}
+        title={note.text}
       >
         {note.text}
       </p>
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-        {note.dueDate && (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1",
-              overdue && "text-destructive font-medium",
-              soon && "text-warning font-medium",
-            )}
-          >
-            <CalendarDays className="size-3" />
-            {fmtDue(note.dueDate)}
-            {overdue && " · en retard"}
-            {soon && " · bientôt"}
-          </span>
+      {/* Date — discreet */}
+      <span
+        className={cn(
+          "shrink-0 inline-flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums",
+          overdue && "text-destructive font-medium",
+          soon && "text-warning font-medium",
         )}
-        <span className="ml-auto">Créée le {fmtDate(note.createdAt)}</span>
-      </div>
+      >
+        <CalendarDays className="size-3" />
+        {note.dueDate ? fmtDue(note.dueDate) : fmtDate(note.createdAt)}
+      </span>
 
-      <div className="flex items-center justify-end gap-1 -mb-1 -mr-1">
-        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={onEdit}>
+      {/* Actions — right */}
+      <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
+        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onEdit} title="Modifier">
           <Pencil className="size-3.5" />
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          className="h-7 px-2"
+          className="h-7 w-7 p-0"
           onClick={onArchive}
           title={note.archived ? "Désarchiver" : "Archiver"}
         >
@@ -728,8 +727,9 @@ function NoteCard({
         <Button
           size="sm"
           variant="ghost"
-          className="h-7 px-2 text-destructive hover:text-destructive"
+          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
           onClick={onDelete}
+          title="Supprimer"
         >
           <Trash2 className="size-3.5" />
         </Button>
@@ -737,6 +737,7 @@ function NoteCard({
     </li>
   );
 }
+
 
 function EditDialog({
   note,
