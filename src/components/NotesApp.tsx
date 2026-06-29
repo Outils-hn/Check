@@ -470,6 +470,8 @@ export default function NotesApp() {
             <StatCard label="En cours" value={stats.in_progress} tone="progress" />
             <StatCard label="Réglé" value={stats.done} tone="done" />
           </section>
+
+          <StorageGauge deps={[notes, cats]} />
         </aside>
 
         {/* Notes list */}
