@@ -64,6 +64,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { StorageGauge } from "@/components/StorageGauge";
 
 type SortKey = "created" | "due";
 type StatusFilter = "all" | NoteStatus;
@@ -469,6 +470,8 @@ export default function NotesApp() {
             <StatCard label="En cours" value={stats.in_progress} tone="progress" />
             <StatCard label="Réglé" value={stats.done} tone="done" />
           </section>
+
+          <StorageGauge deps={[notes, cats]} />
         </aside>
 
         {/* Notes list */}
