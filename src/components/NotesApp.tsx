@@ -552,9 +552,9 @@ export default function NotesApp() {
               </p>
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="rounded-xl border bg-card shadow-sm divide-y overflow-hidden">
               {visible.map((n) => (
-                <NoteCard
+                <NoteRow
                   key={n.id}
                   note={n}
                   onCycle={() => cycleStatus(n.id)}
@@ -564,6 +564,7 @@ export default function NotesApp() {
                 />
               ))}
             </ul>
+
           )}
         </section>
       </main>
