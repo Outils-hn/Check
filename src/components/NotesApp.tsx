@@ -384,6 +384,16 @@ export default function NotesApp() {
                 onChange={handleImportFile}
               />
             </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 rounded-lg border border-border"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
+              aria-label="Basculer le thème"
+            >
+              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </Button>
           </div>
         </div>
       </header>
