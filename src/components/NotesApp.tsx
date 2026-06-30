@@ -313,18 +313,22 @@ export default function NotesApp() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/60 backdrop-blur sticky top-0 z-20">
+      <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold">
-              DP
+            {/* CHECK logo: square frame with orange geometric check */}
+            <div className="relative size-10 border-2 border-foreground/70 bg-gradient-to-br from-card to-background flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+              <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter" style={{ color: "var(--accent-laser)" }}>
+                <polyline points="4,13 10,19 20,5" />
+              </svg>
+              <span className="absolute -inset-px border border-[var(--accent-laser)]/30 pointer-events-none" />
             </div>
             <div>
-              <h1 className="text-base font-semibold leading-tight">
-                Carnet de chantier
+              <h1 className="text-lg font-bold leading-none tracking-[0.25em] uppercase">
+                CHECK
               </h1>
-              <p className="text-xs text-muted-foreground">
-                Notes & tâches — dessinateur projeteur
+              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1">
+                Index · Trame · Vérification
               </p>
             </div>
           </div>
