@@ -70,10 +70,10 @@ type SortKey = "created" | "due";
 type StatusFilter = "all" | NoteStatus;
 
 const STATUS_CLASSES: Record<NoteStatus, string> = {
-  todo: "bg-status-todo text-status-todo-foreground hover:bg-status-todo/90",
+  todo: "border border-status-todo text-status-todo-foreground bg-status-todo/5 hover:bg-status-todo/10",
   in_progress:
-    "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
-  done: "bg-status-done text-status-done-foreground hover:bg-status-done/90",
+    "border border-status-progress text-status-progress-foreground bg-status-progress/5 hover:bg-status-progress/10",
+  done: "border border-status-done text-status-done-foreground bg-status-done/5 hover:bg-status-done/10",
 };
 
 function uid() {
