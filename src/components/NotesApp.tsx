@@ -666,22 +666,29 @@ function NoteRow({
         note.status === "done" && "opacity-70",
       )}
     >
-      {/* Category badge — fixed light grey */}
-      <span className="shrink-0 inline-flex items-center rounded-md bg-muted text-muted-foreground px-2 py-0.5 text-[11px] font-medium border">
-        {note.category}
-      </span>
+      {/* Category — fixed width column */}
+      <div className="w-full sm:w-[150px] sm:shrink-0 flex sm:justify-start">
+        <span
+          className="inline-flex max-w-full items-center rounded-md bg-muted text-muted-foreground px-2 py-0.5 text-[11px] font-medium border truncate"
+          title={note.category}
+        >
+          {note.category}
+        </span>
+      </div>
 
-      {/* Status — clickable */}
-      <button
-        onClick={onCycle}
-        className={cn(
-          "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium transition",
-          STATUS_CLASSES[note.status],
-        )}
-        title="Cliquer pour changer de statut"
-      >
-        {STATUS_LABEL[note.status]}
-      </button>
+      {/* Status — fixed width column, centered */}
+      <div className="w-[120px] shrink-0 flex justify-center">
+        <button
+          onClick={onCycle}
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[11px] font-medium transition",
+            STATUS_CLASSES[note.status],
+          )}
+          title="Cliquer pour changer de statut"
+        >
+          {STATUS_LABEL[note.status]}
+        </button>
+      </div>
 
       {/* Note text — flex-1 */}
       <p
@@ -694,10 +701,10 @@ function NoteRow({
         {note.text}
       </p>
 
-      {/* Date — discreet */}
+      {/* Date — discreet, fixed width */}
       <span
         className={cn(
-          "shrink-0 inline-flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums",
+          "shrink-0 sm:w-[110px] inline-flex items-center justify-end gap-1 text-[11px] text-muted-foreground tabular-nums",
           overdue && "text-destructive font-medium",
           soon && "text-warning font-medium",
         )}
@@ -705,6 +712,7 @@ function NoteRow({
         <CalendarDays className="size-3" />
         {note.dueDate ? fmtDue(note.dueDate) : fmtDate(note.createdAt)}
       </span>
+
 
       {/* Actions — right */}
       <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
