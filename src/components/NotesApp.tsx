@@ -16,13 +16,7 @@ import { exportBackup, importBackupFile } from "@/lib/backup";
 import { exportNotesPdf } from "@/lib/pdf-export";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -72,8 +66,7 @@ type StatusFilter = "all" | NoteStatus;
 
 const STATUS_CLASSES: Record<NoteStatus, string> = {
   todo: "bg-status-todo text-status-todo-foreground hover:bg-status-todo/90",
-  in_progress:
-    "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
+  in_progress: "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
   done: "bg-status-done text-status-done-foreground hover:bg-status-done/90",
 };
 
@@ -181,9 +174,7 @@ export default function NotesApp() {
       todo: active.filter((n) => n.status === "todo").length,
       in_progress: active.filter((n) => n.status === "in_progress").length,
       done: active.filter((n) => n.status === "done").length,
-      late: active.filter(
-        (n) => n.status !== "done" && dueState(n.dueDate) === "late",
-      ).length,
+      late: active.filter((n) => n.status !== "done" && dueState(n.dueDate) === "late").length,
     };
   }, [notes]);
 
@@ -207,17 +198,13 @@ export default function NotesApp() {
   }
 
   function cycleStatus(id: string) {
-    setNotes((p) =>
-      p.map((n) => (n.id === id ? { ...n, status: nextStatus(n.status) } : n)),
-    );
+    setNotes((p) => p.map((n) => (n.id === id ? { ...n, status: nextStatus(n.status) } : n)));
   }
   function removeNote(id: string) {
     setNotes((p) => p.filter((n) => n.id !== id));
   }
   function toggleArchive(id: string) {
-    setNotes((p) =>
-      p.map((n) => (n.id === id ? { ...n, archived: !n.archived } : n)),
-    );
+    setNotes((p) => p.map((n) => (n.id === id ? { ...n, archived: !n.archived } : n)));
   }
   function saveEdit(updated: Note) {
     setNotes((p) => p.map((n) => (n.id === updated.id ? updated : n)));
@@ -232,9 +219,7 @@ export default function NotesApp() {
       return;
     }
     setCats((p) => p.map((c) => (c === oldName ? v : c)));
-    setNotes((p) =>
-      p.map((n) => (n.category === oldName ? { ...n, category: v } : n)),
-    );
+    setNotes((p) => p.map((n) => (n.category === oldName ? { ...n, category: v } : n)));
     if (filterCat === oldName) setFilterCat(v);
     if (formCat === oldName) setFormCat(v);
     toast.success(`Catégorie renommée en "${v}"`);
@@ -255,11 +240,7 @@ export default function NotesApp() {
     if (mode === "delete-notes") {
       setNotes((p) => p.filter((n) => n.category !== name));
     } else {
-      setNotes((p) =>
-        p.map((n) =>
-          n.category === name ? { ...n, category: UNCATEGORIZED } : n,
-        ),
-      );
+      setNotes((p) => p.map((n) => (n.category === name ? { ...n, category: UNCATEGORIZED } : n)));
     }
     setCats((p) => p.filter((c) => c !== name));
     if (filterCat === name) setFilterCat("all");
@@ -290,11 +271,7 @@ export default function NotesApp() {
   function confirmImport() {
     if (!pendingImport) return;
     setNotes(pendingImport.notes);
-    setCats(
-      pendingImport.categories.length > 0
-        ? pendingImport.categories
-        : ["Perso"],
-    );
+    setCats(pendingImport.categories.length > 0 ? pendingImport.categories : ["Perso"]);
     setFilterCat("all");
     setFormCat(pendingImport.categories[0] ?? "");
     // Also write raw to be safe
@@ -321,12 +298,8 @@ export default function NotesApp() {
               <Check className="size-6 text-[#ff6a1a]" strokeWidth={3} />
             </div>
             <div>
-              <h1 className="text-lg font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white">
-                CHECK
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Notes &amp; tâches techniques
-              </p>
+              <h1 className="font-display text-lg font-bold uppercase tracking-[0.22em] text-foreground">Check</h1>
+              <p className="text-xs text-muted-foreground">Notes &amp; tâches techniques</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -403,10 +376,7 @@ export default function NotesApp() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
-                  value={formStatus}
-                  onValueChange={(v) => setFormStatus(v as NoteStatus)}
-                >
+                <Select value={formStatus} onValueChange={(v) => setFormStatus(v as NoteStatus)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -419,11 +389,7 @@ export default function NotesApp() {
               </div>
               <div className="flex items-center gap-2">
                 <CalendarDays className="size-4 text-muted-foreground" />
-                <Input
-                  type="date"
-                  value={formDue}
-                  onChange={(e) => setFormDue(e.target.value)}
-                />
+                <Input type="date" value={formDue} onChange={(e) => setFormDue(e.target.value)} />
               </div>
               <Button type="submit" className="w-full" disabled={!text.trim()}>
                 Ajouter
@@ -434,21 +400,14 @@ export default function NotesApp() {
           <section className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold">Catégories</h2>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 px-2 gap-1 text-xs"
-                onClick={() => setManageCats(true)}
-              >
+              <Button size="sm" variant="ghost" className="h-7 px-2 gap-1 text-xs" onClick={() => setManageCats(true)}>
                 <FolderCog className="size-3.5" />
                 Gérer
               </Button>
             </div>
             <ul className="space-y-1">
               {cats.map((c) => {
-                const count = notes.filter(
-                  (n) => !n.archived && n.category === c,
-                ).length;
+                const count = notes.filter((n) => !n.archived && n.category === c).length;
                 return (
                   <li
                     key={c}
@@ -458,9 +417,7 @@ export default function NotesApp() {
                       <span className="size-2 rounded-full bg-primary/70" />
                       {c}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {count}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{count}</span>
                   </li>
                 );
               })}
@@ -501,10 +458,7 @@ export default function NotesApp() {
                 ))}
               </SelectContent>
             </Select>
-            <Select
-              value={filterStatus}
-              onValueChange={(v) => setFilterStatus(v as StatusFilter)}
-            >
+            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as StatusFilter)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>
@@ -548,9 +502,7 @@ export default function NotesApp() {
             <div className="rounded-xl border border-dashed bg-card p-12 text-center text-muted-foreground">
               <Inbox className="size-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">
-                {showArchived
-                  ? "Aucune note archivée."
-                  : "Aucune note. Ajoutez-en une depuis le formulaire."}
+                {showArchived ? "Aucune note archivée." : "Aucune note. Ajoutez-en une depuis le formulaire."}
               </p>
             </div>
           ) : (
@@ -566,19 +518,11 @@ export default function NotesApp() {
                 />
               ))}
             </ul>
-
           )}
         </section>
       </main>
 
-      {editing && (
-        <EditDialog
-          note={editing}
-          cats={cats}
-          onClose={() => setEditing(null)}
-          onSave={saveEdit}
-        />
-      )}
+      {editing && <EditDialog note={editing} cats={cats} onClose={() => setEditing(null)} onSave={saveEdit} />}
 
       <CategoryManagerDialog
         open={manageCats}
@@ -590,26 +534,19 @@ export default function NotesApp() {
         onDelete={deleteCategory}
       />
 
-      <AlertDialog
-        open={!!pendingImport}
-        onOpenChange={(o) => !o && setPendingImport(null)}
-      >
+      <AlertDialog open={!!pendingImport} onOpenChange={(o) => !o && setPendingImport(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Restaurer la sauvegarde ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action va <strong>écraser toutes les données actuelles</strong>{" "}
-              ({notes.length} note(s), {cats.length} catégorie(s)) et les
-              remplacer par le contenu du fichier ({pendingImport?.notes.length}{" "}
-              note(s), {pendingImport?.categories.length} catégorie(s)). Cette
-              opération est irréversible.
+              Cette action va <strong>écraser toutes les données actuelles</strong> ({notes.length} note(s),{" "}
+              {cats.length} catégorie(s)) et les remplacer par le contenu du fichier ({pendingImport?.notes.length}{" "}
+              note(s), {pendingImport?.categories.length} catégorie(s)). Cette opération est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmImport}>
-              Restaurer
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmImport}>Restaurer</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -617,21 +554,8 @@ export default function NotesApp() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: "todo" | "progress" | "done";
-}) {
-  const dot =
-    tone === "todo"
-      ? "bg-status-todo"
-      : tone === "progress"
-        ? "bg-status-progress"
-        : "bg-status-done";
+function StatCard({ label, value, tone }: { label: string; value: number; tone: "todo" | "progress" | "done" }) {
+  const dot = tone === "todo" ? "bg-status-todo" : tone === "progress" ? "bg-status-progress" : "bg-status-done";
   return (
     <div className="rounded-lg border bg-background/50 p-2">
       <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
@@ -682,10 +606,7 @@ function NoteRow({
       <div className="w-[120px] shrink-0 flex justify-center">
         <button
           onClick={onCycle}
-          className={cn(
-            "rounded-full px-2 py-0.5 text-[11px] font-medium transition",
-            STATUS_CLASSES[note.status],
-          )}
+          className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium transition", STATUS_CLASSES[note.status])}
           title="Cliquer pour changer de statut"
         >
           {STATUS_LABEL[note.status]}
@@ -715,7 +636,6 @@ function NoteRow({
         {note.dueDate ? fmtDue(note.dueDate) : fmtDate(note.createdAt)}
       </span>
 
-
       {/* Actions — right */}
       <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onEdit} title="Modifier">
@@ -728,11 +648,7 @@ function NoteRow({
           onClick={onArchive}
           title={note.archived ? "Désarchiver" : "Archiver"}
         >
-          {note.archived ? (
-            <ArchiveRestore className="size-3.5" />
-          ) : (
-            <Archive className="size-3.5" />
-          )}
+          {note.archived ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
         </Button>
         <Button
           size="sm"
@@ -747,7 +663,6 @@ function NoteRow({
     </li>
   );
 }
-
 
 function EditDialog({
   note,
@@ -772,11 +687,7 @@ function EditDialog({
           <DialogTitle>Modifier la note</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <Textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={4}
-          />
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} />
           <div className="grid grid-cols-2 gap-2">
             <Select value={cat} onValueChange={setCat}>
               <SelectTrigger>
@@ -790,10 +701,7 @@ function EditDialog({
                 ))}
               </SelectContent>
             </Select>
-            <Select
-              value={status}
-              onValueChange={(v) => setStatus(v as NoteStatus)}
-            >
+            <Select value={status} onValueChange={(v) => setStatus(v as NoteStatus)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -804,11 +712,7 @@ function EditDialog({
               </SelectContent>
             </Select>
           </div>
-          <Input
-            type="date"
-            value={due}
-            onChange={(e) => setDue(e.target.value)}
-          />
+          <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
@@ -854,8 +758,7 @@ function CategoryManagerDialog({
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [deleteMode, setDeleteMode] =
-    useState<"uncategorize" | "delete-notes">("uncategorize");
+  const [deleteMode, setDeleteMode] = useState<"uncategorize" | "delete-notes">("uncategorize");
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
@@ -879,7 +782,7 @@ function CategoryManagerDialog({
     setEditingCat(null);
   }
 
-  const deletingCount = deleting ? counts[deleting] ?? 0 : 0;
+  const deletingCount = deleting ? (counts[deleting] ?? 0) : 0;
   const canDelete = cats.length > 1; // keep at least one
 
   return (
@@ -891,8 +794,7 @@ function CategoryManagerDialog({
               <Settings2 className="size-4" /> Gérer les catégories
             </DialogTitle>
             <DialogDescription>
-              Renommez ou supprimez vos catégories. Les notes associées seront
-              mises à jour automatiquement.
+              Renommez ou supprimez vos catégories. Les notes associées seront mises à jour automatiquement.
             </DialogDescription>
           </DialogHeader>
 
@@ -913,10 +815,7 @@ function CategoryManagerDialog({
               const count = counts[c] ?? 0;
               const isEditing = editingCat === c;
               return (
-                <li
-                  key={c}
-                  className="flex items-center gap-2 rounded-md border bg-card px-2 py-1.5"
-                >
+                <li key={c} className="flex items-center gap-2 rounded-md border bg-card px-2 py-1.5">
                   {isEditing ? (
                     <>
                       <Input
@@ -929,20 +828,10 @@ function CategoryManagerDialog({
                         }}
                         className="h-8"
                       />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 px-2"
-                        onClick={commitEdit}
-                      >
+                      <Button size="sm" variant="ghost" className="h-8 px-2" onClick={commitEdit}>
                         <Check className="size-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 px-2"
-                        onClick={() => setEditingCat(null)}
-                      >
+                      <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => setEditingCat(null)}>
                         <X className="size-4" />
                       </Button>
                     </>
@@ -955,12 +844,7 @@ function CategoryManagerDialog({
                           {count} note{count > 1 ? "s" : ""}
                         </span>
                       </span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 px-2"
-                        onClick={() => startEdit(c)}
-                      >
+                      <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => startEdit(c)}>
                         <Pencil className="size-3.5" />
                       </Button>
                       <Button
@@ -973,9 +857,7 @@ function CategoryManagerDialog({
                         }}
                         disabled={!canDelete}
                         title={
-                          !canDelete
-                            ? "Impossible : il doit rester au moins une catégorie"
-                            : "Supprimer la catégorie"
+                          !canDelete ? "Impossible : il doit rester au moins une catégorie" : "Supprimer la catégorie"
                         }
                       >
                         <Trash2 className="size-3.5" />
@@ -995,15 +877,10 @@ function CategoryManagerDialog({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={!!deleting}
-        onOpenChange={(o) => !o && setDeleting(null)}
-      >
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Supprimer la catégorie « {deleting} » ?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Supprimer la catégorie « {deleting} » ?</AlertDialogTitle>
             <AlertDialogDescription>
               {deletingCount > 0
                 ? `${deletingCount} note(s) sont associées à cette catégorie. Choisissez ce qu'il faut en faire :`
@@ -1022,8 +899,7 @@ function CategoryManagerDialog({
                   onChange={() => setDeleteMode("uncategorize")}
                 />
                 <span className="text-sm">
-                  <strong>Conserver les notes</strong> — les basculer vers «{" "}
-                  {UNCATEGORIZED} »
+                  <strong>Conserver les notes</strong> — les basculer vers « {UNCATEGORIZED} »
                 </span>
               </label>
               <label className="flex items-start gap-2 rounded-md border p-2 cursor-pointer hover:bg-accent">
@@ -1035,10 +911,7 @@ function CategoryManagerDialog({
                   onChange={() => setDeleteMode("delete-notes")}
                 />
                 <span className="text-sm">
-                  <strong className="text-destructive">
-                    Supprimer aussi les notes
-                  </strong>{" "}
-                  — action irréversible
+                  <strong className="text-destructive">Supprimer aussi les notes</strong> — action irréversible
                 </span>
               </label>
             </div>
