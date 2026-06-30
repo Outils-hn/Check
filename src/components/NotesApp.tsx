@@ -70,10 +70,10 @@ type SortKey = "created" | "due";
 type StatusFilter = "all" | NoteStatus;
 
 const STATUS_CLASSES: Record<NoteStatus, string> = {
-  todo: "bg-status-todo text-status-todo-foreground hover:bg-status-todo/90",
+  todo: "border border-status-todo text-status-todo-foreground bg-status-todo/5 hover:bg-status-todo/10",
   in_progress:
-    "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
-  done: "bg-status-done text-status-done-foreground hover:bg-status-done/90",
+    "border border-status-progress text-status-progress-foreground bg-status-progress/5 hover:bg-status-progress/10",
+  done: "border border-status-done text-status-done-foreground bg-status-done/5 hover:bg-status-done/10",
 };
 
 function uid() {
@@ -313,18 +313,22 @@ export default function NotesApp() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/60 backdrop-blur sticky top-0 z-20">
+      <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold">
-              DP
+            {/* CHECK logo: square frame with orange geometric check */}
+            <div className="relative size-10 border-2 border-foreground/70 bg-gradient-to-br from-card to-background flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+              <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter" style={{ color: "var(--accent-laser)" }}>
+                <polyline points="4,13 10,19 20,5" />
+              </svg>
+              <span className="absolute -inset-px border border-[var(--accent-laser)]/30 pointer-events-none" />
             </div>
             <div>
-              <h1 className="text-base font-semibold leading-tight">
-                Carnet de chantier
+              <h1 className="text-lg font-bold leading-none tracking-[0.25em] uppercase">
+                CHECK
               </h1>
-              <p className="text-xs text-muted-foreground">
-                Notes & tâches — dessinateur projeteur
+              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1">
+                Index · Trame · Vérification
               </p>
             </div>
           </div>
@@ -377,8 +381,8 @@ export default function NotesApp() {
         {/* Sidebar / Form */}
         <aside className="space-y-4">
           <section className="rounded-xl border bg-card p-4 shadow-sm">
-            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Plus className="size-4" /> Nouvelle note
+            <h2 className="text-xs font-semibold mb-3 flex items-center gap-2 uppercase tracking-[0.15em] text-muted-foreground">
+              <Plus className="size-3.5" /> Nouvelle note
             </h2>
             <form onSubmit={addNote} className="space-y-3">
               <Textarea
@@ -431,7 +435,7 @@ export default function NotesApp() {
 
           <section className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold">Catégories</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Catégories</h2>
               <Button
                 size="sm"
                 variant="ghost"
@@ -534,11 +538,11 @@ export default function NotesApp() {
             <Button
               size="sm"
               onClick={handleExportPdf}
-              className="gap-1 ml-auto bg-slate-800 hover:bg-slate-900 text-white"
+              className="gap-1 ml-auto bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-[0.1em] text-xs"
               title="Exporter les notes affichées en PDF"
             >
               <FileDown className="size-4" />
-              Exporter en PDF
+              Exporter PDF
             </Button>
           </div>
 
@@ -661,15 +665,15 @@ function NoteRow({
   return (
     <li
       className={cn(
-        "group flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
-        overdue && "bg-destructive/5",
+        "group relative flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/60 border-l-2 border-transparent hover:border-l-[var(--accent-laser)]",
+        overdue && "bg-destructive/10",
         note.status === "done" && "opacity-70",
       )}
     >
       {/* Category — fixed width column */}
       <div className="w-full sm:w-[150px] sm:shrink-0 flex sm:justify-start">
         <span
-          className="inline-flex max-w-full items-center rounded-md bg-muted text-muted-foreground px-2 py-0.5 text-[11px] font-medium border truncate"
+          className="inline-flex max-w-full items-center bg-background/60 text-foreground/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] border border-border truncate"
           title={note.category}
         >
           {note.category}
@@ -681,7 +685,7 @@ function NoteRow({
         <button
           onClick={onCycle}
           className={cn(
-            "rounded-full px-2 py-0.5 text-[11px] font-medium transition",
+            "px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] transition rounded-none",
             STATUS_CLASSES[note.status],
           )}
           title="Cliquer pour changer de statut"
