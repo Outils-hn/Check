@@ -61,6 +61,8 @@ import {
   X,
   AlertTriangle,
   Inbox,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -70,10 +72,9 @@ type SortKey = "created" | "due";
 type StatusFilter = "all" | NoteStatus;
 
 const STATUS_CLASSES: Record<NoteStatus, string> = {
-  todo: "border border-status-todo text-status-todo-foreground bg-status-todo/5 hover:bg-status-todo/10",
-  in_progress:
-    "border border-status-progress text-status-progress-foreground bg-status-progress/5 hover:bg-status-progress/10",
-  done: "border border-status-done text-status-done-foreground bg-status-done/5 hover:bg-status-done/10",
+  todo: "bg-status-todo text-status-todo-foreground hover:opacity-80",
+  in_progress: "bg-status-progress text-status-progress-foreground hover:opacity-80",
+  done: "bg-status-done text-status-done-foreground hover:opacity-80",
 };
 
 function uid() {
@@ -113,6 +114,7 @@ export default function NotesApp() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [cats, setCats] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   // form
   const [text, setText] = useState("");
@@ -142,7 +144,17 @@ export default function NotesApp() {
     setNotes(loadNotes());
     setFormCat(c[0] ?? "");
     setHydrated(true);
+    const stored = (typeof window !== "undefined" && localStorage.getItem("check-theme")) as "dark" | "light" | null;
+    const initial: "dark" | "light" = stored ?? (document.documentElement.classList.contains("dark") ? "dark" : "light");
+    setTheme(initial);
   }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    try { localStorage.setItem("check-theme", next); } catch {}
+  }
 
   useEffect(() => {
     if (hydrated) saveNotes(notes);
@@ -316,19 +328,18 @@ export default function NotesApp() {
       <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            {/* CHECK logo: square frame with orange geometric check */}
-            <div className="relative size-10 border-2 border-foreground/70 bg-gradient-to-br from-card to-background flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
-              <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter" style={{ color: "var(--accent-laser)" }}>
+            {/* CHECK logo: rounded square with orange check */}
+            <div className="relative size-10 rounded-lg bg-card border border-border flex items-center justify-center shadow-soft">
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--primary)" }}>
                 <polyline points="4,13 10,19 20,5" />
               </svg>
-              <span className="absolute -inset-px border border-[var(--accent-laser)]/30 pointer-events-none" />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-none tracking-[0.25em] uppercase">
+              <h1 className="text-base font-semibold leading-none tracking-tight">
                 CHECK
               </h1>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1">
-                Index · Trame · Vérification
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Notes & tâches techniques
               </p>
             </div>
           </div>
@@ -373,6 +384,16 @@ export default function NotesApp() {
                 onChange={handleImportFile}
               />
             </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 rounded-lg border border-border"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
+              aria-label="Basculer le thème"
+            >
+              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </Button>
           </div>
         </div>
       </header>
@@ -538,7 +559,7 @@ export default function NotesApp() {
             <Button
               size="sm"
               onClick={handleExportPdf}
-              className="gap-1 ml-auto bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-[0.1em] text-xs"
+              className="gap-1 ml-auto rounded-lg"
               title="Exporter les notes affichées en PDF"
             >
               <FileDown className="size-4" />
@@ -673,7 +694,7 @@ function NoteRow({
       {/* Category — fixed width column */}
       <div className="w-full sm:w-[150px] sm:shrink-0 flex sm:justify-start">
         <span
-          className="inline-flex max-w-full items-center bg-background/60 text-foreground/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] border border-border truncate"
+          className="inline-flex max-w-full items-center bg-muted text-foreground/80 px-2.5 py-1 text-[11px] font-medium rounded-md truncate"
           title={note.category}
         >
           {note.category}
@@ -685,7 +706,7 @@ function NoteRow({
         <button
           onClick={onCycle}
           className={cn(
-            "px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] transition rounded-none",
+            "px-3 py-1 text-[11px] font-medium transition rounded-full",
             STATUS_CLASSES[note.status],
           )}
           title="Cliquer pour changer de statut"
