@@ -559,7 +559,7 @@ export default function NotesApp() {
             <Button
               size="sm"
               onClick={handleExportPdf}
-              className="gap-1 ml-auto bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-[0.1em] text-xs"
+              className="gap-1 ml-auto rounded-lg"
               title="Exporter les notes affichées en PDF"
             >
               <FileDown className="size-4" />
