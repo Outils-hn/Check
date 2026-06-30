@@ -65,6 +65,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { StorageGauge } from "@/components/StorageGauge";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type SortKey = "created" | "due";
 type StatusFilter = "all" | NoteStatus;
