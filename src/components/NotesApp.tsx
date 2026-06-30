@@ -665,8 +665,8 @@ function NoteRow({
   return (
     <li
       className={cn(
-        "group flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
-        overdue && "bg-destructive/5",
+        "group relative flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/60 border-l-2 border-transparent hover:border-l-[var(--accent-laser)]",
+        overdue && "bg-destructive/10",
         note.status === "done" && "opacity-70",
       )}
     >
