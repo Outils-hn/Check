@@ -65,6 +65,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { StorageGauge } from "@/components/StorageGauge";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type SortKey = "created" | "due";
 type StatusFilter = "all" | NoteStatus;
@@ -316,15 +317,15 @@ export default function NotesApp() {
       <header className="border-b bg-card/60 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold">
-              DP
+            <div className="size-10 rounded-xl bg-white dark:bg-slate-100 border border-border shadow-sm grid place-items-center">
+              <Check className="size-6 text-[#ff6a1a]" strokeWidth={3} />
             </div>
             <div>
-              <h1 className="text-base font-semibold leading-tight">
-                Carnet de chantier
+              <h1 className="text-lg font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white">
+                CHECK
               </h1>
               <p className="text-xs text-muted-foreground">
-                Notes & tâches — dessinateur projeteur
+                Notes &amp; tâches techniques
               </p>
             </div>
           </div>
@@ -337,6 +338,7 @@ export default function NotesApp() {
                 </Badge>
               )}
             </div>
+            <ThemeToggle />
             <div className="flex items-center gap-1 rounded-md border bg-background/60 px-1 py-1">
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground px-1.5 hidden sm:inline">
                 Sauvegarde
