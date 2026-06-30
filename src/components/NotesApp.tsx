@@ -435,7 +435,7 @@ export default function NotesApp() {
 
           <section className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold">Catégories</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Catégories</h2>
               <Button
                 size="sm"
                 variant="ghost"
