@@ -144,7 +144,17 @@ export default function NotesApp() {
     setNotes(loadNotes());
     setFormCat(c[0] ?? "");
     setHydrated(true);
+    const stored = (typeof window !== "undefined" && localStorage.getItem("check-theme")) as "dark" | "light" | null;
+    const initial: "dark" | "light" = stored ?? (document.documentElement.classList.contains("dark") ? "dark" : "light");
+    setTheme(initial);
   }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    try { localStorage.setItem("check-theme", next); } catch {}
+  }
 
   useEffect(() => {
     if (hydrated) saveNotes(notes);
