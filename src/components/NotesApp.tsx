@@ -61,6 +61,8 @@ import {
   X,
   AlertTriangle,
   Inbox,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
