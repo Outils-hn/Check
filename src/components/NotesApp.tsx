@@ -673,7 +673,7 @@ function NoteRow({
       {/* Category — fixed width column */}
       <div className="w-full sm:w-[150px] sm:shrink-0 flex sm:justify-start">
         <span
-          className="inline-flex max-w-full items-center rounded-md bg-muted text-muted-foreground px-2 py-0.5 text-[11px] font-medium border truncate"
+          className="inline-flex max-w-full items-center bg-background/60 text-foreground/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] border border-border truncate"
           title={note.category}
         >
           {note.category}
@@ -685,7 +685,7 @@ function NoteRow({
         <button
           onClick={onCycle}
           className={cn(
-            "rounded-full px-2 py-0.5 text-[11px] font-medium transition",
+            "px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] transition rounded-none",
             STATUS_CLASSES[note.status],
           )}
           title="Cliquer pour changer de statut"
