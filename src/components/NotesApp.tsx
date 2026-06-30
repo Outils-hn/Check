@@ -114,6 +114,7 @@ export default function NotesApp() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [cats, setCats] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   // form
   const [text, setText] = useState("");
