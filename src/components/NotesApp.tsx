@@ -381,8 +381,8 @@ export default function NotesApp() {
         {/* Sidebar / Form */}
         <aside className="space-y-4">
           <section className="rounded-xl border bg-card p-4 shadow-sm">
-            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Plus className="size-4" /> Nouvelle note
+            <h2 className="text-xs font-semibold mb-3 flex items-center gap-2 uppercase tracking-[0.15em] text-muted-foreground">
+              <Plus className="size-3.5" /> Nouvelle note
             </h2>
             <form onSubmit={addNote} className="space-y-3">
               <Textarea
