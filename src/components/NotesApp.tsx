@@ -92,6 +92,16 @@ function fmtDue(iso: string | null) {
   });
 }
 
+function completionSuffix(createdAt: number, completedAt: number) {
+  const start = new Date(createdAt);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(completedAt);
+  end.setHours(0, 0, 0, 0);
+  const days = Math.ceil((end.getTime() - start.getTime()) / 86400000);
+  if (days <= 0) return "(Fait le jour même)";
+  return `(Fait en ${days} jour${days > 1 ? "s" : ""})`;
+}
+
 function dueState(iso: string | null): "none" | "ok" | "soon" | "late" {
   if (!iso) return "none";
   const today = new Date();
@@ -189,6 +199,7 @@ export default function NotesApp() {
       status: formStatus,
       dueDate: formDue || null,
       createdAt: Date.now(),
+      completedAt: formStatus === "done" ? Date.now() : null,
       archived: false,
     };
     setNotes((p) => [n, ...p]);
@@ -198,7 +209,13 @@ export default function NotesApp() {
   }
 
   function cycleStatus(id: string) {
-    setNotes((p) => p.map((n) => (n.id === id ? { ...n, status: nextStatus(n.status) } : n)));
+    setNotes((p) =>
+      p.map((n) => {
+        if (n.id !== id) return n;
+        const ns = nextStatus(n.status);
+        return { ...n, status: ns, completedAt: ns === "done" ? Date.now() : null };
+      }),
+    );
   }
   function removeNote(id: string) {
     setNotes((p) => p.filter((n) => n.id !== id));
@@ -207,7 +224,15 @@ export default function NotesApp() {
     setNotes((p) => p.map((n) => (n.id === id ? { ...n, archived: !n.archived } : n)));
   }
   function saveEdit(updated: Note) {
-    setNotes((p) => p.map((n) => (n.id === updated.id ? updated : n)));
+    setNotes((p) =>
+      p.map((n) => {
+        if (n.id !== updated.id) return n;
+        let completedAt = n.completedAt ?? null;
+        if (updated.status === "done" && n.status !== "done") completedAt = Date.now();
+        else if (updated.status !== "done") completedAt = null;
+        return { ...updated, completedAt };
+      }),
+    );
     setEditing(null);
   }
 
@@ -625,16 +650,30 @@ function NoteRow({
       </p>
 
       {/* Date — discreet, fixed width */}
-      <span
+      <div
         className={cn(
-          "shrink-0 sm:w-[110px] inline-flex items-center justify-end gap-1 text-[11px] text-muted-foreground tabular-nums",
-          overdue && "text-destructive font-medium",
-          soon && "text-warning font-medium",
+          "shrink-0 sm:w-[150px] flex flex-col items-end justify-center gap-0.5 text-[11px] tabular-nums leading-tight",
         )}
       >
-        <CalendarDays className="size-3" />
-        {note.dueDate ? fmtDue(note.dueDate) : fmtDate(note.createdAt)}
-      </span>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 text-muted-foreground",
+            overdue && "text-destructive font-medium",
+            soon && "text-warning font-medium",
+          )}
+          title={note.dueDate ? `Échéance : ${fmtDue(note.dueDate)}` : undefined}
+        >
+          <CalendarDays className="size-3" />
+          Créée le {fmtDate(note.createdAt)}
+        </span>
+        {note.status === "done" && note.completedAt && (
+          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+            <Check className="size-3" />
+            Réglée le {fmtDate(note.completedAt)} {completionSuffix(note.createdAt, note.completedAt)}
+          </span>
+        )}
+      </div>
+
 
       {/* Actions — right */}
       <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
