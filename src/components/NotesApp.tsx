@@ -640,16 +640,30 @@ function NoteRow({
       </p>
 
       {/* Date — discreet, fixed width */}
-      <span
+      <div
         className={cn(
-          "shrink-0 sm:w-[110px] inline-flex items-center justify-end gap-1 text-[11px] text-muted-foreground tabular-nums",
-          overdue && "text-destructive font-medium",
-          soon && "text-warning font-medium",
+          "shrink-0 sm:w-[150px] flex flex-col items-end justify-center gap-0.5 text-[11px] tabular-nums leading-tight",
         )}
       >
-        <CalendarDays className="size-3" />
-        {note.dueDate ? fmtDue(note.dueDate) : fmtDate(note.createdAt)}
-      </span>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 text-muted-foreground",
+            overdue && "text-destructive font-medium",
+            soon && "text-warning font-medium",
+          )}
+          title={note.dueDate ? `Échéance : ${fmtDue(note.dueDate)}` : undefined}
+        >
+          <CalendarDays className="size-3" />
+          Créée le {fmtDate(note.createdAt)}
+        </span>
+        {note.status === "done" && note.completedAt && (
+          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+            <Check className="size-3" />
+            Réglée le {fmtDate(note.completedAt)} {completionSuffix(note.createdAt, note.completedAt)}
+          </span>
+        )}
+      </div>
+
 
       {/* Actions — right */}
       <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
