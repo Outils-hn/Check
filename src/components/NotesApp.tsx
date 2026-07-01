@@ -189,6 +189,7 @@ export default function NotesApp() {
       status: formStatus,
       dueDate: formDue || null,
       createdAt: Date.now(),
+      completedAt: formStatus === "done" ? Date.now() : null,
       archived: false,
     };
     setNotes((p) => [n, ...p]);
@@ -198,7 +199,13 @@ export default function NotesApp() {
   }
 
   function cycleStatus(id: string) {
-    setNotes((p) => p.map((n) => (n.id === id ? { ...n, status: nextStatus(n.status) } : n)));
+    setNotes((p) =>
+      p.map((n) => {
+        if (n.id !== id) return n;
+        const ns = nextStatus(n.status);
+        return { ...n, status: ns, completedAt: ns === "done" ? Date.now() : null };
+      }),
+    );
   }
   function removeNote(id: string) {
     setNotes((p) => p.filter((n) => n.id !== id));
@@ -207,7 +214,15 @@ export default function NotesApp() {
     setNotes((p) => p.map((n) => (n.id === id ? { ...n, archived: !n.archived } : n)));
   }
   function saveEdit(updated: Note) {
-    setNotes((p) => p.map((n) => (n.id === updated.id ? updated : n)));
+    setNotes((p) =>
+      p.map((n) => {
+        if (n.id !== updated.id) return n;
+        let completedAt = n.completedAt ?? null;
+        if (updated.status === "done" && n.status !== "done") completedAt = Date.now();
+        else if (updated.status !== "done") completedAt = null;
+        return { ...updated, completedAt };
+      }),
+    );
     setEditing(null);
   }
 
