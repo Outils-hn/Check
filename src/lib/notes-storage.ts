@@ -7,6 +7,7 @@ export interface Note {
   status: NoteStatus;
   dueDate: string | null; // ISO date (yyyy-mm-dd)
   createdAt: number;
+  completedAt?: number | null;
   archived: boolean;
 }
 
