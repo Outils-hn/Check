@@ -92,6 +92,16 @@ function fmtDue(iso: string | null) {
   });
 }
 
+function completionSuffix(createdAt: number, completedAt: number) {
+  const start = new Date(createdAt);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(completedAt);
+  end.setHours(0, 0, 0, 0);
+  const days = Math.ceil((end.getTime() - start.getTime()) / 86400000);
+  if (days <= 0) return "(Fait le jour même)";
+  return `(Fait en ${days} jour${days > 1 ? "s" : ""})`;
+}
+
 function dueState(iso: string | null): "none" | "ok" | "soon" | "late" {
   if (!iso) return "none";
   const today = new Date();
