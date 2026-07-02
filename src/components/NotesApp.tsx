@@ -652,12 +652,12 @@ function NoteRow({
       {/* Date — discreet, fixed width */}
       <div
         className={cn(
-          "shrink-0 sm:w-[150px] flex flex-col items-end justify-center gap-0.5 text-[11px] tabular-nums leading-tight",
+          "shrink-0 sm:w-[190px] flex flex-col items-end justify-center gap-0.5 text-[11px] tabular-nums leading-tight whitespace-nowrap",
         )}
       >
         <span
           className={cn(
-            "inline-flex items-center gap-1 text-muted-foreground",
+            "inline-flex items-center gap-1 text-muted-foreground whitespace-nowrap",
             overdue && "text-destructive font-medium",
             soon && "text-warning font-medium",
           )}
@@ -667,12 +667,13 @@ function NoteRow({
           Créée le {fmtDate(note.createdAt)}
         </span>
         {note.status === "done" && note.completedAt && (
-          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
             <Check className="size-3" />
-            Réglée le {fmtDate(note.completedAt)} {completionSuffix(note.createdAt, note.completedAt)}
+            Réglée le {fmtDate(note.completedAt)}
           </span>
         )}
       </div>
+
 
 
       {/* Actions — right */}
