@@ -4,11 +4,10 @@ import NotesApp from "@/components/NotesApp";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Carnet de chantier — Notes & tâches" },
+      { title: "Check ·" },
       {
         name: "description",
-        content:
-          "Application rapide de prise de notes et gestion de tâches pour dessinateur projeteur en bâtiment.",
+        content: "Application rapide de prise de notes et gestion de tâches pour dessinateur projeteur en bâtiment.",
       },
       { property: "og:title", content: "Carnet de chantier" },
       {
