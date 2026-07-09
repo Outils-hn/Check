@@ -1,15 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CATS_KEY,
+  CAT_COLORS_KEY,
+  CATEGORY_PALETTE,
   NOTES_KEY,
   Note,
   NoteStatus,
   STATUS_LABEL,
   UNCATEGORIZED,
+  colorForCategory,
+  hexToRgba,
   loadCategories,
+  loadCategoryColors,
   loadNotes,
   nextStatus,
   saveCategories,
+  saveCategoryColors,
   saveNotes,
 } from "@/lib/notes-storage";
 import { exportBackup, importBackupFile } from "@/lib/backup";
@@ -19,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +33,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -46,6 +52,7 @@ import {
   Download,
   FileDown,
   FolderCog,
+  GripVertical,
   Pencil,
   Plus,
   Search,
@@ -61,7 +68,7 @@ import { toast } from "sonner";
 import { StorageGauge } from "@/components/StorageGauge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-type SortKey = "created" | "due";
+type SortKey = "manual" | "created" | "due";
 type StatusFilter = "all" | NoteStatus;
 
 const STATUS_CLASSES: Record<NoteStatus, string> = {
@@ -92,16 +99,6 @@ function fmtDue(iso: string | null) {
   });
 }
 
-function completionSuffix(createdAt: number, completedAt: number) {
-  const start = new Date(createdAt);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(completedAt);
-  end.setHours(0, 0, 0, 0);
-  const days = Math.ceil((end.getTime() - start.getTime()) / 86400000);
-  if (days <= 0) return "(Fait le jour même)";
-  return `(Fait en ${days} jour${days > 1 ? "s" : ""})`;
-}
-
 function dueState(iso: string | null): "none" | "ok" | "soon" | "late" {
   if (!iso) return "none";
   const today = new Date();
@@ -116,6 +113,7 @@ function dueState(iso: string | null): "none" | "ok" | "soon" | "late" {
 export default function NotesApp() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [cats, setCats] = useState<string[]>([]);
+  const [catColors, setCatColors] = useState<Record<string, string>>({});
   const [hydrated, setHydrated] = useState(false);
 
   // form
@@ -126,10 +124,14 @@ export default function NotesApp() {
 
   // filters
   const [search, setSearch] = useState("");
-  const [filterCat, setFilterCat] = useState<string>("all");
+  const [filterCats, setFilterCats] = useState<string[]>([]); // empty = all
   const [filterStatus, setFilterStatus] = useState<StatusFilter>("all");
-  const [sort, setSort] = useState<SortKey>("created");
+  const [sort, setSort] = useState<SortKey>("manual");
   const [showArchived, setShowArchived] = useState(false);
+
+  // drag & drop
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   // dialogs
   const [editing, setEditing] = useState<Note | null>(null);
@@ -144,6 +146,7 @@ export default function NotesApp() {
     const c = loadCategories();
     setCats(c);
     setNotes(loadNotes());
+    setCatColors(loadCategoryColors());
     setFormCat(c[0] ?? "");
     setHydrated(true);
   }, []);
@@ -154,6 +157,9 @@ export default function NotesApp() {
   useEffect(() => {
     if (hydrated) saveCategories(cats);
   }, [cats, hydrated]);
+  useEffect(() => {
+    if (hydrated) saveCategoryColors(catColors);
+  }, [catColors, hydrated]);
 
   const allCatsForFilter = useMemo(() => {
     const set = new Set(cats);
@@ -163,19 +169,24 @@ export default function NotesApp() {
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return notes
-      .filter((n) => n.archived === showArchived)
-      .filter((n) => (filterCat === "all" ? true : n.category === filterCat))
-      .filter((n) => (filterStatus === "all" ? true : n.status === filterStatus))
-      .filter((n) => (q ? n.text.toLowerCase().includes(q) : true))
-      .sort((a, b) => {
-        if (sort === "created") return b.createdAt - a.createdAt;
-        if (!a.dueDate && !b.dueDate) return b.createdAt - a.createdAt;
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return a.dueDate.localeCompare(b.dueDate);
-      });
-  }, [notes, search, filterCat, filterStatus, sort, showArchived]);
+    const filtered = notes
+      .map((n, idx) => ({ n, idx }))
+      .filter(({ n }) => n.archived === showArchived)
+      .filter(({ n }) => (filterCats.length === 0 ? true : filterCats.includes(n.category)))
+      .filter(({ n }) => (filterStatus === "all" ? true : n.status === filterStatus))
+      .filter(({ n }) => (q ? n.text.toLowerCase().includes(q) : true));
+
+    filtered.sort((a, b) => {
+      if (sort === "manual") return a.idx - b.idx;
+      if (sort === "created") return b.n.createdAt - a.n.createdAt;
+      // due
+      if (!a.n.dueDate && !b.n.dueDate) return b.n.createdAt - a.n.createdAt;
+      if (!a.n.dueDate) return 1;
+      if (!b.n.dueDate) return -1;
+      return a.n.dueDate.localeCompare(b.n.dueDate);
+    });
+    return filtered.map(({ n }) => n);
+  }, [notes, search, filterCats, filterStatus, sort, showArchived]);
 
   const stats = useMemo(() => {
     const active = notes.filter((n) => !n.archived);
@@ -187,6 +198,15 @@ export default function NotesApp() {
       late: active.filter((n) => n.status !== "done" && dueState(n.dueDate) === "late").length,
     };
   }, [notes]);
+
+  function ensureCategoryColor(name: string) {
+    setCatColors((prev) => {
+      if (prev[name]) return prev;
+      const used = new Set(Object.values(prev));
+      const next = CATEGORY_PALETTE.find((c) => !used.has(c)) ?? CATEGORY_PALETTE[Object.keys(prev).length % CATEGORY_PALETTE.length];
+      return { ...prev, [name]: next };
+    });
+  }
 
   function addNote(e: React.FormEvent) {
     e.preventDefault();
@@ -236,6 +256,19 @@ export default function NotesApp() {
     setEditing(null);
   }
 
+  function moveNote(fromId: string, toId: string) {
+    if (fromId === toId) return;
+    setNotes((p) => {
+      const from = p.findIndex((n) => n.id === fromId);
+      const to = p.findIndex((n) => n.id === toId);
+      if (from < 0 || to < 0) return p;
+      const copy = [...p];
+      const [moved] = copy.splice(from, 1);
+      copy.splice(to, 0, moved);
+      return copy;
+    });
+  }
+
   function renameCategory(oldName: string, newName: string) {
     const v = newName.trim();
     if (!v || v === oldName) return;
@@ -245,7 +278,11 @@ export default function NotesApp() {
     }
     setCats((p) => p.map((c) => (c === oldName ? v : c)));
     setNotes((p) => p.map((n) => (n.category === oldName ? { ...n, category: v } : n)));
-    if (filterCat === oldName) setFilterCat(v);
+    setCatColors((prev) => {
+      const { [oldName]: c, ...rest } = prev;
+      return c ? { ...rest, [v]: c } : rest;
+    });
+    setFilterCats((p) => p.map((c) => (c === oldName ? v : c)));
     if (formCat === oldName) setFormCat(v);
     toast.success(`Catégorie renommée en "${v}"`);
   }
@@ -258,7 +295,12 @@ export default function NotesApp() {
       return false;
     }
     setCats((p) => [...p, v]);
+    ensureCategoryColor(v);
     return true;
+  }
+
+  function setCategoryColor(name: string, color: string) {
+    setCatColors((p) => ({ ...p, [name]: color }));
   }
 
   function deleteCategory(name: string, mode: "uncategorize" | "delete-notes") {
@@ -268,7 +310,11 @@ export default function NotesApp() {
       setNotes((p) => p.map((n) => (n.category === name ? { ...n, category: UNCATEGORIZED } : n)));
     }
     setCats((p) => p.filter((c) => c !== name));
-    if (filterCat === name) setFilterCat("all");
+    setCatColors((prev) => {
+      const { [name]: _, ...rest } = prev;
+      return rest;
+    });
+    setFilterCats((p) => p.filter((c) => c !== name));
     if (formCat === name) {
       const remaining = cats.filter((c) => c !== name);
       setFormCat(remaining[0] ?? "");
@@ -297,9 +343,8 @@ export default function NotesApp() {
     if (!pendingImport) return;
     setNotes(pendingImport.notes);
     setCats(pendingImport.categories.length > 0 ? pendingImport.categories : ["Perso"]);
-    setFilterCat("all");
+    setFilterCats([]);
     setFormCat(pendingImport.categories[0] ?? "");
-    // Also write raw to be safe
     localStorage.setItem(NOTES_KEY, JSON.stringify(pendingImport.notes));
     localStorage.setItem(CATS_KEY, JSON.stringify(pendingImport.categories));
     setPendingImport(null);
@@ -313,6 +358,36 @@ export default function NotesApp() {
     }
     exportNotesPdf(visible);
   }
+
+  // Sync filter with top select — single-cat semantics
+  const topSelectValue = filterCats.length === 0 ? "all" : filterCats.length === 1 ? filterCats[0] : "__multi__";
+
+  function onTopSelectChange(v: string) {
+    if (v === "all") setFilterCats([]);
+    else if (v === "__multi__") return;
+    else setFilterCats([v]);
+  }
+
+  function onSidebarCategoryClick(cat: string, e: React.MouseEvent) {
+    const multi = e.ctrlKey || e.metaKey;
+    setFilterCats((prev) => {
+      if (multi) {
+        return prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat];
+      }
+      // single click: if it's the only selected -> clear (all); else set to just this
+      if (prev.length === 1 && prev[0] === cat) return [];
+      return [cat];
+    });
+  }
+
+  function onSidebarCategoryCheck(cat: string, checked: boolean) {
+    setFilterCats((prev) => {
+      if (checked) return prev.includes(cat) ? prev : [...prev, cat];
+      return prev.filter((c) => c !== cat);
+    });
+  }
+
+  const dndActive = sort === "manual" && !search.trim() && filterStatus === "all";
 
   return (
     <div className="min-h-screen bg-background">
@@ -425,22 +500,53 @@ export default function NotesApp() {
           <section className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold">Catégories</h2>
-              <Button size="sm" variant="ghost" className="h-7 px-2 gap-1 text-xs" onClick={() => setManageCats(true)}>
-                <FolderCog className="size-3.5" />
-                Gérer
-              </Button>
+              <div className="flex items-center gap-1">
+                {filterCats.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 gap-1 text-xs"
+                    onClick={() => setFilterCats([])}
+                    title="Réinitialiser le filtre"
+                  >
+                    <X className="size-3.5" /> Tout
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" className="h-7 px-2 gap-1 text-xs" onClick={() => setManageCats(true)}>
+                  <FolderCog className="size-3.5" />
+                  Gérer
+                </Button>
+              </div>
             </div>
+            <p className="text-[10px] text-muted-foreground mb-2">
+              Clic pour filtrer · Ctrl/⌘ + clic ou cases pour cumuler
+            </p>
             <ul className="space-y-1">
               {cats.map((c) => {
                 const count = notes.filter((n) => !n.archived && n.category === c).length;
+                const selected = filterCats.includes(c);
+                const color = colorForCategory(c, catColors);
                 return (
                   <li
                     key={c}
-                    className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                    onClick={(e) => onSidebarCategoryClick(c, e)}
+                    className={cn(
+                      "flex items-center justify-between rounded-md px-2 py-1.5 text-sm cursor-pointer transition-colors",
+                      selected ? "bg-accent" : "hover:bg-accent/60",
+                    )}
                   >
-                    <span className="flex items-center gap-2">
-                      <span className="size-2 rounded-full bg-primary/70" />
-                      {c}
+                    <span className="flex items-center gap-2 min-w-0">
+                      <Checkbox
+                        checked={selected}
+                        onCheckedChange={(v) => onSidebarCategoryCheck(c, !!v)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="size-3.5"
+                      />
+                      <span
+                        className="size-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="truncate">{c}</span>
                     </span>
                     <span className="text-xs text-muted-foreground">{count}</span>
                   </li>
@@ -455,7 +561,7 @@ export default function NotesApp() {
             <StatCard label="Réglé" value={stats.done} tone="done" />
           </section>
 
-          <StorageGauge deps={[notes, cats]} />
+          <StorageGauge deps={[notes, cats, catColors]} />
         </aside>
 
         {/* Notes list */}
@@ -470,12 +576,17 @@ export default function NotesApp() {
                 className="pl-9"
               />
             </div>
-            <Select value={filterCat} onValueChange={setFilterCat}>
-              <SelectTrigger className="w-[150px]">
+            <Select value={topSelectValue} onValueChange={onTopSelectChange}>
+              <SelectTrigger className="w-[170px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes catégories</SelectItem>
+                {filterCats.length > 1 && (
+                  <SelectItem value="__multi__" disabled>
+                    {filterCats.length} sélectionnées
+                  </SelectItem>
+                )}
                 {allCatsForFilter.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
@@ -495,10 +606,11 @@ export default function NotesApp() {
               </SelectContent>
             </Select>
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[170px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="manual">Tri : manuel</SelectItem>
                 <SelectItem value="created">Tri : récent</SelectItem>
                 <SelectItem value="due">Tri : échéance</SelectItem>
               </SelectContent>
@@ -536,6 +648,21 @@ export default function NotesApp() {
                 <NoteRow
                   key={n.id}
                   note={n}
+                  categoryColor={colorForCategory(n.category, catColors)}
+                  dndActive={dndActive}
+                  isDragging={dragId === n.id}
+                  isDragOver={dragOverId === n.id && dragId !== n.id}
+                  onDragStart={() => setDragId(n.id)}
+                  onDragEnterRow={() => dragId && setDragOverId(n.id)}
+                  onDragEndRow={() => {
+                    setDragId(null);
+                    setDragOverId(null);
+                  }}
+                  onDropRow={() => {
+                    if (dragId) moveNote(dragId, n.id);
+                    setDragId(null);
+                    setDragOverId(null);
+                  }}
                   onCycle={() => cycleStatus(n.id)}
                   onEdit={() => setEditing(n)}
                   onDelete={() => removeNote(n.id)}
@@ -554,9 +681,11 @@ export default function NotesApp() {
         onOpenChange={setManageCats}
         cats={cats}
         notes={notes}
+        catColors={catColors}
         onAdd={addCategoryName}
         onRename={renameCategory}
         onDelete={deleteCategory}
+        onSetColor={setCategoryColor}
       />
 
       <AlertDialog open={!!pendingImport} onOpenChange={(o) => !o && setPendingImport(null)}>
@@ -594,12 +723,28 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone: 
 
 function NoteRow({
   note,
+  categoryColor,
+  dndActive,
+  isDragging,
+  isDragOver,
+  onDragStart,
+  onDragEnterRow,
+  onDragEndRow,
+  onDropRow,
   onCycle,
   onEdit,
   onDelete,
   onArchive,
 }: {
   note: Note;
+  categoryColor: string;
+  dndActive: boolean;
+  isDragging: boolean;
+  isDragOver: boolean;
+  onDragStart: () => void;
+  onDragEnterRow: () => void;
+  onDragEndRow: () => void;
+  onDropRow: () => void;
   onCycle: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -609,25 +754,64 @@ function NoteRow({
   const overdue = due === "late" && note.status !== "done";
   const soon = due === "soon" && note.status !== "done";
 
+  const badgeStyle: React.CSSProperties = {
+    backgroundColor: hexToRgba(categoryColor, 0.14),
+    borderColor: hexToRgba(categoryColor, 0.55),
+    color: categoryColor,
+  };
+
   return (
     <li
+      draggable={dndActive}
+      onDragStart={(e) => {
+        if (!dndActive) return;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", note.id);
+        onDragStart();
+      }}
+      onDragOver={(e) => {
+        if (!dndActive) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        onDragEnterRow();
+      }}
+      onDrop={(e) => {
+        if (!dndActive) return;
+        e.preventDefault();
+        onDropRow();
+      }}
+      onDragEnd={onDragEndRow}
       className={cn(
         "group flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
         overdue && "bg-destructive/5",
         note.status === "done" && "opacity-70",
+        isDragging && "opacity-40",
+        isDragOver && "border-t-2 border-t-primary",
       )}
     >
+      {/* Drag handle */}
+      <span
+        className={cn(
+          "shrink-0 -ml-1 grid place-items-center size-6 rounded text-muted-foreground/60",
+          dndActive ? "cursor-grab active:cursor-grabbing hover:text-foreground hover:bg-accent" : "opacity-30 cursor-not-allowed",
+        )}
+        title={dndActive ? "Glisser pour réordonner" : "Passez en tri manuel pour réordonner"}
+      >
+        <GripVertical className="size-3.5" />
+      </span>
+
       {/* Category — fixed width column */}
       <div className="w-full sm:w-[150px] sm:shrink-0 flex sm:justify-start">
         <span
-          className="inline-flex max-w-full items-center rounded-md bg-muted text-muted-foreground px-2 py-0.5 text-[11px] font-medium border truncate"
+          className="inline-flex max-w-full items-center rounded-md px-2 py-0.5 text-[11px] font-medium border truncate"
+          style={badgeStyle}
           title={note.category}
         >
           {note.category}
         </span>
       </div>
 
-      {/* Status — fixed width column, centered */}
+      {/* Status */}
       <div className="w-[120px] shrink-0 flex justify-center">
         <button
           onClick={onCycle}
@@ -638,7 +822,7 @@ function NoteRow({
         </button>
       </div>
 
-      {/* Note text — flex-1 */}
+      {/* Note text */}
       <p
         className={cn(
           "flex-1 min-w-0 truncate sm:whitespace-normal sm:break-words basis-full sm:basis-auto order-last sm:order-none",
@@ -649,7 +833,7 @@ function NoteRow({
         {note.text}
       </p>
 
-      {/* Date — discreet, fixed width */}
+      {/* Date */}
       <div
         className={cn(
           "shrink-0 sm:w-[190px] flex flex-col items-end justify-center gap-0.5 text-[11px] tabular-nums leading-tight whitespace-nowrap",
@@ -674,9 +858,7 @@ function NoteRow({
         )}
       </div>
 
-
-
-      {/* Actions — right */}
+      {/* Actions */}
       <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onEdit} title="Modifier">
           <Pencil className="size-3.5" />
@@ -777,22 +959,53 @@ function EditDialog({
   );
 }
 
+function CategoryColorPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (c: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      {CATEGORY_PALETTE.map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={cn(
+            "size-4 rounded-full border transition-transform",
+            value.toLowerCase() === c.toLowerCase() ? "ring-2 ring-offset-1 ring-foreground scale-110" : "hover:scale-110",
+          )}
+          style={{ backgroundColor: c, borderColor: c }}
+          title={c}
+          aria-label={`Couleur ${c}`}
+        />
+      ))}
+    </div>
+  );
+}
+
 function CategoryManagerDialog({
   open,
   onOpenChange,
   cats,
   notes,
+  catColors,
   onAdd,
   onRename,
   onDelete,
+  onSetColor,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   cats: string[];
   notes: Note[];
+  catColors: Record<string, string>;
   onAdd: (name: string) => boolean;
   onRename: (oldName: string, newName: string) => void;
   onDelete: (name: string, mode: "uncategorize" | "delete-notes") => void;
+  onSetColor: (name: string, color: string) => void;
 }) {
   const [newCat, setNewCat] = useState("");
   const [editingCat, setEditingCat] = useState<string | null>(null);
@@ -823,7 +1036,7 @@ function CategoryManagerDialog({
   }
 
   const deletingCount = deleting ? (counts[deleting] ?? 0) : 0;
-  const canDelete = cats.length > 1; // keep at least one
+  const canDelete = cats.length > 1;
 
   return (
     <>
@@ -834,7 +1047,7 @@ function CategoryManagerDialog({
               <Settings2 className="size-4" /> Gérer les catégories
             </DialogTitle>
             <DialogDescription>
-              Renommez ou supprimez vos catégories. Les notes associées seront mises à jour automatiquement.
+              Renommez, colorez ou supprimez vos catégories. Les notes associées seront mises à jour automatiquement.
             </DialogDescription>
           </DialogHeader>
 
@@ -854,55 +1067,64 @@ function CategoryManagerDialog({
             {cats.map((c) => {
               const count = counts[c] ?? 0;
               const isEditing = editingCat === c;
+              const color = colorForCategory(c, catColors);
               return (
-                <li key={c} className="flex items-center gap-2 rounded-md border bg-card px-2 py-1.5">
-                  {isEditing ? (
-                    <>
-                      <Input
-                        autoFocus
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") commitEdit();
-                          if (e.key === "Escape") setEditingCat(null);
-                        }}
-                        className="h-8"
-                      />
-                      <Button size="sm" variant="ghost" className="h-8 px-2" onClick={commitEdit}>
-                        <Check className="size-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => setEditingCat(null)}>
-                        <X className="size-4" />
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="flex-1 text-sm flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-primary/70" />
-                        {c}
-                        <span className="text-xs text-muted-foreground">
-                          {count} note{count > 1 ? "s" : ""}
+                <li key={c} className="flex flex-col gap-2 rounded-md border bg-card px-2 py-1.5">
+                  <div className="flex items-center gap-2">
+                    {isEditing ? (
+                      <>
+                        <Input
+                          autoFocus
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") commitEdit();
+                            if (e.key === "Escape") setEditingCat(null);
+                          }}
+                          className="h-8"
+                        />
+                        <Button size="sm" variant="ghost" className="h-8 px-2" onClick={commitEdit}>
+                          <Check className="size-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => setEditingCat(null)}>
+                          <X className="size-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex-1 text-sm flex items-center gap-2 min-w-0">
+                          <span
+                            className="size-3 rounded-full shrink-0"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className="truncate">{c}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {count} note{count > 1 ? "s" : ""}
+                          </span>
                         </span>
-                      </span>
-                      <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => startEdit(c)}>
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 px-2 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          setDeleting(c);
-                          setDeleteMode("uncategorize");
-                        }}
-                        disabled={!canDelete}
-                        title={
-                          !canDelete ? "Impossible : il doit rester au moins une catégorie" : "Supprimer la catégorie"
-                        }
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </>
+                        <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => startEdit(c)}>
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 px-2 text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setDeleting(c);
+                            setDeleteMode("uncategorize");
+                          }}
+                          disabled={!canDelete}
+                          title={
+                            !canDelete ? "Impossible : il doit rester au moins une catégorie" : "Supprimer la catégorie"
+                          }
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  {!isEditing && (
+                    <CategoryColorPicker value={color} onChange={(nc) => onSetColor(c, nc)} />
                   )}
                 </li>
               );
