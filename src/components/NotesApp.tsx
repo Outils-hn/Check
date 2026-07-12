@@ -871,6 +871,19 @@ function NoteRow({
         </button>
       </div>
 
+      {/* Priority */}
+      <div className="w-[52px] shrink-0 flex justify-center">
+        <span
+          className={cn(
+            "inline-flex items-center justify-center rounded-md border px-1.5 py-0.5 text-[11px] font-bold leading-none",
+            PRIORITY_STYLES[note.priority ?? "medium"].badge,
+          )}
+          title={`Priorité : ${PRIORITY_LABEL[note.priority ?? "medium"]}`}
+        >
+          {PRIORITY_STYLES[note.priority ?? "medium"].mark}
+        </span>
+      </div>
+
       {/* Note text */}
       <p
         className={cn(
@@ -885,27 +898,37 @@ function NoteRow({
       {/* Date */}
       <div
         className={cn(
-          "shrink-0 sm:w-[190px] flex flex-col items-end justify-center gap-0.5 text-[11px] tabular-nums leading-tight whitespace-nowrap",
+          "shrink-0 sm:w-[210px] flex flex-col items-end justify-center gap-0.5 text-[11px] tabular-nums leading-tight whitespace-nowrap",
         )}
       >
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 text-muted-foreground whitespace-nowrap",
-            overdue && "text-destructive font-medium",
-            soon && "text-warning font-medium",
-          )}
-          title={note.dueDate ? `Échéance : ${fmtDue(note.dueDate)}` : undefined}
-        >
+        <span className="inline-flex items-center gap-1 text-muted-foreground whitespace-nowrap">
           <CalendarDays className="size-3" />
           Créée le {fmtDate(note.createdAt)}
         </span>
-        {note.status === "done" && note.completedAt && (
+        {note.status === "done" && note.completedAt ? (
           <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
             <Check className="size-3" />
             Réglée le {fmtDate(note.completedAt)}
           </span>
+        ) : (
+          note.dueDate && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 whitespace-nowrap",
+                overdue
+                  ? "text-red-600 dark:text-red-400 font-semibold"
+                  : soon
+                    ? "text-orange-600 dark:text-orange-400"
+                    : "text-muted-foreground",
+              )}
+            >
+              <AlertTriangle className="size-3" />
+              Échéance : {fmtDue(note.dueDate)}
+            </span>
+          )
         )}
       </div>
+
 
       {/* Actions */}
       <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
