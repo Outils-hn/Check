@@ -242,6 +242,7 @@ export default function NotesApp() {
       text: t,
       category: formCat,
       status: formStatus,
+      priority: formPriority,
       dueDate: formDue || null,
       createdAt: Date.now(),
       completedAt: formStatus === "done" ? Date.now() : null,
@@ -251,6 +252,7 @@ export default function NotesApp() {
     setText("");
     setFormDue("");
     setFormStatus("todo");
+    setFormPriority("medium");
   }
 
   function cycleStatus(id: string) {
