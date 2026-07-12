@@ -1,15 +1,30 @@
 export type NoteStatus = "todo" | "in_progress" | "done";
+export type NotePriority = "low" | "medium" | "high";
 
 export interface Note {
   id: string;
   text: string;
   category: string;
   status: NoteStatus;
+  priority?: NotePriority;
   dueDate: string | null; // ISO date (yyyy-mm-dd)
   createdAt: number;
   completedAt?: number | null;
   archived: boolean;
 }
+
+export const PRIORITY_LABEL: Record<NotePriority, string> = {
+  low: "Basse",
+  medium: "Moyenne",
+  high: "Haute",
+};
+
+export const PRIORITY_RANK: Record<NotePriority, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
 
 export const NOTES_KEY = "dp-notes-v1";
 export const CATS_KEY = "dp-categories-v1";
