@@ -138,6 +138,7 @@ export default function NotesApp() {
   const [text, setText] = useState("");
   const [formCat, setFormCat] = useState<string>("");
   const [formStatus, setFormStatus] = useState<NoteStatus>("todo");
+  const [formPriority, setFormPriority] = useState<NotePriority>("medium");
   const [formDue, setFormDue] = useState<string>("");
 
   // filters
