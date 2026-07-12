@@ -71,13 +71,28 @@ import { toast } from "sonner";
 import { StorageGauge } from "@/components/StorageGauge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-type SortKey = "manual" | "created" | "due";
+type SortKey = "manual" | "created" | "due" | "priority";
 type StatusFilter = "all" | NoteStatus;
 
 const STATUS_CLASSES: Record<NoteStatus, string> = {
   todo: "bg-status-todo text-status-todo-foreground hover:bg-status-todo/90",
   in_progress: "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
   done: "bg-status-done text-status-done-foreground hover:bg-status-done/90",
+};
+
+const PRIORITY_STYLES: Record<NotePriority, { badge: string; mark: string }> = {
+  high: {
+    badge: "bg-red-100 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
+    mark: "!!!",
+  },
+  medium: {
+    badge: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
+    mark: "!!",
+  },
+  low: {
+    badge: "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700",
+    mark: "!",
+  },
 };
 
 function uid() {
