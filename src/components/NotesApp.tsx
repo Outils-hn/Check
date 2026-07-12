@@ -661,6 +661,7 @@ export default function NotesApp() {
                 <SelectItem value="manual">Tri : manuel</SelectItem>
                 <SelectItem value="created">Tri : récent</SelectItem>
                 <SelectItem value="due">Tri : échéance</SelectItem>
+                <SelectItem value="priority">Tri : priorité</SelectItem>
               </SelectContent>
             </Select>
             <Button
