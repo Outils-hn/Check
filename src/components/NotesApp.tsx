@@ -1041,6 +1041,7 @@ function EditDialog({
                 text: text.trim() || note.text,
                 category: cat,
                 status,
+                priority,
                 dueDate: due || null,
               })
             }
