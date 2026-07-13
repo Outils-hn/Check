@@ -163,7 +163,9 @@ export default function NotesApp() {
     notes: Note[];
     categories: string[];
   } | null>(null);
+  const [confirmCleanup, setConfirmCleanup] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const c = loadCategories();
