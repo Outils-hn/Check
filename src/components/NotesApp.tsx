@@ -528,11 +528,19 @@ export default function NotesApp() {
             </h2>
             <form onSubmit={addNote} className="space-y-3">
               <Textarea
-                placeholder="Ex. Vérifier cotes plan RDC bâtiment A…"
+                ref={textAreaRef}
+                placeholder="Écrivez votre note et pressez Entrée…"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    addNote();
+                  }
+                }}
                 rows={3}
                 className="resize-none"
+                autoFocus
               />
               <div className="grid grid-cols-2 gap-2">
                 <Select value={formCat} onValueChange={setFormCat}>
@@ -554,6 +562,7 @@ export default function NotesApp() {
                   <SelectContent>
                     <SelectItem value="todo">À faire</SelectItem>
                     <SelectItem value="in_progress">En cours</SelectItem>
+                    <SelectItem value="waiting">En attente</SelectItem>
                     <SelectItem value="done">Réglé</SelectItem>
                   </SelectContent>
                 </Select>
