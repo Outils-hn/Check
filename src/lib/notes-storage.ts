@@ -117,10 +117,11 @@ export function hexToRgba(hex: string, alpha: number): string {
 export const STATUS_LABEL: Record<NoteStatus, string> = {
   todo: "À faire",
   in_progress: "En cours",
+  waiting: "En attente",
   done: "Réglé",
 };
 
-export const STATUS_ORDER: NoteStatus[] = ["todo", "in_progress", "done"];
+export const STATUS_ORDER: NoteStatus[] = ["todo", "in_progress", "waiting", "done"];
 
 export function nextStatus(s: NoteStatus): NoteStatus {
   const i = STATUS_ORDER.indexOf(s);
