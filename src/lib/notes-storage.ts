@@ -1,4 +1,4 @@
-export type NoteStatus = "todo" | "in_progress" | "done";
+export type NoteStatus = "todo" | "in_progress" | "waiting" | "done";
 export type NotePriority = "low" | "medium" | "high";
 
 export interface Note {
@@ -11,7 +11,10 @@ export interface Note {
   createdAt: number;
   completedAt?: number | null;
   archived: boolean;
+  flash?: boolean;
 }
+
+export const DEFAULT_CATEGORY = "Général";
 
 export const PRIORITY_LABEL: Record<NotePriority, string> = {
   low: "Basse",
