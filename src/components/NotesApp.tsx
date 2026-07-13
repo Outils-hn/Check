@@ -80,6 +80,7 @@ type StatusFilter = "all" | NoteStatus;
 const STATUS_CLASSES: Record<NoteStatus, string> = {
   todo: "bg-status-todo text-status-todo-foreground hover:bg-status-todo/90",
   in_progress: "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
+  waiting: "bg-status-waiting text-status-waiting-foreground hover:bg-status-waiting/90",
   done: "bg-status-done text-status-done-foreground hover:bg-status-done/90",
 };
 
