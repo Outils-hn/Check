@@ -818,6 +818,22 @@ export default function NotesApp() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={confirmCleanup} onOpenChange={setConfirmCleanup}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nettoyer l'historique ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Toutes les tâches au statut « Réglé » depuis plus de 7 jours seront archivées et retirées de la vue principale.
+              Vous pourrez les retrouver dans la vue « Archivées ».
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={cleanupOldDone}>Nettoyer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
