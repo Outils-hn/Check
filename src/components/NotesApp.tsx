@@ -3,6 +3,7 @@ import {
   CATS_KEY,
   CAT_COLORS_KEY,
   CATEGORY_PALETTE,
+  DEFAULT_CATEGORY,
   NOTES_KEY,
   Note,
   NotePriority,
@@ -65,6 +66,8 @@ import {
   X,
   AlertTriangle,
   Inbox,
+  Zap,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -77,6 +80,7 @@ type StatusFilter = "all" | NoteStatus;
 const STATUS_CLASSES: Record<NoteStatus, string> = {
   todo: "bg-status-todo text-status-todo-foreground hover:bg-status-todo/90",
   in_progress: "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
+  waiting: "bg-status-waiting text-status-waiting-foreground hover:bg-status-waiting/90",
   done: "bg-status-done text-status-done-foreground hover:bg-status-done/90",
 };
 
@@ -159,7 +163,9 @@ export default function NotesApp() {
     notes: Note[];
     categories: string[];
   } | null>(null);
+  const [confirmCleanup, setConfirmCleanup] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const c = loadCategories();
@@ -233,26 +239,64 @@ export default function NotesApp() {
     });
   }
 
-  function addNote(e: React.FormEvent) {
-    e.preventDefault();
+  function addNote(e?: React.FormEvent) {
+    e?.preventDefault();
     const t = text.trim();
-    if (!t || !formCat) return;
+    if (!t) return;
+
+    // Fallback category
+    let cat = formCat;
+    if (!cat) {
+      cat = cats.includes(DEFAULT_CATEGORY) ? DEFAULT_CATEGORY : cats[0] ?? DEFAULT_CATEGORY;
+      if (!cats.includes(cat)) {
+        setCats((p) => [...p, cat]);
+        ensureCategoryColor(cat);
+      }
+    }
+
     const n: Note = {
       id: uid(),
       text: t,
-      category: formCat,
+      category: cat,
       status: formStatus,
       priority: formPriority,
-      dueDate: formDue || null,
+      dueDate: formDue || new Date().toISOString().slice(0, 10),
       createdAt: Date.now(),
       completedAt: formStatus === "done" ? Date.now() : null,
       archived: false,
+      flash: false,
     };
     setNotes((p) => [n, ...p]);
     setText("");
     setFormDue("");
     setFormStatus("todo");
     setFormPriority("medium");
+    // refocus textarea for chained input
+    requestAnimationFrame(() => textAreaRef.current?.focus());
+  }
+
+  function toggleFlash(id: string) {
+    setNotes((p) => p.map((n) => (n.id === id ? { ...n, flash: !n.flash } : n)));
+  }
+
+  function cleanupOldDone() {
+    const cutoff = Date.now() - 7 * 86400000;
+    let count = 0;
+    setNotes((p) =>
+      p.map((n) => {
+        if (!n.archived && n.status === "done" && n.completedAt && n.completedAt < cutoff) {
+          count++;
+          return { ...n, archived: true };
+        }
+        return n;
+      }),
+    );
+    setConfirmCleanup(false);
+    toast.success(
+      count > 0
+        ? `${count} tâche(s) réglée(s) depuis plus de 7 jours archivée(s)`
+        : "Aucune tâche à nettoyer",
+    );
   }
 
   function cycleStatus(id: string) {
@@ -484,11 +528,19 @@ export default function NotesApp() {
             </h2>
             <form onSubmit={addNote} className="space-y-3">
               <Textarea
-                placeholder="Ex. Vérifier cotes plan RDC bâtiment A…"
+                ref={textAreaRef}
+                placeholder="Écrivez votre note et pressez Entrée…"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    addNote();
+                  }
+                }}
                 rows={3}
                 className="resize-none"
+                autoFocus
               />
               <div className="grid grid-cols-2 gap-2">
                 <Select value={formCat} onValueChange={setFormCat}>
@@ -510,6 +562,7 @@ export default function NotesApp() {
                   <SelectContent>
                     <SelectItem value="todo">À faire</SelectItem>
                     <SelectItem value="in_progress">En cours</SelectItem>
+                    <SelectItem value="waiting">En attente</SelectItem>
                     <SelectItem value="done">Réglé</SelectItem>
                   </SelectContent>
                 </Select>
@@ -650,6 +703,7 @@ export default function NotesApp() {
                 <SelectItem value="all">Tous statuts</SelectItem>
                 <SelectItem value="todo">À faire</SelectItem>
                 <SelectItem value="in_progress">En cours</SelectItem>
+                <SelectItem value="waiting">En attente</SelectItem>
                 <SelectItem value="done">Réglé</SelectItem>
               </SelectContent>
             </Select>
@@ -675,8 +729,18 @@ export default function NotesApp() {
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={() => setConfirmCleanup(true)}
+              className="gap-1 ml-auto"
+              title="Archiver les tâches réglées depuis plus de 7 jours"
+            >
+              <Sparkles className="size-4" />
+              <span className="hidden sm:inline">Nettoyer</span>
+            </Button>
+            <Button
+              size="sm"
               onClick={handleExportPdf}
-              className="gap-1 ml-auto bg-slate-800 hover:bg-slate-900 text-white"
+              className="gap-1 bg-slate-800 hover:bg-slate-900 text-white"
               title="Exporter les notes affichées en PDF"
             >
               <FileDown className="size-4" />
@@ -716,6 +780,7 @@ export default function NotesApp() {
                   onEdit={() => setEditing(n)}
                   onDelete={() => removeNote(n.id)}
                   onArchive={() => toggleArchive(n.id)}
+                  onToggleFlash={() => toggleFlash(n.id)}
                 />
               ))}
             </ul>
@@ -753,6 +818,22 @@ export default function NotesApp() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={confirmCleanup} onOpenChange={setConfirmCleanup}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nettoyer l'historique ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Toutes les tâches au statut « Réglé » depuis plus de 7 jours seront archivées et retirées de la vue principale.
+              Vous pourrez les retrouver dans la vue « Archivées ».
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={cleanupOldDone}>Nettoyer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -784,6 +865,7 @@ function NoteRow({
   onEdit,
   onDelete,
   onArchive,
+  onToggleFlash,
 }: {
   note: Note;
   categoryColor: string;
@@ -798,6 +880,7 @@ function NoteRow({
   onEdit: () => void;
   onDelete: () => void;
   onArchive: () => void;
+  onToggleFlash: () => void;
 }) {
   const due = dueState(note.dueDate);
   const overdue = due === "late" && note.status !== "done";
@@ -831,11 +914,12 @@ function NoteRow({
       }}
       onDragEnd={onDragEndRow}
       className={cn(
-        "group flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
+        "group relative flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
         overdue && "bg-destructive/5",
         note.status === "done" && "opacity-70",
         isDragging && "opacity-40",
         isDragOver && "border-t-2 border-t-primary",
+        note.flash && note.status !== "done" && "flash-row",
       )}
     >
       {/* Drag handle */}
@@ -932,6 +1016,18 @@ function NoteRow({
 
       {/* Actions */}
       <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
+        <Button
+          size="sm"
+          variant="ghost"
+          className={cn(
+            "h-7 w-7 p-0",
+            note.flash ? "text-orange-500 hover:text-orange-600 opacity-100" : "text-muted-foreground",
+          )}
+          onClick={onToggleFlash}
+          title={note.flash ? "Retirer l'alerte Flash" : "Marquer comme Flash / Urgent"}
+        >
+          <Zap className={cn("size-3.5", note.flash && "fill-orange-500")} />
+        </Button>
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onEdit} title="Modifier">
           <Pencil className="size-3.5" />
         </Button>
@@ -1003,6 +1099,7 @@ function EditDialog({
               <SelectContent>
                 <SelectItem value="todo">À faire</SelectItem>
                 <SelectItem value="in_progress">En cours</SelectItem>
+                <SelectItem value="waiting">En attente</SelectItem>
                 <SelectItem value="done">Réglé</SelectItem>
               </SelectContent>
             </Select>
