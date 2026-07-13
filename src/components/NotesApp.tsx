@@ -780,6 +780,7 @@ export default function NotesApp() {
                   onEdit={() => setEditing(n)}
                   onDelete={() => removeNote(n.id)}
                   onArchive={() => toggleArchive(n.id)}
+                  onToggleFlash={() => toggleFlash(n.id)}
                 />
               ))}
             </ul>
