@@ -849,6 +849,7 @@ function NoteRow({
   onEdit,
   onDelete,
   onArchive,
+  onToggleFlash,
 }: {
   note: Note;
   categoryColor: string;
@@ -863,6 +864,7 @@ function NoteRow({
   onEdit: () => void;
   onDelete: () => void;
   onArchive: () => void;
+  onToggleFlash: () => void;
 }) {
   const due = dueState(note.dueDate);
   const overdue = due === "late" && note.status !== "done";
