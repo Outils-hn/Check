@@ -63,6 +63,8 @@
   --color-status-todo-foreground: var(--status-todo-foreground);
   --color-status-progress: var(--status-progress);
   --color-status-progress-foreground: var(--status-progress-foreground);
+  --color-status-waiting: var(--status-waiting);
+  --color-status-waiting-foreground: var(--status-waiting-foreground);
   --color-status-done: var(--status-done);
   --color-status-done-foreground: var(--status-done-foreground);
   --color-warning: var(--warning);
