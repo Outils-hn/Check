@@ -1000,6 +1000,18 @@ function NoteRow({
 
       {/* Actions */}
       <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
+        <Button
+          size="sm"
+          variant="ghost"
+          className={cn(
+            "h-7 w-7 p-0",
+            note.flash ? "text-orange-500 hover:text-orange-600 opacity-100" : "text-muted-foreground",
+          )}
+          onClick={onToggleFlash}
+          title={note.flash ? "Retirer l'alerte Flash" : "Marquer comme Flash / Urgent"}
+        >
+          <Zap className={cn("size-3.5", note.flash && "fill-orange-500")} />
+        </Button>
         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onEdit} title="Modifier">
           <Pencil className="size-3.5" />
         </Button>
