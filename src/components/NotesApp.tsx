@@ -1083,6 +1083,7 @@ function EditDialog({
               <SelectContent>
                 <SelectItem value="todo">À faire</SelectItem>
                 <SelectItem value="in_progress">En cours</SelectItem>
+                <SelectItem value="waiting">En attente</SelectItem>
                 <SelectItem value="done">Réglé</SelectItem>
               </SelectContent>
             </Select>
