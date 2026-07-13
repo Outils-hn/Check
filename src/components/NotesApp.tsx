@@ -3,6 +3,7 @@ import {
   CATS_KEY,
   CAT_COLORS_KEY,
   CATEGORY_PALETTE,
+  DEFAULT_CATEGORY,
   NOTES_KEY,
   Note,
   NotePriority,
