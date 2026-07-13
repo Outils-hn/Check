@@ -729,8 +729,18 @@ export default function NotesApp() {
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={() => setConfirmCleanup(true)}
+              className="gap-1 ml-auto"
+              title="Archiver les tâches réglées depuis plus de 7 jours"
+            >
+              <Sparkles className="size-4" />
+              <span className="hidden sm:inline">Nettoyer</span>
+            </Button>
+            <Button
+              size="sm"
               onClick={handleExportPdf}
-              className="gap-1 ml-auto bg-slate-800 hover:bg-slate-900 text-white"
+              className="gap-1 bg-slate-800 hover:bg-slate-900 text-white"
               title="Exporter les notes affichées en PDF"
             >
               <FileDown className="size-4" />
