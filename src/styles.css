@@ -174,3 +174,17 @@
     color: var(--color-foreground);
   }
 }
+
+@keyframes flash-pulse {
+  0%, 100% { box-shadow: inset 4px 0 0 0 rgb(249 115 22 / 0.95); }
+  50%      { box-shadow: inset 4px 0 0 0 rgb(239 68 68 / 0.55); }
+}
+
+.flash-row {
+  animation: flash-pulse 1.6s ease-in-out infinite;
+  background: linear-gradient(to right, rgb(249 115 22 / 0.08), transparent 40%);
+}
+
+.dark .flash-row {
+  background: linear-gradient(to right, rgb(249 115 22 / 0.14), transparent 40%);
+}
