@@ -145,6 +145,8 @@
   --status-progress-foreground: oklch(0.99 0 0);
   --status-done: oklch(0.64 0.16 150);
   --status-done-foreground: oklch(0.99 0 0);
+  --status-waiting: oklch(0.62 0.14 300);
+  --status-waiting-foreground: oklch(0.99 0 0);
   --warning: oklch(0.74 0.17 75);
 
   --chart-1: oklch(0.488 0.243 264.376);
