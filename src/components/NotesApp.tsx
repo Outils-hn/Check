@@ -898,11 +898,12 @@ function NoteRow({
       }}
       onDragEnd={onDragEndRow}
       className={cn(
-        "group flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
+        "group relative flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
         overdue && "bg-destructive/5",
         note.status === "done" && "opacity-70",
         isDragging && "opacity-40",
         isDragOver && "border-t-2 border-t-primary",
+        note.flash && note.status !== "done" && "flash-row",
       )}
     >
       {/* Drag handle */}
