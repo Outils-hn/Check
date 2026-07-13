@@ -239,26 +239,64 @@ export default function NotesApp() {
     });
   }
 
-  function addNote(e: React.FormEvent) {
-    e.preventDefault();
+  function addNote(e?: React.FormEvent) {
+    e?.preventDefault();
     const t = text.trim();
-    if (!t || !formCat) return;
+    if (!t) return;
+
+    // Fallback category
+    let cat = formCat;
+    if (!cat) {
+      cat = cats.includes(DEFAULT_CATEGORY) ? DEFAULT_CATEGORY : cats[0] ?? DEFAULT_CATEGORY;
+      if (!cats.includes(cat)) {
+        setCats((p) => [...p, cat]);
+        ensureCategoryColor(cat);
+      }
+    }
+
     const n: Note = {
       id: uid(),
       text: t,
-      category: formCat,
+      category: cat,
       status: formStatus,
       priority: formPriority,
-      dueDate: formDue || null,
+      dueDate: formDue || new Date().toISOString().slice(0, 10),
       createdAt: Date.now(),
       completedAt: formStatus === "done" ? Date.now() : null,
       archived: false,
+      flash: false,
     };
     setNotes((p) => [n, ...p]);
     setText("");
     setFormDue("");
     setFormStatus("todo");
     setFormPriority("medium");
+    // refocus textarea for chained input
+    requestAnimationFrame(() => textAreaRef.current?.focus());
+  }
+
+  function toggleFlash(id: string) {
+    setNotes((p) => p.map((n) => (n.id === id ? { ...n, flash: !n.flash } : n)));
+  }
+
+  function cleanupOldDone() {
+    const cutoff = Date.now() - 7 * 86400000;
+    let count = 0;
+    setNotes((p) =>
+      p.map((n) => {
+        if (!n.archived && n.status === "done" && n.completedAt && n.completedAt < cutoff) {
+          count++;
+          return { ...n, archived: true };
+        }
+        return n;
+      }),
+    );
+    setConfirmCleanup(false);
+    toast.success(
+      count > 0
+        ? `${count} tâche(s) réglée(s) depuis plus de 7 jours archivée(s)`
+        : "Aucune tâche à nettoyer",
+    );
   }
 
   function cycleStatus(id: string) {
