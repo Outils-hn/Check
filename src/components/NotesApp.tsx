@@ -124,7 +124,7 @@ export default function NotesApp() {
   const [text, setText] = useState("");
   const [formCat, setFormCat] = useState<string>("");
   const [formStatus, setFormStatus] = useState<NoteStatus>("todo");
-  const [formDue2, _unused] = [null, null]; void _unused;
+  
   const [formDue, setFormDue] = useState<string>("");
 
   // filters
