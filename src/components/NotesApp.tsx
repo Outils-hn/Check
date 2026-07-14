@@ -186,12 +186,6 @@ export default function NotesApp() {
     filtered.sort((a, b) => {
       if (sort === "manual") return a.idx - b.idx;
       if (sort === "created") return b.n.createdAt - a.n.createdAt;
-      if (sort === "priority") {
-        const pa = PRIORITY_RANK[a.n.priority ?? "medium"];
-        const pb = PRIORITY_RANK[b.n.priority ?? "medium"];
-        if (pa !== pb) return pa - pb;
-        return b.n.createdAt - a.n.createdAt;
-      }
       // due
       if (!a.n.dueDate && !b.n.dueDate) return b.n.createdAt - a.n.createdAt;
       if (!a.n.dueDate) return 1;
