@@ -235,7 +235,7 @@ export default function NotesApp() {
       text: t,
       category: cat,
       status: formStatus,
-      priority: formPriority,
+      priority: "medium",
       dueDate: formDue || new Date().toISOString().slice(0, 10),
       createdAt: Date.now(),
       completedAt: formStatus === "done" ? Date.now() : null,
@@ -246,7 +246,6 @@ export default function NotesApp() {
     setText("");
     setFormDue("");
     setFormStatus("todo");
-    setFormPriority("medium");
     // refocus textarea for chained input
     requestAnimationFrame(() => textAreaRef.current?.focus());
   }
