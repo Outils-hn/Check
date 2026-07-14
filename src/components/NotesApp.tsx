@@ -909,18 +909,6 @@ function NoteRow({
         </button>
       </div>
 
-      {/* Priority */}
-      <div className="w-[52px] shrink-0 flex justify-center">
-        <span
-          className={cn(
-            "inline-flex items-center justify-center rounded-md border px-1.5 py-0.5 text-[11px] font-bold leading-none",
-            PRIORITY_STYLES[note.priority ?? "medium"].badge,
-          )}
-          title={`Priorité : ${PRIORITY_LABEL[note.priority ?? "medium"]}`}
-        >
-          {PRIORITY_STYLES[note.priority ?? "medium"].mark}
-        </span>
-      </div>
 
       {/* Note text */}
       <p
