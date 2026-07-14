@@ -1010,7 +1010,7 @@ function EditDialog({
   const [text, setText] = useState(note.text);
   const [cat, setCat] = useState(note.category);
   const [status, setStatus] = useState<NoteStatus>(note.status);
-  const [priority, setPriority] = useState<NotePriority>(note.priority ?? "medium");
+  const [status, setStatus] = useState<NoteStatus>(note.status);
   const [due, setDue] = useState(note.dueDate ?? "");
 
   return (
