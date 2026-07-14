@@ -6,10 +6,7 @@ import {
   DEFAULT_CATEGORY,
   NOTES_KEY,
   Note,
-  NotePriority,
   NoteStatus,
-  PRIORITY_LABEL,
-  PRIORITY_RANK,
   STATUS_LABEL,
   UNCATEGORIZED,
   colorForCategory,
@@ -74,7 +71,7 @@ import { toast } from "sonner";
 import { StorageGauge } from "@/components/StorageGauge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-type SortKey = "manual" | "created" | "due" | "priority";
+type SortKey = "manual" | "created" | "due";
 type StatusFilter = "all" | NoteStatus;
 
 const STATUS_CLASSES: Record<NoteStatus, string> = {
@@ -82,21 +79,6 @@ const STATUS_CLASSES: Record<NoteStatus, string> = {
   in_progress: "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
   waiting: "bg-status-waiting text-status-waiting-foreground hover:bg-status-waiting/90",
   done: "bg-status-done text-status-done-foreground hover:bg-status-done/90",
-};
-
-const PRIORITY_STYLES: Record<NotePriority, { badge: string; mark: string }> = {
-  high: {
-    badge: "bg-red-100 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
-    mark: "!!!",
-  },
-  medium: {
-    badge: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
-    mark: "!!",
-  },
-  low: {
-    badge: "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700",
-    mark: "!",
-  },
 };
 
 function uid() {
@@ -142,7 +124,7 @@ export default function NotesApp() {
   const [text, setText] = useState("");
   const [formCat, setFormCat] = useState<string>("");
   const [formStatus, setFormStatus] = useState<NoteStatus>("todo");
-  const [formPriority, setFormPriority] = useState<NotePriority>("medium");
+  
   const [formDue, setFormDue] = useState<string>("");
 
   // filters
@@ -204,12 +186,6 @@ export default function NotesApp() {
     filtered.sort((a, b) => {
       if (sort === "manual") return a.idx - b.idx;
       if (sort === "created") return b.n.createdAt - a.n.createdAt;
-      if (sort === "priority") {
-        const pa = PRIORITY_RANK[a.n.priority ?? "medium"];
-        const pb = PRIORITY_RANK[b.n.priority ?? "medium"];
-        if (pa !== pb) return pa - pb;
-        return b.n.createdAt - a.n.createdAt;
-      }
       // due
       if (!a.n.dueDate && !b.n.dueDate) return b.n.createdAt - a.n.createdAt;
       if (!a.n.dueDate) return 1;
@@ -259,7 +235,6 @@ export default function NotesApp() {
       text: t,
       category: cat,
       status: formStatus,
-      priority: formPriority,
       dueDate: formDue || new Date().toISOString().slice(0, 10),
       createdAt: Date.now(),
       completedAt: formStatus === "done" ? Date.now() : null,
@@ -270,7 +245,6 @@ export default function NotesApp() {
     setText("");
     setFormDue("");
     setFormStatus("todo");
-    setFormPriority("medium");
     // refocus textarea for chained input
     requestAnimationFrame(() => textAreaRef.current?.focus());
   }
@@ -567,27 +541,6 @@ export default function NotesApp() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Priorité</p>
-                <div className="grid grid-cols-3 gap-1">
-                  {(["low", "medium", "high"] as NotePriority[]).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setFormPriority(p)}
-                      className={cn(
-                        "rounded-md border px-2 py-1 text-xs font-medium transition",
-                        formPriority === p
-                          ? PRIORITY_STYLES[p].badge + " ring-2 ring-offset-1 ring-offset-background ring-current/40"
-                          : "bg-background text-muted-foreground border-border hover:bg-accent",
-                      )}
-                    >
-                      <span className="mr-1 font-bold">{PRIORITY_STYLES[p].mark}</span>
-                      {PRIORITY_LABEL[p]}
-                    </button>
-                  ))}
-                </div>
-              </div>
               <div className="flex items-center gap-2">
                 <CalendarDays className="size-4 text-muted-foreground" />
                 <Input type="date" value={formDue} onChange={(e) => setFormDue(e.target.value)} />
@@ -715,7 +668,7 @@ export default function NotesApp() {
                 <SelectItem value="manual">Tri : manuel</SelectItem>
                 <SelectItem value="created">Tri : récent</SelectItem>
                 <SelectItem value="due">Tri : échéance</SelectItem>
-                <SelectItem value="priority">Tri : priorité</SelectItem>
+                
               </SelectContent>
             </Select>
             <Button
@@ -955,18 +908,6 @@ function NoteRow({
         </button>
       </div>
 
-      {/* Priority */}
-      <div className="w-[52px] shrink-0 flex justify-center">
-        <span
-          className={cn(
-            "inline-flex items-center justify-center rounded-md border px-1.5 py-0.5 text-[11px] font-bold leading-none",
-            PRIORITY_STYLES[note.priority ?? "medium"].badge,
-          )}
-          title={`Priorité : ${PRIORITY_LABEL[note.priority ?? "medium"]}`}
-        >
-          {PRIORITY_STYLES[note.priority ?? "medium"].mark}
-        </span>
-      </div>
 
       {/* Note text */}
       <p
@@ -1068,7 +1009,6 @@ function EditDialog({
   const [text, setText] = useState(note.text);
   const [cat, setCat] = useState(note.category);
   const [status, setStatus] = useState<NoteStatus>(note.status);
-  const [priority, setPriority] = useState<NotePriority>(note.priority ?? "medium");
   const [due, setDue] = useState(note.dueDate ?? "");
 
   return (
@@ -1104,27 +1044,6 @@ function EditDialog({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Priorité</p>
-            <div className="grid grid-cols-3 gap-1">
-              {(["low", "medium", "high"] as NotePriority[]).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPriority(p)}
-                  className={cn(
-                    "rounded-md border px-2 py-1 text-xs font-medium transition",
-                    priority === p
-                      ? PRIORITY_STYLES[p].badge + " ring-2 ring-offset-1 ring-offset-background ring-current/40"
-                      : "bg-background text-muted-foreground border-border hover:bg-accent",
-                  )}
-                >
-                  <span className="mr-1 font-bold">{PRIORITY_STYLES[p].mark}</span>
-                  {PRIORITY_LABEL[p]}
-                </button>
-              ))}
-            </div>
-          </div>
           <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} />
         </div>
         <DialogFooter>
@@ -1138,7 +1057,7 @@ function EditDialog({
                 text: text.trim() || note.text,
                 category: cat,
                 status,
-                priority,
+                
                 dueDate: due || null,
               })
             }
