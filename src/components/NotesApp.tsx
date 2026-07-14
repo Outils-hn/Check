@@ -235,7 +235,6 @@ export default function NotesApp() {
       text: t,
       category: cat,
       status: formStatus,
-      priority: "medium",
       dueDate: formDue || new Date().toISOString().slice(0, 10),
       createdAt: Date.now(),
       completedAt: formStatus === "done" ? Date.now() : null,
