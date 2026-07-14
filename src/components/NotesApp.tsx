@@ -1045,27 +1045,6 @@ function EditDialog({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Priorité</p>
-            <div className="grid grid-cols-3 gap-1">
-              {(["low", "medium", "high"] as NotePriority[]).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPriority(p)}
-                  className={cn(
-                    "rounded-md border px-2 py-1 text-xs font-medium transition",
-                    priority === p
-                      ? PRIORITY_STYLES[p].badge + " ring-2 ring-offset-1 ring-offset-background ring-current/40"
-                      : "bg-background text-muted-foreground border-border hover:bg-accent",
-                  )}
-                >
-                  <span className="mr-1 font-bold">{PRIORITY_STYLES[p].mark}</span>
-                  {PRIORITY_LABEL[p]}
-                </button>
-              ))}
-            </div>
-          </div>
           <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} />
         </div>
         <DialogFooter>
