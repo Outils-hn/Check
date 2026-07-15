@@ -10,6 +10,7 @@ function fmtDue(iso: string | null) {
 const STATUS_COLORS: Record<string, { bg: [number, number, number]; fg: [number, number, number] }> = {
   todo: { bg: [254, 226, 226], fg: [153, 27, 27] }, // red light
   in_progress: { bg: [255, 237, 213], fg: [154, 52, 18] }, // orange light
+  waiting: { bg: [237, 233, 254], fg: [76, 29, 149] }, // violet light
   done: { bg: [220, 252, 231], fg: [22, 101, 52] }, // green light
 };
 
