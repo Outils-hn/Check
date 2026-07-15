@@ -1,207 +1,195 @@
 import { jsPDF } from "jspdf";
 import { Note, STATUS_LABEL } from "./notes-storage";
 
-function fmtDate(iso: string | null) {
+function fmtDue(iso: string | null) {
   if (!iso) return null;
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
 }
 
-function fmtTs(ts: number) {
-  return new Date(ts).toLocaleDateString("fr-FR");
-}
+const STATUS_COLORS: Record<string, { bg: [number, number, number]; fg: [number, number, number] }> = {
+  todo: { bg: [254, 226, 226], fg: [153, 27, 27] }, // red light
+  in_progress: { bg: [255, 237, 213], fg: [154, 52, 18] }, // orange light
+  waiting: { bg: [237, 233, 254], fg: [76, 29, 149] }, // violet light
+  done: { bg: [220, 252, 231], fg: [22, 101, 52] }, // green light
+};
 
 export function exportNotesPdf(notes: Note[]) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const marginX = 48;
-  const marginTop = 48;
-  const marginBottom = 56;
+  const marginTop = 56;
+  const marginBottom = 48;
   const contentW = pageW - marginX * 2;
 
-  const ink: [number, number, number] = [30, 41, 59];        // #1e293b
-  const navy: [number, number, number] = [15, 23, 42];
-  const slate: [number, number, number] = [100, 116, 139];   // #64748b
-  const mute: [number, number, number] = [148, 163, 184];    // #94a3b8
-  const hair: [number, number, number] = [241, 245, 249];    // #f1f5f9
-  const border: [number, number, number] = [226, 232, 240];  // #e2e8f0
-  const orange: [number, number, number] = [234, 88, 12];    // #ea580c
-  const forest: [number, number, number] = [21, 128, 61];    // #15803d green-700
-  const brick: [number, number, number] = [185, 28, 28];     // #b91c1c red-700
+  const navy: [number, number, number] = [30, 41, 59]; // slate-800
+  const slate: [number, number, number] = [100, 116, 139]; // slate-500
+  const lineGray: [number, number, number] = [226, 232, 240]; // slate-200
 
-  const activeNotes = notes.filter((n) => n.status !== "done");
+  let y = marginTop;
+
+  // Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...navy);
+  doc.text("RAPPORT DE SUIVI DE CHANTIER", marginX, y);
+  y += 18;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...slate);
   const today = new Date().toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
+  doc.text(`Date : ${today}`, marginX, y);
+  doc.text(
+    `${notes.length} note${notes.length > 1 ? "s" : ""}`,
+    pageW - marginX,
+    y,
+    { align: "right" },
+  );
+  y += 12;
 
-  const drawHeader = () => {
-    let y = marginTop;
+  doc.setDrawColor(...lineGray);
+  doc.setLineWidth(0.5);
+  doc.line(marginX, y, pageW - marginX, y);
+  y += 18;
 
-    // Small logo mark
-    const logoSize = 26;
-    doc.setDrawColor(...orange);
-    doc.setLineWidth(1.6);
-    doc.roundedRect(marginX, y, logoSize, logoSize, 4, 4);
-    doc.setLineWidth(2);
-    doc.line(marginX + 7, y + 14, marginX + 12, y + 19);
-    doc.line(marginX + 12, y + 19, marginX + 20, y + 9);
-    doc.setLineWidth(0.5);
+  // Notes as cards
+  doc.setFontSize(11);
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(...navy);
-    doc.text("CHECK", marginX + logoSize + 10, y + 12);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...mute);
-    doc.text("RAPPORT DE SUIVI", marginX + logoSize + 10, y + 23);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...slate);
-    doc.text(today, pageW - marginX, y + 12, { align: "right" });
-    doc.setTextColor(...mute);
-    doc.text(
-      `${activeNotes.length} note${activeNotes.length > 1 ? "s" : ""} active${activeNotes.length > 1 ? "s" : ""}`,
-      pageW - marginX,
-      y + 23,
-      { align: "right" },
-    );
-
-    y += logoSize + 18;
-    doc.setDrawColor(...border);
-    doc.setLineWidth(0.5);
-    doc.line(marginX, y, pageW - marginX, y);
-    return y + 24;
-  };
-
-  let y = drawHeader();
-
-  const rowPadY = 20;
-  const rightColW = 170;
-  const gutter = 20;
-  const leftColW = contentW - rightColW - gutter;
-  const lineH = 13;
+  const cardPadX = 12;
+  const cardPadY = 10;
+  const badgeH = 16;
+  const lineH = 14;
 
   for (const n of notes) {
+    // Measure body text
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(11.5);
-    const wrapped = doc.splitTextToSize(n.text, leftColW);
-
+    doc.setFontSize(11);
+    doc.setTextColor(40, 40, 40);
+    const wrapped = doc.splitTextToSize(n.text, contentW - cardPadX * 2);
     const dueLine =
-      n.status !== "done" && n.dueDate ? `Echeance : ${fmtDate(n.dueDate)}` : null;
+      n.status !== "done" && n.dueDate ? `Echeance : ${fmtDue(n.dueDate)}` : null;
     const doneLine =
       n.status === "done" && n.completedAt
-        ? `Reglee le ${fmtTs(n.completedAt)}`
+        ? `Reglee le ${new Date(n.completedAt).toLocaleDateString("fr-FR")}`
         : null;
+    const extraLines = (dueLine ? 1 : 0) + (doneLine ? 1 : 0);
+    const innerH =
+      badgeH +
+      8 +
+      wrapped.length * lineH +
+      (extraLines > 0 ? extraLines * lineH + 4 : 0);
+    const cardH = innerH + cardPadY * 2;
 
-    const badgeH = 14;
-    const bodyH = wrapped.length * (lineH + 1);
-    const leftH = badgeH + 12 + bodyH;
-    const rightH = lineH + (dueLine ? lineH : 0) + (doneLine ? lineH : 0);
-    const rowH = Math.max(leftH, rightH) + rowPadY * 2;
-
-    if (y + rowH > pageH - marginBottom) {
+    // page-break-inside: avoid
+    if (y + cardH > pageH - marginBottom) {
       doc.addPage();
-      y = drawHeader();
+      y = marginTop;
     }
 
-    const cx = marginX;
-    let cy = y + rowPadY;
+    // Card border
+    doc.setDrawColor(...lineGray);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(marginX, y, contentW, cardH, 4, 4, "S");
 
-    // Category badge — light and airy
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    const catLabel = n.category;
-    const catW = doc.getTextWidth(catLabel) + 12;
-    doc.setFillColor(250, 250, 251);
-    doc.setDrawColor(...border);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(cx, cy, catW, badgeH, 2, 2, "FD");
-    doc.setTextColor(...slate);
-    doc.text(catLabel, cx + 6, cy + 9.5);
-
-    // Status label — plain text, no fill
-    let sx = cx + catW + 10;
-    const sLabel = STATUS_LABEL[n.status];
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...mute);
-    doc.text(sLabel.toUpperCase(), sx, cy + 9.5);
-    const sW = doc.getTextWidth(sLabel.toUpperCase());
-
-    // Flash: small lightning glyph
+    // Flash left border indicator
     if (n.flash) {
-      const fx = sx + sW + 8;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(...orange);
-      doc.text("URGENT", fx, cy + 9.5);
-    }
-
-    // Body text — normal weight, ink color
-    cy += badgeH + 12;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11.5);
-    doc.setTextColor(...ink);
-    for (let i = 0; i < wrapped.length; i++) {
-      doc.text(wrapped[i], cx, cy + i * (lineH + 1));
-    }
-
-    // Right column — dates
-    const rx = marginX + contentW;
-    let ry = y + rowPadY + 9.5;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...mute);
-    doc.text(`Creee le ${fmtTs(n.createdAt)}`, rx, ry, { align: "right" });
-
-    if (dueLine) {
-      ry += lineH + 2;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...brick);
-      doc.text(dueLine, rx, ry, { align: "right" });
-    }
-    if (doneLine) {
-      ry += lineH + 2;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...forest);
-      doc.text(doneLine, rx, ry, { align: "right" });
-    }
-
-    // Flash: thin orange accent line at left
-    if (n.flash) {
-      doc.setDrawColor(...orange);
-      doc.setLineWidth(2);
-      doc.line(marginX - 12, y + rowPadY, marginX - 12, y + rowH - rowPadY);
+      doc.setDrawColor(249, 115, 22);
+      doc.setLineWidth(3);
+      doc.line(marginX, y, marginX, y + cardH);
       doc.setLineWidth(0.5);
     }
 
-    // Separator
-    y += rowH;
-    doc.setDrawColor(...hair);
-    doc.setLineWidth(0.5);
-    doc.line(marginX, y, pageW - marginX, y);
+    let cx = marginX + cardPadX;
+    let cy = y + cardPadY;
+
+    // Category badge
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    const catLabel = n.category;
+    const catW = doc.getTextWidth(catLabel) + 12;
+    doc.setFillColor(241, 245, 249); // slate-100
+    doc.setDrawColor(...lineGray);
+    doc.roundedRect(cx, cy, catW, badgeH, 3, 3, "FD");
+    doc.setTextColor(...navy);
+    doc.text(catLabel, cx + 6, cy + 11);
+
+    // Status badge
+    let sx = cx + catW + 6;
+    const sLabel = STATUS_LABEL[n.status];
+    const sW = doc.getTextWidth(sLabel) + 12;
+    const sc = STATUS_COLORS[n.status] ?? { bg: [241, 245, 249] as [number, number, number], fg: [30, 41, 59] as [number, number, number] };
+    doc.setFillColor(...sc.bg);
+    doc.setDrawColor(...sc.bg);
+    doc.roundedRect(sx, cy, sW, badgeH, 3, 3, "F");
+    doc.setTextColor(...sc.fg);
+    doc.text(sLabel, sx + 6, cy + 11);
+
+    // Flash badge
+    if (n.flash) {
+      const fx = sx + sW + 6;
+      const fLabel = "URGENT";
+      const fW = doc.getTextWidth(fLabel) + 12;
+      doc.setFillColor(254, 215, 170);
+      doc.setDrawColor(254, 215, 170);
+      doc.roundedRect(fx, cy, fW, badgeH, 3, 3, "F");
+      doc.setTextColor(154, 52, 18);
+      doc.text(fLabel, fx + 6, cy + 11);
+    }
+
+    // Created date (right)
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...slate);
+    const created = new Date(n.createdAt).toLocaleDateString("fr-FR");
+    doc.text(`Creee le ${created}`, marginX + contentW - cardPadX, cy + 11, {
+      align: "right",
+    });
+
+    cy += badgeH + 8;
+
+    // Body text
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(30, 30, 30);
+    doc.text(wrapped, cx, cy + 10);
+    cy += wrapped.length * lineH;
+
+    // Due / done lines
+    if (dueLine) {
+      cy += 4;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(...slate);
+      doc.text(dueLine, cx, cy + 10);
+      cy += lineH;
+    }
+    if (doneLine) {
+      cy += 4;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(22, 101, 52);
+      doc.text(doneLine, cx, cy + 10);
+    }
+
+    y += cardH + 10;
   }
 
-  // Footer
+  // Footer page numbers
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...mute);
+    doc.setFontSize(9);
+    doc.setTextColor(...slate);
     doc.text(`Page ${i} / ${pages}`, pageW - marginX, pageH - 24, {
       align: "right",
     });
-    doc.text("CHECK", marginX, pageH - 24);
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
