@@ -67,7 +67,7 @@ export function exportNotesPdf(notes: Note[]) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...slate);
-    doc.text("Notes & tâches techniques", marginX + logoSize + 10, y + 26);
+    doc.text("Notes & taches techniques", marginX + logoSize + 10, y + 26);
 
     // Right column
     doc.setFont("helvetica", "bold");
@@ -110,10 +110,10 @@ export function exportNotesPdf(notes: Note[]) {
     const wrapped = doc.splitTextToSize(n.text, leftColW);
 
     const dueLine =
-      n.status !== "done" && n.dueDate ? `⚠ Échéance : ${fmtDate(n.dueDate)}` : null;
+      n.status !== "done" && n.dueDate ? `Echeance : ${fmtDate(n.dueDate)}` : null;
     const doneLine =
       n.status === "done" && n.completedAt
-        ? `✓ Réglée le ${fmtTs(n.completedAt)}`
+        ? `Reglee le ${fmtTs(n.completedAt)}`
         : null;
 
     const leftH = badgeH + 10 + wrapped.length * lineH;
@@ -186,7 +186,7 @@ export function exportNotesPdf(notes: Note[]) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...slate);
-    doc.text(`Créée le : ${fmtTs(n.createdAt)}`, rx, ry, { align: "right" });
+    doc.text(`Creee le : ${fmtTs(n.createdAt)}`, rx, ry, { align: "right" });
 
     if (dueLine) {
       ry += lineH;
@@ -214,7 +214,7 @@ export function exportNotesPdf(notes: Note[]) {
     doc.text(`Page ${i} / ${pages}`, pageW - marginX, pageH - 20, {
       align: "right",
     });
-    doc.text("CHECK — Rapport de suivi", marginX, pageH - 20);
+    doc.text("CHECK - Rapport de suivi", marginX, pageH - 20);
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
