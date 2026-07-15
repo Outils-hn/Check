@@ -10,6 +10,7 @@ function fmtDue(iso: string | null) {
 const STATUS_COLORS: Record<string, { bg: [number, number, number]; fg: [number, number, number] }> = {
   todo: { bg: [254, 226, 226], fg: [153, 27, 27] }, // red light
   in_progress: { bg: [255, 237, 213], fg: [154, 52, 18] }, // orange light
+  waiting: { bg: [237, 233, 254], fg: [76, 29, 149] }, // violet light
   done: { bg: [220, 252, 231], fg: [22, 101, 52] }, // green light
 };
 
@@ -71,12 +72,18 @@ export function exportNotesPdf(notes: Note[]) {
     doc.setFontSize(11);
     doc.setTextColor(40, 40, 40);
     const wrapped = doc.splitTextToSize(n.text, contentW - cardPadX * 2);
-    const dueLine = n.dueDate ? `Échéance : ${fmtDue(n.dueDate)}` : null;
+    const dueLine =
+      n.status !== "done" && n.dueDate ? `Echeance : ${fmtDue(n.dueDate)}` : null;
+    const doneLine =
+      n.status === "done" && n.completedAt
+        ? `Reglee le ${new Date(n.completedAt).toLocaleDateString("fr-FR")}`
+        : null;
+    const extraLines = (dueLine ? 1 : 0) + (doneLine ? 1 : 0);
     const innerH =
       badgeH +
       8 +
       wrapped.length * lineH +
-      (dueLine ? lineH + 4 : 0);
+      (extraLines > 0 ? extraLines * lineH + 4 : 0);
     const cardH = innerH + cardPadY * 2;
 
     // page-break-inside: avoid
@@ -89,6 +96,14 @@ export function exportNotesPdf(notes: Note[]) {
     doc.setDrawColor(...lineGray);
     doc.setLineWidth(0.5);
     doc.roundedRect(marginX, y, contentW, cardH, 4, 4, "S");
+
+    // Flash left border indicator
+    if (n.flash) {
+      doc.setDrawColor(249, 115, 22);
+      doc.setLineWidth(3);
+      doc.line(marginX, y, marginX, y + cardH);
+      doc.setLineWidth(0.5);
+    }
 
     let cx = marginX + cardPadX;
     let cy = y + cardPadY;
@@ -105,22 +120,34 @@ export function exportNotesPdf(notes: Note[]) {
     doc.text(catLabel, cx + 6, cy + 11);
 
     // Status badge
-    const sx = cx + catW + 6;
+    let sx = cx + catW + 6;
     const sLabel = STATUS_LABEL[n.status];
     const sW = doc.getTextWidth(sLabel) + 12;
-    const sc = STATUS_COLORS[n.status];
+    const sc = STATUS_COLORS[n.status] ?? { bg: [241, 245, 249] as [number, number, number], fg: [30, 41, 59] as [number, number, number] };
     doc.setFillColor(...sc.bg);
     doc.setDrawColor(...sc.bg);
     doc.roundedRect(sx, cy, sW, badgeH, 3, 3, "F");
     doc.setTextColor(...sc.fg);
     doc.text(sLabel, sx + 6, cy + 11);
 
+    // Flash badge
+    if (n.flash) {
+      const fx = sx + sW + 6;
+      const fLabel = "URGENT";
+      const fW = doc.getTextWidth(fLabel) + 12;
+      doc.setFillColor(254, 215, 170);
+      doc.setDrawColor(254, 215, 170);
+      doc.roundedRect(fx, cy, fW, badgeH, 3, 3, "F");
+      doc.setTextColor(154, 52, 18);
+      doc.text(fLabel, fx + 6, cy + 11);
+    }
+
     // Created date (right)
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...slate);
     const created = new Date(n.createdAt).toLocaleDateString("fr-FR");
-    doc.text(`Créée le ${created}`, marginX + contentW - cardPadX, cy + 11, {
+    doc.text(`Creee le ${created}`, marginX + contentW - cardPadX, cy + 11, {
       align: "right",
     });
 
@@ -133,13 +160,21 @@ export function exportNotesPdf(notes: Note[]) {
     doc.text(wrapped, cx, cy + 10);
     cy += wrapped.length * lineH;
 
-    // Due line
+    // Due / done lines
     if (dueLine) {
       cy += 4;
       doc.setFont("helvetica", "italic");
       doc.setFontSize(10);
       doc.setTextColor(...slate);
       doc.text(dueLine, cx, cy + 10);
+      cy += lineH;
+    }
+    if (doneLine) {
+      cy += 4;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(22, 101, 52);
+      doc.text(doneLine, cx, cy + 10);
     }
 
     y += cardH + 10;
