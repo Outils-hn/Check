@@ -214,7 +214,7 @@ export function exportNotesPdf(notes: Note[]) {
     doc.text(`Page ${i} / ${pages}`, pageW - marginX, pageH - 20, {
       align: "right",
     });
-    doc.text("CHECK — Rapport de suivi", marginX, pageH - 20);
+    doc.text("CHECK - Rapport de suivi", marginX, pageH - 20);
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
