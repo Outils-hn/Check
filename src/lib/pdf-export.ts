@@ -186,7 +186,7 @@ export function exportNotesPdf(notes: Note[]) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...slate);
-    doc.text(`Créée le : ${fmtTs(n.createdAt)}`, rx, ry, { align: "right" });
+    doc.text(`Creee le : ${fmtTs(n.createdAt)}`, rx, ry, { align: "right" });
 
     if (dueLine) {
       ry += lineH;
