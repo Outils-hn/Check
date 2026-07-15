@@ -67,7 +67,7 @@ export function exportNotesPdf(notes: Note[]) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...slate);
-    doc.text("Notes & tâches techniques", marginX + logoSize + 10, y + 26);
+    doc.text("Notes & taches techniques", marginX + logoSize + 10, y + 26);
 
     // Right column
     doc.setFont("helvetica", "bold");
