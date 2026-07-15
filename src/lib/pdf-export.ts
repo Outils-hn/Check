@@ -110,10 +110,10 @@ export function exportNotesPdf(notes: Note[]) {
     const wrapped = doc.splitTextToSize(n.text, leftColW);
 
     const dueLine =
-      n.status !== "done" && n.dueDate ? `⚠ Échéance : ${fmtDate(n.dueDate)}` : null;
+      n.status !== "done" && n.dueDate ? `Echeance : ${fmtDate(n.dueDate)}` : null;
     const doneLine =
       n.status === "done" && n.completedAt
-        ? `✓ Réglée le ${fmtTs(n.completedAt)}`
+        ? `Reglee le ${fmtTs(n.completedAt)}`
         : null;
 
     const leftH = badgeH + 10 + wrapped.length * lineH;
