@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useCompte } from "@/lib/compte";
-import { useActions, useComptes, useDonnees } from "@/lib/donnees";
+import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
   LIBELLE, PERSO, STATUTS, aNettoyer, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
@@ -52,6 +52,7 @@ function Carnet() {
   const { projets, membres, notes, chargement, erreur } = useDonnees();
   const comptes = useComptes();
   const act = useActions();
+  useDirect();
 
   // Saisie
   const [texte, setTexte] = useState("");

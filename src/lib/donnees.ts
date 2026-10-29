@@ -31,13 +31,19 @@ async function charger(uid: string): Promise<Donnees> {
   }
 }
 
-/** Projets, equipes et notes du compte connecte (filtres par la base), mis a jour en direct. */
+/** Projets, equipes et notes du compte connecte (filtres par la base). */
 export function useDonnees() {
   const { uid, valide } = useCompte();
-  const qc = useQueryClient();
   const q = useQuery({ queryKey: ["check", "donnees", uid], enabled: valide && !!uid, queryFn: () => charger(uid!), staleTime: 15_000, retry: 1 });
 
-  // Ce qu'un collegue ajoute, regle ou supprime apparait sans recharger
+  return { ...(q.data ?? vide), chargement: q.isLoading, erreur: q.error as Error | null };
+}
+
+/** Mises a jour en direct : a appeler UNE seule fois (dans le carnet). Ce qu'un collegue ajoute,
+ *  regle ou supprime apparait sans recharger. */
+export function useDirect() {
+  const { uid, valide } = useCompte();
+  const qc = useQueryClient();
   useEffect(() => {
     if (!valide || !uid) return;
     let attente: ReturnType<typeof setTimeout> | null = null;
@@ -49,7 +55,6 @@ export function useDonnees() {
     return () => { if (attente) clearTimeout(attente); db.removeChannel(canal); };
   }, [valide, uid, qc]);
 
-  return { ...(q.data ?? vide), chargement: q.isLoading, erreur: q.error as Error | null };
 }
 
 /** Comptes valides (nom + email), pour les equipes et « Pour : … ». */
