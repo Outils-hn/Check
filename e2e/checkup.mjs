@@ -94,11 +94,14 @@ async function brancher(ctx) {
 }
 
 const b = await chromium.launch();
+const pages = [];
 async function page({ dark = false, anciennes = null } = {}) {
   const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
   await ctx.addInitScript(([d, a]) => { if (d) localStorage.setItem("check-theme", "dark"); if (a && !localStorage.getItem("check-reprise-faite")) localStorage.setItem("dp-notes-v1", a); }, [dark, anciennes]);
   await brancher(ctx);
   const p = await ctx.newPage();
+  pages.push(p);
+  p.on("console", (m) => m.type() === "error" && lignes.push(`NOTE console : ${m.text().slice(0, 200)}`));
   p.on("pageerror", (e) => ok(false, `erreur JS : ${e.message}`));
   return p;
 }
@@ -229,5 +232,6 @@ try {
   ok((await p3.getByRole("menuitem").count()) === 8, "sélecteur : 8 applis");
 } catch (e) {
   ok(false, `arret du check-up : ${e.message.split("\n")[0]}`);
+  for (const [i, x] of pages.entries()) await x.screenshot({ path: `${out}/echec-${i}.png`, fullPage: true }).catch(() => {});
 }
 await b.close();
