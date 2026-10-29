@@ -69,7 +69,8 @@ function Carnet() {
 
   // Fenetres
   const [edition, setEdition] = useState<Note | null>(null);
-  const [projetOuvert, setProjetOuvert] = useState<{ p: Projet | null } | null>(null);
+  // Garde le projet pendant la fermeture : la fenetre ne bascule pas en « Nouveau projet » en se refermant
+  const [projetOuvert, setProjetOuvert] = useState<{ p: Projet | null; open: boolean }>({ p: null, open: false });
   const [nettoyer, setNettoyer] = useState(false);
   const [reprise, setReprise] = useState<PlanReprise | null>(null);
   const [glisse, setGlisse] = useState<string | null>(null);
@@ -187,21 +188,21 @@ function Carnet() {
         <section className="panel p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="card-title">Projets</h2>
-            <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setProjetOuvert({ p: null })}>+ Nouveau projet</button>
+            <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setProjetOuvert({ p: null, open: true })}>+ Nouveau projet</button>
           </div>
           <p className="mb-2 text-[11px] text-muted-foreground">Clic pour filtrer · Ctrl + clic pour en cumuler</p>
           <ul className="space-y-0.5 text-sm">
             <LigneProjet nom="Perso" detail="Visible par vous seul" n={nbProjet(PERSO)} actif={f.projets.includes(PERSO)} onClick={(e) => cliqueProjet(PERSO, e)} />
             {actifs.map((p) => (
               <LigneProjet key={p.id} nom={nomProjet(p)} detail={`${equipeDe(p.id).length} membre${equipeDe(p.id).length > 1 ? "s" : ""}`} n={nbProjet(p.id)}
-                actif={f.projets.includes(p.id)} onClick={(e) => cliqueProjet(p.id, e)} onReglages={() => setProjetOuvert({ p })} />
+                actif={f.projets.includes(p.id)} onClick={(e) => cliqueProjet(p.id, e)} onReglages={() => setProjetOuvert({ p, open: true })} />
             ))}
           </ul>
           {archives.length > 0 && (
             <details className="mt-2 text-sm">
               <summary className="cursor-pointer text-xs text-muted-foreground">Projets archivés · {archives.length}</summary>
               <ul className="mt-1 space-y-0.5">
-                {archives.map((p) => <LigneProjet key={p.id} nom={nomProjet(p)} n={nbProjet(p.id)} actif={f.projets.includes(p.id)} onClick={(e) => cliqueProjet(p.id, e)} onReglages={() => setProjetOuvert({ p })} />)}
+                {archives.map((p) => <LigneProjet key={p.id} nom={nomProjet(p)} n={nbProjet(p.id)} actif={f.projets.includes(p.id)} onClick={(e) => cliqueProjet(p.id, e)} onReglages={() => setProjetOuvert({ p, open: true })} />)}
               </ul>
             </details>
           )}
@@ -275,7 +276,7 @@ function Carnet() {
 
       {edition && <EditionDialog note={edition} projets={actifs} equipeDe={equipeDe} personne={personne} onClose={() => setEdition(null)}
         onSave={async (c) => { if (await act.modifier(edition.id, c)) setEdition(null); }} />}
-      <ProjetDialog open={!!projetOuvert} onOpenChange={(o) => !o && setProjetOuvert(null)} projet={projetOuvert?.p ? projetDe.get(projetOuvert.p.id) ?? null : null}
+      <ProjetDialog open={projetOuvert.open} onOpenChange={(o) => setProjetOuvert((x) => ({ ...x, open: o }))} projet={projetOuvert.p ? projetDe.get(projetOuvert.p.id) ?? null : null}
         onCree={(id) => { setFormProjet(id); setF((x) => ({ ...x, projets: [id] })); }} />
       <RepriseDialog plan={reprise} onClose={() => setReprise(null)} />
       <Dialog open={nettoyer} onOpenChange={setNettoyer}>

@@ -27,7 +27,7 @@ export function ProjetDialog({ open, onOpenChange, projet, onCree }: { open: boo
   const modifie = !!projet && (nom.trim() !== projet.nom || numero.trim() !== projet.numero);
 
   const enregistrer = async () => {
-    if (!nom.trim()) return;
+    if (!open || !nom.trim()) return;
     if (!projet) {
       const p = await creerProjet(nom, numero);
       if (p) { onCree?.(p.id); onOpenChange(false); }
@@ -86,7 +86,7 @@ export function ProjetDialog({ open, onOpenChange, projet, onCree }: { open: boo
           <div className="flex gap-2">
             {projet ? <Button variant="outline" onClick={async () => { await modifierProjet(projet.id, { archive: !projet.archive }); onOpenChange(false); }}>{projet.archive ? "Réactiver" : "Archiver le projet"}</Button> : null}
             {!projet && <Button variant="ghost" onClick={() => onOpenChange(false)}>Annuler</Button>}
-            {!projet ? <Button type="submit" form="form-projet" disabled={!nom.trim()}>Créer</Button> : <Button onClick={() => onOpenChange(false)}>Fermer</Button>}
+            {!projet ? <Button key="creer" type="submit" form="form-projet" disabled={!nom.trim()}>Créer</Button> : <Button key="fermer" type="button" onClick={() => onOpenChange(false)}>Fermer</Button>}
           </div>
         </DialogFooter>
       </DialogContent>
