@@ -1,0 +1,8 @@
+clair : chargement 3092 ms, titre="Check ·" lang=en
+accessibilite clair : button-name(8), color-contrast(14), label(1)
+recherche "schuco" (sans trema) -> 3 note(s)
+PDF : telecharge rapport-chantier-2026-10-29.pdf
+formulaire present : 1
+ARRET locator.click: Timeout 30000ms exceeded.
+sombre : chargement 1398 ms, titre="Check ·" lang=en
+accessibilite sombre : button-name(8), color-contrast(14), label(1)
