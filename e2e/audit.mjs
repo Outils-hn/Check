@@ -4,7 +4,8 @@ import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs";
 const out = process.argv[2] || "out";
 const notes = [];
-const log = (s) => { notes.push(s); console.log(s); };
+const log = (s) => { notes.push(s); console.log(s); fs.writeFileSync(`${out}/checkup.txt`, notes.join("\n") + "\n"); };
+process.on("unhandledRejection", (e) => log("ARRET " + String(e).split("\n")[0]));
 const J = 86400000, now = Date.now();
 const iso = (d) => new Date(now + d * J).toISOString().slice(0, 10);
 const seed = [
@@ -15,7 +16,7 @@ const seed = [
   { id: "e", text: "Rendez-vous médecin", category: "Perso", status: "todo", dueDate: iso(6), createdAt: now - J, archived: false },
 ];
 const b = await chromium.launch();
-for (const dark of [false, true]) {
+for (const dark of [false, true]) { try {
   const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
   await ctx.addInitScript(([s, d]) => { if (!localStorage.getItem("dp-notes-v1")) localStorage.setItem("dp-notes-v1", s); if (d) localStorage.setItem("theme", "dark"); }, [JSON.stringify(seed), dark]);
   const p = await ctx.newPage();
@@ -49,6 +50,6 @@ for (const dark of [false, true]) {
     log(`stockage : ${(await p.evaluate(() => (localStorage.getItem("dp-notes-v1") || "").length))} caracteres dans le navigateur`);
   }
   await ctx.close();
-}
+} catch (e) { log("ARRET " + String(e.message).split("\n")[0]); } }
 await b.close();
 fs.writeFileSync(`${out}/checkup.txt`, notes.join("\n") + "\n");
