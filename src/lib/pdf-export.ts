@@ -1,10 +1,14 @@
 import { jsPDF } from "jspdf";
-import { Note, STATUS_LABEL } from "./notes-storage";
+import { LIBELLE, type Statut } from "./notes";
+import { installerPolicesPDF } from "./pdf-fonts";
+
+/** Une note telle qu'imprimee : projet et personne deja en toutes lettres. */
+export type NotePdf = { texte: string; projet: string; pour: string | null; statut: Statut; flash: boolean; created_at: string; echeance: string | null; regle_le: string | null };
 
 function fmtDue(iso: string | null) {
   if (!iso) return null;
   const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
+  return `${d}.${m}.${y}`;
 }
 
 const STATUS_COLORS: Record<string, { bg: [number, number, number]; fg: [number, number, number] }> = {
@@ -14,8 +18,10 @@ const STATUS_COLORS: Record<string, { bg: [number, number, number]; fg: [number,
   done: { bg: [220, 252, 231], fg: [22, 101, 52] }, // green light
 };
 
-export function exportNotesPdf(notes: Note[]) {
+export async function exportNotesPdf(notes: NotePdf[], titre = "Rapport de suivi") {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
+  // Police livree avec l'appli : accents corrects (« Créée », « Échéance »)
+  await installerPolicesPDF(doc);
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const marginX = 48;
@@ -30,16 +36,16 @@ export function exportNotesPdf(notes: Note[]) {
   let y = marginTop;
 
   // Header
-  doc.setFont("helvetica", "bold");
+  doc.setFont("PlexSans", "bold");
   doc.setFontSize(14);
   doc.setTextColor(...navy);
-  doc.text("RAPPORT DE SUIVI DE CHANTIER", marginX, y);
+  doc.text(titre, marginX, y);
   y += 18;
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("PlexSans", "normal");
   doc.setFontSize(10);
   doc.setTextColor(...slate);
-  const today = new Date().toLocaleDateString("fr-FR", {
+  const today = new Date().toLocaleDateString("fr-CH", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -68,17 +74,18 @@ export function exportNotesPdf(notes: Note[]) {
 
   for (const n of notes) {
     // Measure body text
-    doc.setFont("helvetica", "normal");
+    doc.setFont("PlexSans", "normal");
     doc.setFontSize(11);
     doc.setTextColor(40, 40, 40);
-    const wrapped = doc.splitTextToSize(n.text, contentW - cardPadX * 2);
+    const wrapped = doc.splitTextToSize(n.texte, contentW - cardPadX * 2);
     const dueLine =
-      n.status !== "done" && n.dueDate ? `Echeance : ${fmtDue(n.dueDate)}` : null;
+      n.statut !== "done" && n.echeance ? `Échéance : ${fmtDue(n.echeance)}` : null;
     const doneLine =
-      n.status === "done" && n.completedAt
-        ? `Reglee le ${new Date(n.completedAt).toLocaleDateString("fr-FR")}`
+      n.statut === "done" && n.regle_le
+        ? `Réglée le ${new Date(n.regle_le).toLocaleDateString("fr-CH")}`
         : null;
-    const extraLines = (dueLine ? 1 : 0) + (doneLine ? 1 : 0);
+    const pourLigne = n.pour ? `Pour : ${n.pour}` : null;
+    const extraLines = (dueLine ? 1 : 0) + (doneLine ? 1 : 0) + (pourLigne ? 1 : 0);
     const innerH =
       badgeH +
       8 +
@@ -109,9 +116,9 @@ export function exportNotesPdf(notes: Note[]) {
     let cy = y + cardPadY;
 
     // Category badge
-    doc.setFont("helvetica", "bold");
+    doc.setFont("PlexSans", "bold");
     doc.setFontSize(9);
-    const catLabel = n.category;
+    const catLabel = n.projet;
     const catW = doc.getTextWidth(catLabel) + 12;
     doc.setFillColor(241, 245, 249); // slate-100
     doc.setDrawColor(...lineGray);
@@ -121,9 +128,9 @@ export function exportNotesPdf(notes: Note[]) {
 
     // Status badge
     let sx = cx + catW + 6;
-    const sLabel = STATUS_LABEL[n.status];
+    const sLabel = LIBELLE[n.statut];
     const sW = doc.getTextWidth(sLabel) + 12;
-    const sc = STATUS_COLORS[n.status] ?? { bg: [241, 245, 249] as [number, number, number], fg: [30, 41, 59] as [number, number, number] };
+    const sc = STATUS_COLORS[n.statut] ?? { bg: [241, 245, 249] as [number, number, number], fg: [30, 41, 59] as [number, number, number] };
     doc.setFillColor(...sc.bg);
     doc.setDrawColor(...sc.bg);
     doc.roundedRect(sx, cy, sW, badgeH, 3, 3, "F");
@@ -143,27 +150,35 @@ export function exportNotesPdf(notes: Note[]) {
     }
 
     // Created date (right)
-    doc.setFont("helvetica", "normal");
+    doc.setFont("PlexSans", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...slate);
-    const created = new Date(n.createdAt).toLocaleDateString("fr-FR");
-    doc.text(`Creee le ${created}`, marginX + contentW - cardPadX, cy + 11, {
+    const created = new Date(n.created_at).toLocaleDateString("fr-CH");
+    doc.text(`Créée le ${created}`, marginX + contentW - cardPadX, cy + 11, {
       align: "right",
     });
 
     cy += badgeH + 8;
 
     // Body text
-    doc.setFont("helvetica", "normal");
+    doc.setFont("PlexSans", "normal");
     doc.setFontSize(11);
     doc.setTextColor(30, 30, 30);
     doc.text(wrapped, cx, cy + 10);
     cy += wrapped.length * lineH;
 
     // Due / done lines
+    if (pourLigne) {
+      cy += 4;
+      doc.setFont("PlexSans", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(...slate);
+      doc.text(pourLigne, cx, cy + 10);
+      cy += lineH;
+    }
     if (dueLine) {
       cy += 4;
-      doc.setFont("helvetica", "italic");
+      doc.setFont("PlexSans", "normal");
       doc.setFontSize(10);
       doc.setTextColor(...slate);
       doc.text(dueLine, cx, cy + 10);
@@ -171,7 +186,7 @@ export function exportNotesPdf(notes: Note[]) {
     }
     if (doneLine) {
       cy += 4;
-      doc.setFont("helvetica", "italic");
+      doc.setFont("PlexSans", "normal");
       doc.setFontSize(10);
       doc.setTextColor(22, 101, 52);
       doc.text(doneLine, cx, cy + 10);
@@ -184,7 +199,7 @@ export function exportNotesPdf(notes: Note[]) {
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("PlexSans", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...slate);
     doc.text(`Page ${i} / ${pages}`, pageW - marginX, pageH - 24, {
@@ -193,5 +208,5 @@ export function exportNotesPdf(notes: Note[]) {
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
-  doc.save(`rapport-chantier-${stamp}.pdf`);
+  doc.save(`check-${titre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${stamp}.pdf`);
 }

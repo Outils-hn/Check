@@ -2,19 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import NotesApp from "@/components/NotesApp";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Check ·" },
-      {
-        name: "description",
-        content: "Application rapide de prise de notes et gestion de tâches pour dessinateur projeteur en bâtiment.",
-      },
-      { property: "og:title", content: "Carnet de chantier" },
-      {
-        property: "og:description",
-        content: "Notes & tâches optimisées pour le dessinateur projeteur.",
-      },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Check — notes et tâches" }] }),
   component: NotesApp,
 });

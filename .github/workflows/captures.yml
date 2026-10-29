@@ -1,0 +1,37 @@
+# Check-up et captures d'ecran : sur chaque branche (sauf main), l'appli est ouverte dans un navigateur
+# avec une base Supabase SIMULEE (donnees fictives) ; resultats publies sur « captures/<branche> ».
+name: Captures
+on:
+  push:
+    branches-ignore: [main, "captures/**", "audit/**"]
+permissions:
+  contents: write
+jobs:
+  captures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          npm pkg set overrides.@types/estree=1.0.8
+          npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps
+      - run: npm install --no-save --no-package-lock --legacy-peer-deps playwright@1.48.2 @axe-core/playwright@4.10.1 && npx playwright install --with-deps chromium
+      - name: Lancer l'appli et verifier
+        run: |
+          mkdir -p out
+          (npx vite dev --port 8080 --host 127.0.0.1 > dev.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8080/ >/dev/null && break; sleep 2; done
+          node e2e/checkup.mjs out || true
+          grep -c "^ECHEC" out/checkup.txt | xargs -I{} echo "::notice::Check-up Check : {} echec(s)"
+          grep "^ECHEC" out/checkup.txt | while IFS= read -r l; do echo "::warning::$l"; done
+          tail -30 dev.log > out/dev-log.txt
+      - name: Publier sur la branche captures
+        run: |
+          cd out
+          git init -q -b "captures/${GITHUB_REF_NAME}"
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "Captures de ${GITHUB_REF_NAME} (${GITHUB_SHA::7})"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/captures/${GITHUB_REF_NAME}"
