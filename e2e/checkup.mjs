@@ -8,6 +8,7 @@ const out = process.argv[2] || "out";
 const URL0 = "http://127.0.0.1:8080";
 const SB = "https://ngfzwfbraqkdcocdcmib.supabase.co";
 const lignes = [];
+let etape = "debut";
 const ok = (cond, msg) => { lignes.push(`${cond ? "OK" : "ECHEC"} ${msg}`); console.log(`${cond ? "OK" : "ECHEC"} ${msg}`); fs.writeFileSync(`${out}/checkup.txt`, lignes.join("\n") + "\n"); };
 
 const COMPTES = {
@@ -80,7 +81,7 @@ async function brancher(ctx) {
         }
       }
       etat[t].push(...rows);
-      if (t === "check_projets") rows.forEach((p) => etat.check_membres.push({ projet_id: p.id, user_id: moi }));
+      if (t === "check_projets") rows.forEach((p) => { etat.check_membres.push({ projet_id: p.id, user_id: moi }); lignes.push(`NOTE projet cree « ${p.nom} » a l'etape ${etape}`); });
       return json(unique ? rows[0] : rows, 201);
     }
     const cibles = etat[t].filter((x) => voit(t, moi, x) && correspond(x, f));
@@ -113,7 +114,7 @@ async function seConnecter(p, email) {
   await p.getByRole("dialog").getByRole("button", { name: "Se connecter" }).click();
   await p.waitForTimeout(1500);
 }
-const lignesNotes = (p) => p.locator("main section ul > li");
+const lignesNotes = (p) => p.locator("[data-note]");
 const J = 86400000;
 const anciennes = JSON.stringify([
   { id: "a1", text: "Vérifier les ancrages HFT niveau 3", category: "Chantier 1", status: "todo", dueDate: new Date(Date.now() - 2 * J).toISOString().slice(0, 10), createdAt: Date.now() - 5 * J, archived: false, flash: true },
@@ -137,6 +138,7 @@ try {
 
   // 3. Alice : reprise des notes de son navigateur
   await seConnecter(p, "alice@exemple.ch");
+  etape = "reprise";
   ok(await p.getByRole("heading", { name: "Reprendre les notes de ce navigateur" }).isVisible(), "première connexion : reprise des anciennes notes proposée");
   await shot(p, "02-reprise");
   await p.getByRole("button", { name: "Importer", exact: true }).click();
@@ -147,6 +149,7 @@ try {
   ok((await lignesNotes(p).count()) === 3, "3 notes affichées après reprise");
 
   // 4. Equipe : Alice invite Bob
+  etape = "equipe";
   await p.getByRole("button", { name: "Projet et équipe : Chantier 1" }).click();
   await p.getByLabel("Collègue à inviter").selectOption({ label: "Bob Keller" });
   await p.getByRole("button", { name: "Inviter" }).click();
@@ -156,6 +159,7 @@ try {
   await p.getByRole("button", { name: "Fermer" }).click();
 
   // 5. Note confiee a Bob
+  etape = "note";
   await p.getByLabel("Projet de la note").selectOption({ label: "Chantier 1" });
   await p.getByLabel("Texte de la note").fill("Contrôler la liste de fabrication indice B");
   await p.waitForTimeout(300);

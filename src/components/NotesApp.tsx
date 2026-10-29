@@ -325,7 +325,7 @@ function LigneNote(props: {
   const corbeille = !!n.supprime_le;
   const btn = "inline-flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground";
   return (
-    <li draggable={props.glisser}
+    <li data-note={n.id} draggable={props.glisser}
       onDragStart={(e) => { if (!props.glisser) return; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", n.id); props.onDragStart(); }}
       onDragOver={(e) => { if (!props.glisser) return; e.preventDefault(); props.onDragOver(); }}
       onDrop={(e) => { if (!props.glisser) return; e.preventDefault(); props.onDrop(); }}
