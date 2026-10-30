@@ -234,6 +234,7 @@ try {
   ok(axe2.violations.length === 0, `accessibilité (sombre) : ${axe2.violations.length} problème(s)${axe2.violations.map((v) => ` [${v.id}: ${v.nodes.length} ${v.nodes[0]?.target}]`).join("")}`);
   await p3.getByRole("button", { name: "Changer d'application" }).click();
   ok((await p3.getByRole("menuitem").count()) === 9, "sélecteur : Accueil + 8 applis");
+  await p3.keyboard.press("Escape"); await p3.waitForTimeout(300);
   const lr = p3.locator("footer").getByRole("link", { name: "Suggestion / bug" });
   await lr.focus();
   ok(/Accueil-hn\/\?app=Check&v=2\.0&page=%2F/.test(await lr.getAttribute("href")), "pied de page : « Suggestion / bug » vers l'Accueil (appli, version, page)");
