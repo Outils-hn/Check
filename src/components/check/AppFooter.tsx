@@ -1,3 +1,4 @@
+import { LienRetour } from "./LienRetour";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { APP_AUTHOR, APP_NAME, APP_TAGLINE, APP_UPDATED, APP_VERSION, APP_YEAR } from "@/lib/version";
@@ -15,7 +16,8 @@ export function AppFooter() {
         {APP_NAME} v{APP_VERSION} ·{" "}
         <button type="button" onClick={() => setOpen(true)} className={lien}>Conçu par {APP_AUTHOR}</button>{" "}
         · {APP_YEAR} ·{" "}
-        <button type="button" onClick={() => setSauvegarde(true)} className={lien}>Sauvegarde</button>
+        <button type="button" onClick={() => setSauvegarde(true)} className={lien}>Sauvegarde</button> ·{" "}
+        <LienRetour app="Check" version={APP_VERSION} className={lien} />
       </p>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm text-left">
