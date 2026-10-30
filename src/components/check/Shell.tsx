@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { LogIn, Moon, Sun } from "lucide-react";
+import { LogIn, LogOut, Moon, Sun } from "lucide-react";
 import { deconnexion, useCompte } from "@/lib/compte";
 import { useDonnees } from "@/lib/donnees";
 import { SelecteurApplis } from "./SelecteurApplis";
 import { CheckMark } from "./CheckMark";
 import { AppFooter } from "./AppFooter";
+import { Bandeau } from "./Bandeau";
 import { ConnexionDialog } from "./ConnexionDialog";
 
 const THEME_KEY = "check-theme";
@@ -36,39 +37,39 @@ export function Shell({ children }: { children: ReactNode }) {
   const [dark, setDark] = useTheme();
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-7xl items-center gap-x-6 px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <CheckMark />
-            <SelecteurApplis />
-            <span className="sr-only">Notes et tâches</span>
-          </div>
-          <div className="ml-auto flex items-center gap-2 text-xs">
-            {pret && !uid && (
-              <>
-                <span className="status">Lecture seule</span>
-                <button className="btn btn-sm" onClick={() => setConnexion(true)}><LogIn className="size-3.5" /> Se connecter</button>
-              </>
-            )}
-            {uid && (
-              <>
-                {valide && <span className="status status-open" title={email}>{email}</span>}
-                {enAttente && <span className="status" title={email}>Compte en attente de validation</span>}
-                <button className="btn btn-sm" onClick={() => deconnexion()}>Déconnexion</button>
-              </>
-            )}
-            <button onClick={setDark} className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Basculer le thème">
-              {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            </button>
-          </div>
-        </div>
-      </header>
+      <Bandeau
+        marque={<>
+          <CheckMark />
+          <SelecteurApplis />
+          <span className="sr-only">Notes et tâches</span>
+        </>}
+        statut={<>
+          {pret && !uid && (
+            <>
+              <span className="bandeau-statut">Lecture seule</span>
+              <button className="bandeau-btn" onClick={() => setConnexion(true)}><LogIn /> Se connecter</button>
+            </>
+          )}
+          {uid && (
+            <>
+              {valide && <span className="bandeau-statut ouvert" title={email}>{email}</span>}
+              {enAttente && <span className="bandeau-statut" title={email}>Compte en attente de validation</span>}
+              <button className="bandeau-btn" onClick={() => deconnexion()}><LogOut /> Déconnexion</button>
+            </>
+          )}
+        </>}
+        theme={
+          <button onClick={setDark} className="bandeau-icone" aria-label="Basculer le thème">
+            {dark ? <Sun /> : <Moon />}
+          </button>
+        }
+      />
       {horsLigne && (
         <div role="status" className="border-b border-border bg-muted px-4 py-2 text-center text-xs text-foreground">
           Base de données injoignable : affichage de la copie locale du {fmtDate(horsLigne)}, en lecture seule.
         </div>
       )}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
+      <main className="page flex-1 py-6">{children}</main>
       <AppFooter />
       <ConnexionDialog open={connexion} onOpenChange={setConnexion} />
     </div>
