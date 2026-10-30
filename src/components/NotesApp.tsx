@@ -1,1308 +1,434 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  CATS_KEY,
-  CAT_COLORS_KEY,
-  CATEGORY_PALETTE,
-  DEFAULT_CATEGORY,
-  NOTES_KEY,
-  Note,
-  NoteStatus,
-  STATUS_LABEL,
-  UNCATEGORIZED,
-  colorForCategory,
-  hexToRgba,
-  loadCategories,
-  loadCategoryColors,
-  loadNotes,
-  nextStatus,
-  saveCategories,
-  saveCategoryColors,
-  saveNotes,
-} from "@/lib/notes-storage";
-import { exportBackup, importBackupFile } from "@/lib/backup";
-import { exportNotesPdf } from "@/lib/pdf-export";
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Inbox, LogIn, Pencil, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Archive,
-  ArchiveRestore,
-  CalendarDays,
-  Check,
-  Download,
-  FileDown,
-  FolderCog,
-  GripVertical,
-  Pencil,
-  Plus,
-  Search,
-  Settings2,
-  Trash2,
-  Upload,
-  X,
-  AlertTriangle,
-  Inbox,
-  Zap,
-  Sparkles,
-} from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { StorageGauge } from "@/components/StorageGauge";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { useCompte } from "@/lib/compte";
+import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
+import {
+  LIBELLE, PERSO, STATUTS, aNettoyer, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
+  type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
+} from "@/lib/notes";
+import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
+import { exportNotesPdf } from "@/lib/pdf-export";
+import { ProjetDialog } from "@/components/check/ProjetDialog";
+import { RepriseDialog, type PlanReprise } from "@/components/check/RepriseDialog";
+import { ConnexionDialog } from "@/components/check/ConnexionDialog";
 
-type SortKey = "manual" | "created" | "due";
-type StatusFilter = "all" | NoteStatus;
-
-const STATUS_CLASSES: Record<NoteStatus, string> = {
-  todo: "bg-status-todo text-status-todo-foreground hover:bg-status-todo/90",
-  in_progress: "bg-status-progress text-status-progress-foreground hover:bg-status-progress/90",
-  waiting: "bg-status-waiting text-status-waiting-foreground hover:bg-status-waiting/90",
-  done: "bg-status-done text-status-done-foreground hover:bg-status-done/90",
-};
-
-function uid() {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-}
-
-function fmtDate(ts: number) {
-  return new Date(ts).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function fmtDue(iso: string | null) {
-  if (!iso) return null;
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function dueState(iso: string | null): "none" | "ok" | "soon" | "late" {
-  if (!iso) return "none";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(iso + "T00:00:00");
-  const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
-  if (diff < 0) return "late";
-  if (diff <= 2) return "soon";
-  return "ok";
-}
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" });
+const fmtJour = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" });
+const DOT: Record<Statut, string> = { todo: "var(--st-todo)", in_progress: "var(--st-progress)", waiting: "var(--st-waiting)", done: "var(--st-done)" };
 
 export default function NotesApp() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [cats, setCats] = useState<string[]>([]);
-  const [catColors, setCatColors] = useState<Record<string, string>>({});
-  const [hydrated, setHydrated] = useState(false);
+  const { pret, uid, valide, enAttente } = useCompte();
+  const [connexion, setConnexion] = useState(false);
+  if (!pret) return null;
+  if (!valide) {
+    return (
+      <div className="panel mx-auto mt-16 max-w-md p-6 text-center text-sm">
+        <h2 className="text-base font-semibold">{enAttente ? "Compte en attente de validation" : "Vos notes, sur tous vos postes"}</h2>
+        <p className="mt-2 text-muted-foreground">
+          {enAttente
+            ? "Un administrateur doit valider votre compte dans Index → Configuration → Comptes. Vous aurez ensuite accès à vos notes et à celles de vos projets."
+            : "Check utilise votre compte Index : notes perso, et notes partagées avec l'équipe de chaque projet."}
+        </p>
+        {!uid && <Button className="mt-4 gap-1.5" onClick={() => setConnexion(true)}><LogIn className="size-4" /> Se connecter</Button>}
+        <ConnexionDialog open={connexion} onOpenChange={setConnexion} />
+      </div>
+    );
+  }
+  return <Carnet />;
+}
 
-  // form
-  const [text, setText] = useState("");
-  const [formCat, setFormCat] = useState<string>("");
-  const [formStatus, setFormStatus] = useState<NoteStatus>("todo");
-  
-  const [formDue, setFormDue] = useState<string>("");
+function Carnet() {
+  const { uid } = useCompte();
+  const moi = uid!;
+  const { projets, membres, notes, chargement, erreur } = useDonnees();
+  const comptes = useComptes();
+  const act = useActions();
+  useDirect();
 
-  // filters
-  const [search, setSearch] = useState("");
-  const [filterCats, setFilterCats] = useState<string[]>([]); // empty = all
-  const [filterStatus, setFilterStatus] = useState<StatusFilter>("all");
-  const [sort, setSort] = useState<SortKey>("manual");
-  const [showArchived, setShowArchived] = useState(false);
+  // Saisie
+  const [texte, setTexte] = useState("");
+  const [formProjet, setFormProjet] = useState<string>(PERSO);
+  const [formStatut, setFormStatut] = useState<Statut>("todo");
+  const [formEcheance, setFormEcheance] = useState("");
+  const [formPour, setFormPour] = useState("");
+  const saisie = useRef<HTMLTextAreaElement>(null);
+  const recherche = useRef<HTMLInputElement>(null);
 
-  // drag & drop
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  // Filtres
+  const [f, setF] = useState<Filtres>({ vue: "actives", projets: [], statut: "tous", q: "", tri: "manuel" });
+  const maj = (p: Partial<Filtres>) => setF((x) => ({ ...x, ...p }));
 
-  // dialogs
-  const [editing, setEditing] = useState<Note | null>(null);
-  const [manageCats, setManageCats] = useState(false);
-  const [pendingImport, setPendingImport] = useState<{
-    notes: Note[];
-    categories: string[];
-  } | null>(null);
-  const [confirmCleanup, setConfirmCleanup] = useState(false);
-  const importInputRef = useRef<HTMLInputElement>(null);
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  // Fenetres
+  const [edition, setEdition] = useState<Note | null>(null);
+  // Garde le projet pendant la fermeture : la fenetre ne bascule pas en « Nouveau projet » en se refermant
+  const [projetOuvert, setProjetOuvert] = useState<{ p: Projet | null; open: boolean }>({ p: null, open: false });
+  const [nettoyer, setNettoyer] = useState(false);
+  const [reprise, setReprise] = useState<PlanReprise | null>(null);
+  const [glisse, setGlisse] = useState<string | null>(null);
+  const [survol, setSurvol] = useState<string | null>(null);
 
+  const projetDe = useMemo(() => new Map(projets.map((p) => [p.id, p])), [projets]);
+  const nomDe = (id: string | null) => nomProjet(id ? projetDe.get(id) : null);
+  const personne = (id: string | null) => (id ? (id === moi ? "moi" : comptes.find((c) => c.id === id)?.nom ?? "un collègue") : null);
+  const equipeDe = (pid: string | null) => (pid && pid !== PERSO ? membres.filter((m) => m.projet_id === pid).map((m) => m.user_id) : []);
+  const actifs = projets.filter((p) => !p.archive);
+  const archives = projets.filter((p) => p.archive);
+
+  // Premiere connexion : reprise des notes restees dans ce navigateur ; corbeille de plus de 30 jours videe
   useEffect(() => {
-    const c = loadCategories();
-    setCats(c);
-    setNotes(loadNotes());
-    setCatColors(loadCategoryColors());
-    setFormCat(c[0] ?? "");
-    setHydrated(true);
+    void act.viderCorbeille();
+    try {
+      if (localStorage.getItem(REPRISE_FAITE)) return;
+      const a = lireAnciennes(localStorage.getItem(ANCIENNES_NOTES));
+      if (a.notes.length) setReprise({ titre: "Reprendre les notes de ce navigateur", ...a, apres: () => { try { localStorage.setItem(REPRISE_FAITE, new Date().toISOString()); } catch { /* bloque */ } } });
+    } catch { /* stockage bloque */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // « / » : recherche ; « n » : nouvelle note
   useEffect(() => {
-    if (hydrated) saveNotes(notes);
-  }, [notes, hydrated]);
-  useEffect(() => {
-    if (hydrated) saveCategories(cats);
-  }, [cats, hydrated]);
-  useEffect(() => {
-    if (hydrated) saveCategoryColors(catColors);
-  }, [catColors, hydrated]);
-
-  const allCatsForFilter = useMemo(() => {
-    const set = new Set(cats);
-    notes.forEach((n) => set.add(n.category));
-    return Array.from(set);
-  }, [cats, notes]);
-
-  const visible = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const filtered = notes
-      .map((n, idx) => ({ n, idx }))
-      .filter(({ n }) => n.archived === showArchived)
-      .filter(({ n }) => (filterCats.length === 0 ? true : filterCats.includes(n.category)))
-      .filter(({ n }) => (filterStatus === "all" ? true : n.status === filterStatus))
-      .filter(({ n }) => (q ? n.text.toLowerCase().includes(q) : true));
-
-    filtered.sort((a, b) => {
-      if (sort === "manual") return a.idx - b.idx;
-      if (sort === "created") return b.n.createdAt - a.n.createdAt;
-      // due
-      if (!a.n.dueDate && !b.n.dueDate) return b.n.createdAt - a.n.createdAt;
-      if (!a.n.dueDate) return 1;
-      if (!b.n.dueDate) return -1;
-      return a.n.dueDate.localeCompare(b.n.dueDate);
-    });
-    return filtered.map(({ n }) => n);
-  }, [notes, search, filterCats, filterStatus, sort, showArchived]);
-
-  const stats = useMemo(() => {
-    const active = notes.filter((n) => !n.archived);
-    return {
-      total: active.length,
-      todo: active.filter((n) => n.status === "todo").length,
-      in_progress: active.filter((n) => n.status === "in_progress").length,
-      done: active.filter((n) => n.status === "done").length,
-      late: active.filter((n) => n.status !== "done" && dueState(n.dueDate) === "late").length,
+    const k = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (/INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "/") { e.preventDefault(); recherche.current?.focus(); }
+      if (e.key === "n") { e.preventDefault(); saisie.current?.focus(); }
     };
-  }, [notes]);
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, []);
 
-  function ensureCategoryColor(name: string) {
-    setCatColors((prev) => {
-      if (prev[name]) return prev;
-      const used = new Set(Object.values(prev));
-      const next = CATEGORY_PALETTE.find((c) => !used.has(c)) ?? CATEGORY_PALETTE[Object.keys(prev).length % CATEGORY_PALETTE.length];
-      return { ...prev, [name]: next };
-    });
-  }
+  const visibles = useMemo(() => filtrer(notes, f, moi, nomDe), [notes, f, moi, projetDe]); // eslint-disable-line react-hooks/exhaustive-deps
+  const vivantes = notes.filter((n) => !n.supprime_le && !n.archive);
+  const pourMoi = vivantes.filter((n) => n.pour === moi && n.statut !== "done").length;
+  const enRetard = vivantes.filter((n) => n.statut !== "done" && etatEcheance(n.echeance) === "retard").length;
+  const compte = (s: Statut) => vivantes.filter((n) => n.statut === s).length;
+  const nbProjet = (id: string) => vivantes.filter((n) => (n.projet_id ?? PERSO) === id).length;
+  const nbCorbeille = notes.filter((n) => n.supprime_le).length;
+  const glisserActif = f.vue === "actives" && f.tri === "manuel" && !f.q.trim() && f.statut === "tous";
 
-  function addNote(e?: React.FormEvent) {
-    e?.preventDefault();
-    const t = text.trim();
+  const ajouter = async () => {
+    const t = texte.trim();
     if (!t) return;
-
-    // Fallback category
-    let cat = formCat;
-    if (!cat) {
-      cat = cats.includes(DEFAULT_CATEGORY) ? DEFAULT_CATEGORY : cats[0] ?? DEFAULT_CATEGORY;
-      if (!cats.includes(cat)) {
-        setCats((p) => [...p, cat]);
-        ensureCategoryColor(cat);
-      }
-    }
-
-    const n: Note = {
-      id: uid(),
-      text: t,
-      category: cat,
-      status: formStatus,
-      dueDate: formDue || null,
-      createdAt: Date.now(),
-      completedAt: formStatus === "done" ? Date.now() : null,
-      archived: false,
-      flash: false,
-    };
-    setNotes((p) => [n, ...p]);
-    setText("");
-    setFormDue("");
-    setFormStatus("todo");
-    // refocus textarea for chained input
-    requestAnimationFrame(() => textAreaRef.current?.focus());
-  }
-
-  function toggleFlash(id: string) {
-    setNotes((p) => p.map((n) => (n.id === id ? { ...n, flash: !n.flash } : n)));
-  }
-
-  function cleanupOldDone() {
-    const cutoff = Date.now() - 7 * 86400000;
-    let count = 0;
-    setNotes((p) =>
-      p.map((n) => {
-        if (!n.archived && n.status === "done" && n.completedAt && n.completedAt < cutoff) {
-          count++;
-          return { ...n, archived: true };
-        }
-        return n;
-      }),
-    );
-    setConfirmCleanup(false);
-    toast.success(
-      count > 0
-        ? `${count} tâche(s) réglée(s) depuis plus de 7 jours archivée(s)`
-        : "Aucune tâche à nettoyer",
-    );
-  }
-
-  function cycleStatus(id: string) {
-    setNotes((p) =>
-      p.map((n) => {
-        if (n.id !== id) return n;
-        const ns = nextStatus(n.status);
-        return { ...n, status: ns, completedAt: ns === "done" ? Date.now() : null };
-      }),
-    );
-  }
-  function removeNote(id: string) {
-    setNotes((p) => p.filter((n) => n.id !== id));
-  }
-  function toggleArchive(id: string) {
-    setNotes((p) => p.map((n) => (n.id === id ? { ...n, archived: !n.archived } : n)));
-  }
-  function saveEdit(updated: Note) {
-    setNotes((p) =>
-      p.map((n) => {
-        if (n.id !== updated.id) return n;
-        let completedAt = n.completedAt ?? null;
-        if (updated.status === "done" && n.status !== "done") completedAt = Date.now();
-        else if (updated.status !== "done") completedAt = null;
-        return { ...updated, completedAt };
-      }),
-    );
-    setEditing(null);
-  }
-
-  function moveNote(fromId: string, toId: string) {
-    if (fromId === toId) return;
-    setNotes((p) => {
-      const from = p.findIndex((n) => n.id === fromId);
-      const to = p.findIndex((n) => n.id === toId);
-      if (from < 0 || to < 0) return p;
-      const copy = [...p];
-      const [moved] = copy.splice(from, 1);
-      copy.splice(to, 0, moved);
-      return copy;
-    });
-  }
-
-  function renameCategory(oldName: string, newName: string) {
-    const v = newName.trim();
-    if (!v || v === oldName) return;
-    if (cats.includes(v)) {
-      toast.error("Cette catégorie existe déjà");
-      return;
-    }
-    setCats((p) => p.map((c) => (c === oldName ? v : c)));
-    setNotes((p) => p.map((n) => (n.category === oldName ? { ...n, category: v } : n)));
-    setCatColors((prev) => {
-      const { [oldName]: c, ...rest } = prev;
-      return c ? { ...rest, [v]: c } : rest;
-    });
-    setFilterCats((p) => p.map((c) => (c === oldName ? v : c)));
-    if (formCat === oldName) setFormCat(v);
-    toast.success(`Catégorie renommée en "${v}"`);
-  }
-
-  function addCategoryName(name: string) {
-    const v = name.trim();
-    if (!v) return false;
-    if (cats.includes(v)) {
-      toast.error("Cette catégorie existe déjà");
-      return false;
-    }
-    setCats((p) => [...p, v]);
-    ensureCategoryColor(v);
-    return true;
-  }
-
-  function setCategoryColor(name: string, color: string) {
-    setCatColors((p) => ({ ...p, [name]: color }));
-  }
-
-  function deleteCategory(name: string, mode: "uncategorize" | "delete-notes") {
-    if (mode === "delete-notes") {
-      setNotes((p) => p.filter((n) => n.category !== name));
-    } else {
-      setNotes((p) => p.map((n) => (n.category === name ? { ...n, category: UNCATEGORIZED } : n)));
-    }
-    setCats((p) => p.filter((c) => c !== name));
-    setCatColors((prev) => {
-      const { [name]: _, ...rest } = prev;
-      return rest;
-    });
-    setFilterCats((p) => p.filter((c) => c !== name));
-    if (formCat === name) {
-      const remaining = cats.filter((c) => c !== name);
-      setFormCat(remaining[0] ?? "");
-    }
-    toast.success(`Catégorie "${name}" supprimée`);
-  }
-
-  function handleExportBackup() {
-    exportBackup();
-    toast.success("Sauvegarde téléchargée");
-  }
-
-  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      const data = await importBackupFile(file);
-      setPendingImport({ notes: data.notes, categories: data.categories });
-    } catch (err) {
-      toast.error("Fichier invalide");
-    }
-  }
-
-  function confirmImport() {
-    if (!pendingImport) return;
-    setNotes(pendingImport.notes);
-    setCats(pendingImport.categories.length > 0 ? pendingImport.categories : ["Perso"]);
-    setFilterCats([]);
-    setFormCat(pendingImport.categories[0] ?? "");
-    localStorage.setItem(NOTES_KEY, JSON.stringify(pendingImport.notes));
-    localStorage.setItem(CATS_KEY, JSON.stringify(pendingImport.categories));
-    setPendingImport(null);
-    toast.success("Sauvegarde restaurée");
-  }
-
-  function handleExportPdf() {
-    if (visible.length === 0) {
-      toast.error("Aucune note à exporter");
-      return;
-    }
-    exportNotesPdf(visible);
-  }
-
-  // Sync filter with top select — single-cat semantics
-  const topSelectValue = filterCats.length === 0 ? "all" : filterCats.length === 1 ? filterCats[0] : "__multi__";
-
-  function onTopSelectChange(v: string) {
-    if (v === "all") setFilterCats([]);
-    else if (v === "__multi__") return;
-    else setFilterCats([v]);
-  }
-
-  function onSidebarCategoryClick(cat: string, e: React.MouseEvent) {
-    const multi = e.ctrlKey || e.metaKey;
-    setFilterCats((prev) => {
-      if (multi) {
-        return prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat];
-      }
-      // single click: if it's the only selected -> clear (all); else set to just this
-      if (prev.length === 1 && prev[0] === cat) return [];
-      return [cat];
-    });
-  }
-
-  function onSidebarCategoryCheck(cat: string, checked: boolean) {
-    setFilterCats((prev) => {
-      if (checked) return prev.includes(cat) ? prev : [...prev, cat];
-      return prev.filter((c) => c !== cat);
-    });
-  }
-
-  const dndActive = sort === "manual" && !search.trim() && filterStatus === "all";
-
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/60 backdrop-blur sticky top-0 z-20">
-        <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="size-10 rounded-xl bg-white dark:bg-slate-100 border border-border shadow-sm grid place-items-center">
-              <Check className="size-6 text-[#ff6a1a]" strokeWidth={3} />
-            </div>
-            <div>
-              <h1 className="font-display text-lg font-bold uppercase tracking-[0.22em] text-foreground">Check</h1>
-              <p className="text-xs text-muted-foreground">Notes &amp; tâches techniques</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground mr-2">
-              <Badge variant="secondary">{stats.total} actives</Badge>
-              {stats.late > 0 && (
-                <Badge className="bg-destructive text-destructive-foreground">
-                  <AlertTriangle className="size-3 mr-1" /> {stats.late} en retard
-                </Badge>
-              )}
-            </div>
-            <ThemeToggle />
-            <div className="flex items-center gap-1 rounded-md border bg-background/60 px-1 py-1">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground px-1.5 hidden sm:inline">
-                Sauvegarde
-              </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 gap-1 text-xs"
-                onClick={handleExportBackup}
-                title="Exporter les données (.json)"
-              >
-                <Download className="size-3.5" />
-                <span className="hidden sm:inline">Exporter</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 gap-1 text-xs"
-                onClick={() => importInputRef.current?.click()}
-                title="Importer une sauvegarde (.json)"
-              >
-                <Upload className="size-3.5" />
-                <span className="hidden sm:inline">Importer</span>
-              </Button>
-              <input
-                ref={importInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={handleImportFile}
-              />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-6 grid gap-6 lg:grid-cols-[360px_1fr]">
-        {/* Sidebar / Form */}
-        <aside className="space-y-4">
-          <section className="rounded-xl border bg-card p-4 shadow-sm">
-            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Plus className="size-4" /> Nouvelle note
-            </h2>
-            <form onSubmit={addNote} className="space-y-3">
-              <Textarea
-                ref={textAreaRef}
-                placeholder="Écrivez votre note et pressez Entrée…"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    addNote();
-                  }
-                }}
-                rows={3}
-                className="resize-none"
-                autoFocus
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <Select value={formCat} onValueChange={setFormCat}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Catégorie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cats.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={formStatus} onValueChange={(v) => setFormStatus(v as NoteStatus)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todo">À faire</SelectItem>
-                    <SelectItem value="in_progress">En cours</SelectItem>
-                    <SelectItem value="waiting">En attente</SelectItem>
-                    <SelectItem value="done">Réglé</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <CalendarDays className="size-4 text-muted-foreground" />
-                <Input type="date" value={formDue} onChange={(e) => setFormDue(e.target.value)} />
-              </div>
-              <Button type="submit" className="w-full" disabled={!text.trim()}>
-                Ajouter
-              </Button>
-            </form>
-          </section>
-
-          <section className="rounded-xl border bg-card p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold">Catégories</h2>
-              <div className="flex items-center gap-1">
-                {filterCats.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 gap-1 text-xs"
-                    onClick={() => setFilterCats([])}
-                    title="Réinitialiser le filtre"
-                  >
-                    <X className="size-3.5" /> Tout
-                  </Button>
-                )}
-                <Button size="sm" variant="ghost" className="h-7 px-2 gap-1 text-xs" onClick={() => setManageCats(true)}>
-                  <FolderCog className="size-3.5" />
-                  Gérer
-                </Button>
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground mb-2">
-              Clic pour filtrer · Ctrl/⌘ + clic ou cases pour cumuler
-            </p>
-            <ul className="space-y-1">
-              {cats.map((c) => {
-                const count = notes.filter((n) => !n.archived && n.category === c).length;
-                const selected = filterCats.includes(c);
-                const color = colorForCategory(c, catColors);
-                return (
-                  <li
-                    key={c}
-                    onClick={(e) => onSidebarCategoryClick(c, e)}
-                    className={cn(
-                      "flex items-center justify-between rounded-md px-2 py-1.5 text-sm cursor-pointer transition-colors",
-                      selected ? "bg-accent" : "hover:bg-accent/60",
-                    )}
-                  >
-                    <span className="flex items-center gap-2 min-w-0">
-                      <Checkbox
-                        checked={selected}
-                        onCheckedChange={(v) => onSidebarCategoryCheck(c, !!v)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="size-3.5"
-                      />
-                      <span
-                        className="size-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: color }}
-                      />
-                      <span className="truncate">{c}</span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">{count}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          <section className="rounded-xl border bg-card p-4 shadow-sm grid grid-cols-3 gap-2 text-center">
-            <StatCard label="À faire" value={stats.todo} tone="todo" />
-            <StatCard label="En cours" value={stats.in_progress} tone="progress" />
-            <StatCard label="Réglé" value={stats.done} tone="done" />
-          </section>
-
-          <StorageGauge deps={[notes, cats, catColors]} />
-        </aside>
-
-        {/* Notes list */}
-        <section className="space-y-4 min-w-0">
-          <div className="rounded-xl border bg-card p-3 shadow-sm flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher une note…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={topSelectValue} onValueChange={onTopSelectChange}>
-              <SelectTrigger className="w-[170px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes catégories</SelectItem>
-                {filterCats.length > 1 && (
-                  <SelectItem value="__multi__" disabled>
-                    {filterCats.length} sélectionnées
-                  </SelectItem>
-                )}
-                {allCatsForFilter.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as StatusFilter)}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous statuts</SelectItem>
-                <SelectItem value="todo">À faire</SelectItem>
-                <SelectItem value="in_progress">En cours</SelectItem>
-                <SelectItem value="waiting">En attente</SelectItem>
-                <SelectItem value="done">Réglé</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <SelectTrigger className="w-[170px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manual">Tri : manuel</SelectItem>
-                <SelectItem value="created">Tri : récent</SelectItem>
-                <SelectItem value="due">Tri : échéance</SelectItem>
-                
-              </SelectContent>
-            </Select>
-            <Button
-              variant={showArchived ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowArchived((p) => !p)}
-              className="gap-1"
-            >
-              <Archive className="size-4" />
-              {showArchived ? "Archivées" : "Actives"}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setConfirmCleanup(true)}
-              className="gap-1 ml-auto"
-              title="Archiver les tâches réglées depuis plus de 7 jours"
-            >
-              <Sparkles className="size-4" />
-              <span className="hidden sm:inline">Nettoyer</span>
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleExportPdf}
-              className="gap-1 bg-slate-800 hover:bg-slate-900 text-white"
-              title="Exporter les notes affichées en PDF"
-            >
-              <FileDown className="size-4" />
-              Exporter en PDF
-            </Button>
-          </div>
-
-          {visible.length === 0 ? (
-            <div className="rounded-xl border border-dashed bg-card p-12 text-center text-muted-foreground">
-              <Inbox className="size-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">
-                {showArchived ? "Aucune note archivée." : "Aucune note. Ajoutez-en une depuis le formulaire."}
-              </p>
-            </div>
-          ) : (
-            <ul className="rounded-xl border bg-card shadow-sm divide-y overflow-hidden">
-              {visible.map((n) => (
-                <NoteRow
-                  key={n.id}
-                  note={n}
-                  categoryColor={colorForCategory(n.category, catColors)}
-                  dndActive={dndActive}
-                  isDragging={dragId === n.id}
-                  isDragOver={dragOverId === n.id && dragId !== n.id}
-                  onDragStart={() => setDragId(n.id)}
-                  onDragEnterRow={() => dragId && setDragOverId(n.id)}
-                  onDragEndRow={() => {
-                    setDragId(null);
-                    setDragOverId(null);
-                  }}
-                  onDropRow={() => {
-                    if (dragId) moveNote(dragId, n.id);
-                    setDragId(null);
-                    setDragOverId(null);
-                  }}
-                  onCycle={() => cycleStatus(n.id)}
-                  onEdit={() => setEditing(n)}
-                  onDelete={() => removeNote(n.id)}
-                  onArchive={() => toggleArchive(n.id)}
-                  onToggleFlash={() => toggleFlash(n.id)}
-                />
-              ))}
-            </ul>
-          )}
-        </section>
-      </main>
-
-      {editing && <EditDialog note={editing} cats={cats} onClose={() => setEditing(null)} onSave={saveEdit} />}
-
-      <CategoryManagerDialog
-        open={manageCats}
-        onOpenChange={setManageCats}
-        cats={cats}
-        notes={notes}
-        catColors={catColors}
-        onAdd={addCategoryName}
-        onRename={renameCategory}
-        onDelete={deleteCategory}
-        onSetColor={setCategoryColor}
-      />
-
-      <AlertDialog open={!!pendingImport} onOpenChange={(o) => !o && setPendingImport(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Restaurer la sauvegarde ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action va <strong>écraser toutes les données actuelles</strong> ({notes.length} note(s),{" "}
-              {cats.length} catégorie(s)) et les remplacer par le contenu du fichier ({pendingImport?.notes.length}{" "}
-              note(s), {pendingImport?.categories.length} catégorie(s)). Cette opération est irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmImport}>Restaurer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={confirmCleanup} onOpenChange={setConfirmCleanup}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Nettoyer l'historique ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Toutes les tâches au statut « Réglé » depuis plus de 7 jours seront archivées et retirées de la vue principale.
-              Vous pourrez les retrouver dans la vue « Archivées ».
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={cleanupOldDone}>Nettoyer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
-
-function StatCard({ label, value, tone }: { label: string; value: number; tone: "todo" | "progress" | "done" }) {
-  const dot = tone === "todo" ? "bg-status-todo" : tone === "progress" ? "bg-status-progress" : "bg-status-done";
-  return (
-    <div className="rounded-lg border bg-background/50 p-2">
-      <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-        <span className={cn("size-2 rounded-full", dot)} />
-        {label}
-      </div>
-      <div className="text-lg font-semibold">{value}</div>
-    </div>
-  );
-}
-
-function NoteRow({
-  note,
-  categoryColor,
-  dndActive,
-  isDragging,
-  isDragOver,
-  onDragStart,
-  onDragEnterRow,
-  onDragEndRow,
-  onDropRow,
-  onCycle,
-  onEdit,
-  onDelete,
-  onArchive,
-  onToggleFlash,
-}: {
-  note: Note;
-  categoryColor: string;
-  dndActive: boolean;
-  isDragging: boolean;
-  isDragOver: boolean;
-  onDragStart: () => void;
-  onDragEnterRow: () => void;
-  onDragEndRow: () => void;
-  onDropRow: () => void;
-  onCycle: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onArchive: () => void;
-  onToggleFlash: () => void;
-}) {
-  const due = dueState(note.dueDate);
-  const overdue = due === "late" && note.status !== "done";
-  const soon = due === "soon" && note.status !== "done";
-
-  const badgeStyle: React.CSSProperties = {
-    backgroundColor: hexToRgba(categoryColor, 0.14),
-    borderColor: hexToRgba(categoryColor, 0.55),
-    color: categoryColor,
+    const projet_id = formProjet === PERSO ? null : formProjet;
+    const r = await act.ajouterNote({ texte: t, projet_id, statut: formStatut, echeance: formEcheance || null, pour: projet_id ? formPour || null : null, ordre: ordreEnTete(notes) });
+    if (r) { setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); }
   };
 
+  const supprimer = async (n: Note) => {
+    if (!(await act.mettreCorbeille(n.id))) return;
+    toast("Note mise à la corbeille", { action: { label: "Annuler", onClick: () => act.restaurer(n.id) }, duration: 6000 });
+  };
+
+  const cliqueProjet = (id: string, e: React.MouseEvent) => {
+    const multi = e.ctrlKey || e.metaKey;
+    setF((x) => {
+      const p = x.projets;
+      const projetsSel = multi ? (p.includes(id) ? p.filter((y) => y !== id) : [...p, id]) : p.length === 1 && p[0] === id ? [] : [id];
+      return { ...x, projets: projetsSel };
+    });
+    if (!multi) { setFormProjet(id); setFormPour(""); }
+  };
+
+  const pdf = async () => {
+    if (!visibles.length) return toast.error("Aucune note à exporter.");
+    const titre = f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : f.vue === "pour-moi" ? "Notes pour moi" : "Rapport de suivi";
+    try {
+      await exportNotesPdf(visibles.map((n) => ({ texte: n.texte, projet: nomDe(n.projet_id), pour: n.pour ? personne(n.pour) : null, statut: n.statut, flash: n.flash, created_at: n.created_at, echeance: n.echeance, regle_le: n.regle_le })), titre);
+    } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
+  };
+
+  if (chargement) return <p className="py-16 text-center text-sm text-muted-foreground">Chargement…</p>;
+  if (erreur) {
+    const pasPrete = /check_|schema cache|does not exist|PGRST205|42P01/i.test(erreur.message ?? "");
+    return (
+      <div className="panel mx-auto mt-10 max-w-lg p-6 text-sm">
+        <h2 className="font-semibold">{pasPrete ? "Base pas encore préparée" : "Base injoignable"}</h2>
+        <p className="mt-2 text-muted-foreground">{pasPrete ? "Les tables de Check n'existent pas encore dans le projet Supabase d'Index : lancer supabase/check-index.sql dans le SQL Editor." : "Vérifiez la connexion puis rechargez la page."}</p>
+      </div>
+    );
+  }
+
+  const equipeForm = equipeDe(formProjet);
   return (
-    <li
-      draggable={dndActive}
-      onDragStart={(e) => {
-        if (!dndActive) return;
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", note.id);
-        onDragStart();
-      }}
-      onDragOver={(e) => {
-        if (!dndActive) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        onDragEnterRow();
-      }}
-      onDrop={(e) => {
-        if (!dndActive) return;
-        e.preventDefault();
-        onDropRow();
-      }}
-      onDragEnd={onDragEndRow}
-      className={cn(
-        "group relative flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent/40",
-        overdue && "bg-destructive/5",
-        note.status === "done" && "opacity-70",
-        isDragging && "opacity-40",
-        isDragOver && "border-t-2 border-t-primary",
-        note.flash && note.status !== "done" && "flash-row",
-      )}
-    >
-      {/* Drag handle */}
-      <span
-        className={cn(
-          "shrink-0 -ml-1 grid place-items-center size-6 rounded text-muted-foreground/60",
-          dndActive ? "cursor-grab active:cursor-grabbing hover:text-foreground hover:bg-accent" : "opacity-30 cursor-not-allowed",
+    <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="space-y-4">
+        <section className="panel p-4">
+          <h2 className="card-title mb-3">Nouvelle note</h2>
+          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); ajouter(); }}>
+            <Textarea ref={saisie} rows={3} className="resize-none" autoFocus aria-label="Texte de la note" placeholder="Écrivez votre note, Entrée pour ajouter…" value={texte}
+              onChange={(e) => setTexte(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ajouter(); } }} />
+            <div className="grid grid-cols-2 gap-2">
+              <select className="field" aria-label="Projet de la note" value={formProjet} onChange={(e) => { setFormProjet(e.target.value); setFormPour(""); }}>
+                <option value={PERSO}>Perso</option>
+                {actifs.map((p) => <option key={p.id} value={p.id}>{nomProjet(p)}</option>)}
+              </select>
+              <select className="field" aria-label="Statut de la note" value={formStatut} onChange={(e) => setFormStatut(e.target.value as Statut)}>
+                {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
+              </select>
+              <Input type="date" aria-label="Échéance" value={formEcheance} onChange={(e) => setFormEcheance(e.target.value)} />
+              <select className="field" aria-label="Pour qui" value={formPour} disabled={formProjet === PERSO} onChange={(e) => setFormPour(e.target.value)}
+                title={formProjet === PERSO ? "Une note perso reste pour vous" : undefined}>
+                <option value="">Pour : personne</option>
+                {equipeForm.map((id) => <option key={id} value={id}>Pour : {personne(id)}</option>)}
+              </select>
+            </div>
+            <Button type="submit" className="w-full" disabled={!texte.trim()}>Ajouter</Button>
+          </form>
+        </section>
+
+        <section className="panel p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="card-title">Projets</h2>
+            <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setProjetOuvert({ p: null, open: true })}>+ Nouveau projet</button>
+          </div>
+          <p className="mb-2 text-[11px] text-muted-foreground">Clic pour filtrer · Ctrl + clic pour en cumuler</p>
+          <ul className="space-y-0.5 text-sm">
+            <LigneProjet nom="Perso" detail="Visible par vous seul" n={nbProjet(PERSO)} actif={f.projets.includes(PERSO)} onClick={(e) => cliqueProjet(PERSO, e)} />
+            {actifs.map((p) => (
+              <LigneProjet key={p.id} nom={nomProjet(p)} detail={`${equipeDe(p.id).length} membre${equipeDe(p.id).length > 1 ? "s" : ""}`} n={nbProjet(p.id)}
+                actif={f.projets.includes(p.id)} onClick={(e) => cliqueProjet(p.id, e)} onReglages={() => setProjetOuvert({ p, open: true })} />
+            ))}
+          </ul>
+          {archives.length > 0 && (
+            <details className="mt-2 text-sm">
+              <summary className="cursor-pointer text-xs text-muted-foreground">Projets archivés · {archives.length}</summary>
+              <ul className="mt-1 space-y-0.5">
+                {archives.map((p) => <LigneProjet key={p.id} nom={nomProjet(p)} n={nbProjet(p.id)} actif={f.projets.includes(p.id)} onClick={(e) => cliqueProjet(p.id, e)} onReglages={() => setProjetOuvert({ p, open: true })} />)}
+              </ul>
+            </details>
+          )}
+        </section>
+
+        <section className="panel grid grid-cols-3 gap-2 p-3 text-center">
+          {(["todo", "in_progress", "done"] as Statut[]).map((s) => (
+            <button key={s} className={cn("rounded-md border border-border p-2 hover:bg-muted", f.statut === s && "bg-muted")} onClick={() => maj({ statut: f.statut === s ? "tous" : s })} aria-pressed={f.statut === s}>
+              <span className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground"><span className="size-2 rounded-full" style={{ background: DOT[s] }} />{LIBELLE[s]}</span>
+              <span className="text-lg font-semibold tabular-nums">{compte(s)}</span>
+            </button>
+          ))}
+        </section>
+      </aside>
+
+      <section className="min-w-0 space-y-4">
+        <div className="panel flex flex-wrap items-center gap-2 p-3">
+          <div role="tablist" aria-label="Vue" className="flex rounded-md border border-border p-0.5 text-sm">
+            {([["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
+              <button key={v} role="tab" aria-selected={f.vue === v} data-state={f.vue === v ? "active" : "inactive"} onClick={() => maj({ vue: v })}
+                className={cn("rounded px-2.5 py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
+            ))}
+          </div>
+          <div className="relative min-w-[220px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input ref={recherche} className="pl-9 pr-8" placeholder="Rechercher une note…" aria-label="Rechercher une note" value={f.q} onChange={(e) => maj({ q: e.target.value })} onKeyDown={(e) => e.key === "Escape" && maj({ q: "" })} />
+            <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-[10px] text-muted-foreground">/</kbd>
+          </div>
+          <select className="field w-36" aria-label="Filtrer par statut" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
+            <option value="tous">Tous statuts</option>
+            {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
+          </select>
+          <select className="field w-40" aria-label="Trier" value={f.vue === "pour-moi" ? "echeance" : f.tri} disabled={f.vue === "pour-moi"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
+            <option value="manuel">Tri : manuel</option>
+            <option value="recent">Tri : récent</option>
+            <option value="echeance">Tri : échéance</option>
+          </select>
+          <div className="ml-auto flex gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setNettoyer(true)} title="Archiver les notes réglées depuis plus de 7 jours"><Sparkles className="size-4" /> Nettoyer</Button>
+            <Button size="sm" className="gap-1.5" onClick={pdf}><FileDown className="size-4" /> PDF</Button>
+          </div>
+        </div>
+
+        {enRetard > 0 && f.vue === "actives" && (
+          <p className="note-check" role="status">{enRetard} note{enRetard > 1 ? "s" : ""} en retard · <button className="underline underline-offset-2" onClick={() => maj({ tri: "echeance" })}>trier par échéance</button></p>
         )}
-        title={dndActive ? "Glisser pour réordonner" : "Passez en tri manuel pour réordonner"}
-      >
+
+        {visibles.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+            <Inbox className="mx-auto mb-2 size-7 opacity-50" />
+            {f.vue === "corbeille" ? "La corbeille est vide. Les notes y restent 30 jours." : f.vue === "pour-moi" ? "Aucune note ne vous est confiée." : f.vue === "archivees" ? "Aucune note archivée." : f.q ? `Aucune note ne correspond à « ${f.q} ».` : "Aucune note. Écrivez-en une à gauche (raccourci N)."}
+          </div>
+        ) : (
+          <ul className="panel divide-y divide-border overflow-hidden">
+            {visibles.map((n) => (
+              <LigneNote key={n.id} n={n} projet={nomDe(n.projet_id)} pour={personne(n.pour)} auteur={n.projet_id && n.auteur !== moi ? personne(n.auteur) : null}
+                glisser={glisserActif} enGlisse={glisse === n.id} survol={survol === n.id && glisse !== n.id}
+                onDragStart={() => setGlisse(n.id)} onDragOver={() => glisse && setSurvol(n.id)} onDragEnd={() => { setGlisse(null); setSurvol(null); }}
+                onDrop={() => { if (glisse && glisse !== n.id) act.modifier(glisse, { ordre: ordreAvant(visibles, n.id, glisse) }); setGlisse(null); setSurvol(null); }}
+                onStatut={() => act.modifier(n.id, { statut: suivant(n.statut) })}
+                onFlash={() => act.modifier(n.id, { flash: !n.flash })}
+                onModifier={() => setEdition(n)}
+                onArchiver={() => act.modifier(n.id, { archive: !n.archive })}
+                onSupprimer={() => supprimer(n)}
+                onRestaurer={() => act.restaurer(n.id)}
+                onDetruire={() => act.supprimerDefinitivement(n.id)} />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {edition && <EditionDialog note={edition} projets={actifs} equipeDe={equipeDe} personne={personne} onClose={() => setEdition(null)}
+        onSave={async (c) => { if (await act.modifier(edition.id, c)) setEdition(null); }} />}
+      <ProjetDialog open={projetOuvert.open} onOpenChange={(o) => setProjetOuvert((x) => ({ ...x, open: o }))} projet={projetOuvert.p ? projetDe.get(projetOuvert.p.id) ?? null : null}
+        onCree={(id) => { setFormProjet(id); setF((x) => ({ ...x, projets: [id] })); }} />
+      <RepriseDialog plan={reprise} onClose={() => setReprise(null)} />
+      <Dialog open={nettoyer} onOpenChange={setNettoyer}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nettoyer ?</DialogTitle>
+            <DialogDescription>{aNettoyer(notes).length} note(s) réglée(s) depuis plus de 7 jours seront archivées. Elles restent dans « Archivées ».</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNettoyer(false)}>Annuler</Button>
+            <Button onClick={async () => { const l = aNettoyer(notes); for (const n of l) await act.modifier(n.id, { archive: true }); setNettoyer(false); toast.success(l.length ? `${l.length} note(s) archivée(s)` : "Rien à nettoyer"); }}>Nettoyer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function LigneProjet({ nom, detail, n, actif, onClick, onReglages }: { nom: string; detail?: string; n: number; actif: boolean; onClick: (e: React.MouseEvent) => void; onReglages?: () => void }) {
+  return (
+    <li className={cn("group flex items-center gap-1 rounded-md", actif ? "bg-muted" : "hover:bg-muted/60")}>
+      <button className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-1.5 text-left" onClick={onClick} aria-pressed={actif}>
+        <span className="min-w-0">
+          <span className={cn("block truncate", actif && "font-medium")}>{nom}</span>
+          {detail && <span className="block text-[11px] text-muted-foreground">{detail}</span>}
+        </span>
+        <span className="text-xs tabular-nums text-muted-foreground">{n}</span>
+      </button>
+      {onReglages && (
+        <button className="mr-1 rounded p-1 text-muted-foreground opacity-60 hover:bg-background hover:text-foreground group-hover:opacity-100" onClick={onReglages} aria-label={`Projet et équipe : ${nom}`}>
+          <Settings2 className="size-3.5" />
+        </button>
+      )}
+    </li>
+  );
+}
+
+function LigneNote(props: {
+  n: Note; projet: string; pour: string | null; auteur: string | null; glisser: boolean; enGlisse: boolean; survol: boolean;
+  onDragStart: () => void; onDragOver: () => void; onDragEnd: () => void; onDrop: () => void;
+  onStatut: () => void; onFlash: () => void; onModifier: () => void; onArchiver: () => void; onSupprimer: () => void; onRestaurer: () => void; onDetruire: () => void;
+}) {
+  const { n } = props;
+  const ech = etatEcheance(n.echeance);
+  const retard = ech === "retard" && n.statut !== "done";
+  const proche = ech === "proche" && n.statut !== "done";
+  const corbeille = !!n.supprime_le;
+  const btn = "inline-flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground";
+  return (
+    <li data-note={n.id} draggable={props.glisser}
+      onDragStart={(e) => { if (!props.glisser) return; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", n.id); props.onDragStart(); }}
+      onDragOver={(e) => { if (!props.glisser) return; e.preventDefault(); props.onDragOver(); }}
+      onDrop={(e) => { if (!props.glisser) return; e.preventDefault(); props.onDrop(); }}
+      onDragEnd={props.onDragEnd}
+      className={cn("group grid grid-cols-[1.25rem_9rem_6.5rem_minmax(0,1fr)_9.5rem_auto] items-center gap-3 px-3 py-2 text-sm",
+        retard && "bg-[color-mix(in_oklab,var(--destructive)_5%,transparent)]", props.enGlisse && "opacity-40", props.survol && "shadow-[inset_0_2px_0_var(--app)]",
+        n.flash && n.statut !== "done" && !corbeille && "flash-row")}>
+      <span className={cn("text-muted-foreground/60", props.glisser ? "cursor-grab hover:text-foreground" : "opacity-30")} title={props.glisser ? "Glisser pour réordonner" : "Vue Actives en tri manuel pour réordonner"} aria-hidden="true">
         <GripVertical className="size-3.5" />
       </span>
-
-      {/* Category — fixed width column */}
-      <div className="w-full sm:w-[150px] sm:shrink-0 flex sm:justify-start">
-        <span
-          className="inline-flex max-w-full items-center rounded-md px-2 py-0.5 text-[11px] font-medium border truncate"
-          style={badgeStyle}
-          title={note.category}
-        >
-          {note.category}
-        </span>
-      </div>
-
-      {/* Status */}
-      <div className="w-[120px] shrink-0 flex justify-center">
-        <button
-          onClick={onCycle}
-          className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium transition", STATUS_CLASSES[note.status])}
-          title="Cliquer pour changer de statut"
-        >
-          {STATUS_LABEL[note.status]}
-        </button>
-      </div>
-
-
-      {/* Note text */}
-      <p
-        className={cn(
-          "flex-1 min-w-0 truncate sm:whitespace-normal sm:break-words basis-full sm:basis-auto order-last sm:order-none",
-          note.status === "done" && "line-through text-muted-foreground",
+      <span className="truncate text-xs text-muted-foreground" title={props.projet}>{props.projet}</span>
+      <button onClick={props.onStatut} disabled={corbeille} className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted"
+        title="Cliquer pour passer au statut suivant" aria-label={`Statut : ${LIBELLE[n.statut]}. Passer au suivant`}>
+        <span className="size-2 rounded-full" style={{ background: DOT[n.statut] }} />{LIBELLE[n.statut]}
+      </button>
+      <div className="min-w-0">
+        <p className={cn("whitespace-pre-wrap break-words", n.statut === "done" && "text-muted-foreground line-through")}>{n.texte}</p>
+        {(props.pour || props.auteur) && (
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {props.pour && <span className="font-medium text-[var(--app-ink)]">Pour {props.pour}</span>}
+            {props.pour && props.auteur && " · "}
+            {props.auteur && <>par {props.auteur}</>}
+          </p>
         )}
-        title={note.text}
-      >
-        {note.text}
-      </p>
-
-      {/* Date */}
-      <div
-        className={cn(
-          "shrink-0 sm:w-[210px] flex flex-col items-end justify-center gap-0.5 text-[11px] tabular-nums leading-tight whitespace-nowrap",
-        )}
-      >
-        <span className="inline-flex items-center gap-1 text-muted-foreground whitespace-nowrap">
-          <CalendarDays className="size-3" />
-          Créée le {fmtDate(note.createdAt)}
-        </span>
-        {note.status === "done" && note.completedAt ? (
-          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-            <Check className="size-3" />
-            Réglée le {fmtDate(note.completedAt)}
-          </span>
+      </div>
+      <div className="flex flex-col items-end gap-0.5 text-[11px] leading-tight tabular-nums text-muted-foreground">
+        <span className="inline-flex items-center gap-1"><CalendarDays className="size-3" /> {fmtDate(n.created_at)}</span>
+        {n.statut === "done" && n.regle_le ? (
+          <span className="inline-flex items-center gap-1" style={{ color: "var(--st-done)" }}><Check className="size-3" /> Réglée le {fmtDate(n.regle_le)}</span>
+        ) : n.echeance ? (
+          <span className={cn(retard && "font-semibold text-destructive", proche && "text-[var(--st-todo)]")}>Échéance {fmtJour(n.echeance)}</span>
+        ) : null}
+      </div>
+      <div className="flex items-center opacity-60 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        {corbeille ? (
+          <>
+            <button className={btn} onClick={props.onRestaurer} aria-label="Restaurer la note" title="Restaurer"><RotateCcw className="size-3.5" /></button>
+            <button className={cn(btn, "text-destructive hover:text-destructive")} onClick={props.onDetruire} aria-label="Supprimer définitivement" title="Supprimer définitivement"><Trash2 className="size-3.5" /></button>
+          </>
         ) : (
-          note.dueDate && (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 whitespace-nowrap",
-                overdue
-                  ? "text-red-600 dark:text-red-400 font-semibold"
-                  : soon
-                    ? "text-orange-600 dark:text-orange-400"
-                    : "text-muted-foreground",
-              )}
-            >
-              <AlertTriangle className="size-3" />
-              Échéance : {fmtDue(note.dueDate)}
-            </span>
-          )
+          <>
+            <button className={cn(btn, n.flash && "text-[#EA580C] opacity-100")} onClick={props.onFlash} aria-pressed={n.flash} aria-label={n.flash ? "Retirer l'urgence" : "Marquer comme urgent"} title={n.flash ? "Retirer l'urgence" : "Urgent"}>
+              <Zap className={cn("size-3.5", n.flash && "fill-current")} />
+            </button>
+            <button className={btn} onClick={props.onModifier} aria-label="Modifier la note" title="Modifier"><Pencil className="size-3.5" /></button>
+            <button className={btn} onClick={props.onArchiver} aria-label={n.archive ? "Désarchiver" : "Archiver"} title={n.archive ? "Désarchiver" : "Archiver"}>
+              {n.archive ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
+            </button>
+            <button className={cn(btn, "text-destructive hover:text-destructive")} onClick={props.onSupprimer} aria-label="Mettre à la corbeille" title="Corbeille"><Trash2 className="size-3.5" /></button>
+          </>
         )}
-      </div>
-
-
-      {/* Actions */}
-      <div className="shrink-0 flex items-center gap-0.5 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
-        <Button
-          size="sm"
-          variant="ghost"
-          className={cn(
-            "h-7 w-7 p-0",
-            note.flash ? "text-orange-500 hover:text-orange-600 opacity-100" : "text-muted-foreground",
-          )}
-          onClick={onToggleFlash}
-          title={note.flash ? "Retirer l'alerte Flash" : "Marquer comme Flash / Urgent"}
-        >
-          <Zap className={cn("size-3.5", note.flash && "fill-orange-500")} />
-        </Button>
-        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onEdit} title="Modifier">
-          <Pencil className="size-3.5" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 w-7 p-0"
-          onClick={onArchive}
-          title={note.archived ? "Désarchiver" : "Archiver"}
-        >
-          {note.archived ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-          onClick={onDelete}
-          title="Supprimer"
-        >
-          <Trash2 className="size-3.5" />
-        </Button>
       </div>
     </li>
   );
 }
 
-function EditDialog({
-  note,
-  cats,
-  onClose,
-  onSave,
-}: {
-  note: Note;
-  cats: string[];
-  onClose: () => void;
-  onSave: (n: Note) => void;
+function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave }: {
+  note: Note; projets: Projet[]; equipeDe: (pid: string | null) => string[]; personne: (id: string | null) => string | null;
+  onClose: () => void; onSave: (c: Partial<Note>) => void;
 }) {
-  const [text, setText] = useState(note.text);
-  const [cat, setCat] = useState(note.category);
-  const [status, setStatus] = useState<NoteStatus>(note.status);
-  const [due, setDue] = useState(note.dueDate ?? "");
-
+  const [texte, setTexte] = useState(note.texte);
+  const [projet, setProjet] = useState(note.projet_id ?? PERSO);
+  const [statut, setStatut] = useState<Statut>(note.statut);
+  const [echeance, setEcheance] = useState(note.echeance ?? "");
+  const [pour, setPour] = useState(note.pour ?? "");
+  const equipe = equipeDe(projet);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Modifier la note</DialogTitle>
+          <DialogDescription className="sr-only">Texte, projet, statut, échéance et personne</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} />
-          <div className="grid grid-cols-2 gap-2">
-            <Select value={cat} onValueChange={setCat}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {cats.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={status} onValueChange={(v) => setStatus(v as NoteStatus)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todo">À faire</SelectItem>
-                <SelectItem value="in_progress">En cours</SelectItem>
-                <SelectItem value="waiting">En attente</SelectItem>
-                <SelectItem value="done">Réglé</SelectItem>
-              </SelectContent>
-            </Select>
+        <form id="form-note" className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (texte.trim()) onSave({ texte: texte.trim(), projet_id: projet === PERSO ? null : projet, statut, echeance: echeance || null, pour: projet === PERSO ? null : pour || null }); }}>
+          <Textarea rows={4} aria-label="Texte de la note" value={texte} onChange={(e) => setTexte(e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5"><Label htmlFor="e-projet">Projet</Label>
+              <select id="e-projet" className="field" value={projet} onChange={(e) => { setProjet(e.target.value); setPour(""); }}>
+                <option value={PERSO}>Perso</option>
+                {projets.map((p) => <option key={p.id} value={p.id}>{nomProjet(p)}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5"><Label htmlFor="e-statut">Statut</Label>
+              <select id="e-statut" className="field" value={statut} onChange={(e) => setStatut(e.target.value as Statut)}>
+                {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5"><Label htmlFor="e-ech">Échéance</Label><Input id="e-ech" type="date" value={echeance} onChange={(e) => setEcheance(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label htmlFor="e-pour">Pour</Label>
+              <select id="e-pour" className="field" value={pour} disabled={projet === PERSO} onChange={(e) => setPour(e.target.value)}>
+                <option value="">Personne</option>
+                {equipe.map((id) => <option key={id} value={id}>{personne(id)}</option>)}
+              </select>
+            </div>
           </div>
-          <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} />
-        </div>
+          {projet !== (note.projet_id ?? PERSO) && <p className="note-check">{projet === PERSO ? "La note deviendra perso : l'équipe ne la verra plus." : "La note sera visible par l'équipe de ce projet."}</p>}
+        </form>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button
-            onClick={() =>
-              onSave({
-                ...note,
-                text: text.trim() || note.text,
-                category: cat,
-                status,
-                
-                dueDate: due || null,
-              })
-            }
-          >
-            Enregistrer
-          </Button>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button type="submit" form="form-note" disabled={!texte.trim()}>Enregistrer</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function CategoryColorPicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (c: string) => void;
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      {CATEGORY_PALETTE.map((c) => (
-        <button
-          key={c}
-          type="button"
-          onClick={() => onChange(c)}
-          className={cn(
-            "size-4 rounded-full border transition-transform",
-            value.toLowerCase() === c.toLowerCase() ? "ring-2 ring-offset-1 ring-foreground scale-110" : "hover:scale-110",
-          )}
-          style={{ backgroundColor: c, borderColor: c }}
-          title={c}
-          aria-label={`Couleur ${c}`}
-        />
-      ))}
-    </div>
-  );
-}
-
-function CategoryManagerDialog({
-  open,
-  onOpenChange,
-  cats,
-  notes,
-  catColors,
-  onAdd,
-  onRename,
-  onDelete,
-  onSetColor,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  cats: string[];
-  notes: Note[];
-  catColors: Record<string, string>;
-  onAdd: (name: string) => boolean;
-  onRename: (oldName: string, newName: string) => void;
-  onDelete: (name: string, mode: "uncategorize" | "delete-notes") => void;
-  onSetColor: (name: string, color: string) => void;
-}) {
-  const [newCat, setNewCat] = useState("");
-  const [editingCat, setEditingCat] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [deleteMode, setDeleteMode] = useState<"uncategorize" | "delete-notes">("uncategorize");
-
-  const counts = useMemo(() => {
-    const m: Record<string, number> = {};
-    notes.forEach((n) => {
-      m[n.category] = (m[n.category] ?? 0) + 1;
-    });
-    return m;
-  }, [notes]);
-
-  function handleAdd() {
-    if (onAdd(newCat)) setNewCat("");
-  }
-
-  function startEdit(c: string) {
-    setEditingCat(c);
-    setEditValue(c);
-  }
-
-  function commitEdit() {
-    if (editingCat) onRename(editingCat, editValue);
-    setEditingCat(null);
-  }
-
-  const deletingCount = deleting ? (counts[deleting] ?? 0) : 0;
-  const canDelete = cats.length > 1;
-
-  return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings2 className="size-4" /> Gérer les catégories
-            </DialogTitle>
-            <DialogDescription>
-              Renommez, colorez ou supprimez vos catégories. Les notes associées seront mises à jour automatiquement.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex gap-2">
-            <Input
-              placeholder="Nouvelle catégorie"
-              value={newCat}
-              onChange={(e) => setNewCat(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-            />
-            <Button onClick={handleAdd} disabled={!newCat.trim()}>
-              <Plus className="size-4" />
-            </Button>
-          </div>
-
-          <ul className="space-y-1 max-h-[50vh] overflow-y-auto pr-1">
-            {cats.map((c) => {
-              const count = counts[c] ?? 0;
-              const isEditing = editingCat === c;
-              const color = colorForCategory(c, catColors);
-              return (
-                <li key={c} className="flex flex-col gap-2 rounded-md border bg-card px-2 py-1.5">
-                  <div className="flex items-center gap-2">
-                    {isEditing ? (
-                      <>
-                        <Input
-                          autoFocus
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") commitEdit();
-                            if (e.key === "Escape") setEditingCat(null);
-                          }}
-                          className="h-8"
-                        />
-                        <Button size="sm" variant="ghost" className="h-8 px-2" onClick={commitEdit}>
-                          <Check className="size-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => setEditingCat(null)}>
-                          <X className="size-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="flex-1 text-sm flex items-center gap-2 min-w-0">
-                          <span
-                            className="size-3 rounded-full shrink-0"
-                            style={{ backgroundColor: color }}
-                          />
-                          <span className="truncate">{c}</span>
-                          <span className="text-xs text-muted-foreground shrink-0">
-                            {count} note{count > 1 ? "s" : ""}
-                          </span>
-                        </span>
-                        <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => startEdit(c)}>
-                          <Pencil className="size-3.5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 px-2 text-destructive hover:text-destructive"
-                          onClick={() => {
-                            setDeleting(c);
-                            setDeleteMode("uncategorize");
-                          }}
-                          disabled={!canDelete}
-                          title={
-                            !canDelete ? "Impossible : il doit rester au moins une catégorie" : "Supprimer la catégorie"
-                          }
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                  {!isEditing && (
-                    <CategoryColorPicker value={color} onChange={(nc) => onSetColor(c, nc)} />
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Fermer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer la catégorie « {deleting} » ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deletingCount > 0
-                ? `${deletingCount} note(s) sont associées à cette catégorie. Choisissez ce qu'il faut en faire :`
-                : "Aucune note n'est associée à cette catégorie."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {deletingCount > 0 && (
-            <div className="space-y-2 py-2">
-              <label className="flex items-start gap-2 rounded-md border p-2 cursor-pointer hover:bg-accent">
-                <input
-                  type="radio"
-                  name="del-mode"
-                  className="mt-1"
-                  checked={deleteMode === "uncategorize"}
-                  onChange={() => setDeleteMode("uncategorize")}
-                />
-                <span className="text-sm">
-                  <strong>Conserver les notes</strong> — les basculer vers « {UNCATEGORIZED} »
-                </span>
-              </label>
-              <label className="flex items-start gap-2 rounded-md border p-2 cursor-pointer hover:bg-accent">
-                <input
-                  type="radio"
-                  name="del-mode"
-                  className="mt-1"
-                  checked={deleteMode === "delete-notes"}
-                  onChange={() => setDeleteMode("delete-notes")}
-                />
-                <span className="text-sm">
-                  <strong className="text-destructive">Supprimer aussi les notes</strong> — action irréversible
-                </span>
-              </label>
-            </div>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deleting) onDelete(deleting, deleteMode);
-                setDeleting(null);
-              }}
-            >
-              Confirmer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
   );
 }
