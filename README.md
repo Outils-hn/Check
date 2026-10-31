@@ -38,7 +38,7 @@ Contraintes techniques : Stocke TOUTES les données (notes et catégories) dans 
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://check-hn.lovable.app
+**Live app**: https://outils-hn.github.io/Check/
 
 ## Build with Lovable
 

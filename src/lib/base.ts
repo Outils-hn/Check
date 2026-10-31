@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 export const BASE_URL = "https://ngfzwfbraqkdcocdcmib.supabase.co";
 export const BASE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZnp3ZmJyYXFrZGNvY2RjbWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzg2NTcsImV4cCI6MjA5NTIxNDY1N30.Ikovcm4eWkLvPO_PvkI8C8DJebBT011Rz87k_EYFdbU";
-export const INDEX_URL = "https://index-hn.lovable.app";
+export const INDEX_URL = "https://outils-hn.github.io/Index";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const db: any = createClient(BASE_URL, BASE_KEY, {
