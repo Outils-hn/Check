@@ -1,0 +1,234 @@
+# Constats
+
+# Erreurs navigateur
+[mobile] script : page.screenshot: Protocol error (Page.captureScreenshot): Unable to capture screenshot
+
+# Metriques
+{
+  "mesures:sans-compte": {
+    "titre": "Check — notes et tâches",
+    "lang": "fr",
+    "viewportMeta": true,
+    "h1": 1,
+    "h2": 1,
+    "debordementHorizontal": false,
+    "largeurDoc": 1440,
+    "largeurFenetre": 1440,
+    "champs": 0,
+    "champsSansEtiquette": [],
+    "interactifs": 7,
+    "sansNom": [],
+    "cibles_sous_24px": 4,
+    "taillesTexte": {
+      "12": 5,
+      "13": 1,
+      "14": 2,
+      "16": 2,
+      "17": 1
+    },
+    "tailleMin": 12,
+    "octetsTransferes": 1262170,
+    "octetsJS": 1175098,
+    "nbRequetes": 5,
+    "domContentLoaded": 103,
+    "load": 144,
+    "chargement_ms": 783
+  },
+  "axe:sans-compte": [
+    {
+      "regle": "label-content-name-mismatch",
+      "impact": "serious",
+      "aide": "Elements must have their visible text as part of their accessible name",
+      "occurrences": 1,
+      "exemple": "<button type=\"button\" id=\"radix-_r_0_\" aria-haspopup=\"menu\" aria-expanded=\"false\" data-state=\"closed\" class=\"flex items-center gap-1 rounded",
+      "cible": "#radix-_r_0_"
+    }
+  ],
+  "sans-compte:texte": "Check Notes et tâches Lecture seule Se connecter Vos notes, sur tous vos postes Check utilise votre compte Index : notes perso, et notes partagées avec l'équipe de chaque projet. Se connecter Check v2.5 · Conçu par Hugo N. · 2026 · Sauvegarde · Suggestion / bug",
+  "focus": {
+    "total": 22,
+    "sansIndicateur": 0,
+    "exemples": []
+  },
+  "mauvais-mdp": "Connexion Avec votre compte Index : mêmes email et mot de passe. Email Mot de passe Email ou mot de passe incorrect. Pas encore de compte ? Créer un compte dans Index. Mot de passe oublié : depuis Index. Annuler Se connecter Close",
+  "en-attente:texte": "Check Notes et tâches Compte en attente de validation Déconnexion Compte en attente de validation Un administrateur doit valider votre compte dans Index → Configuration → Comptes. Vous aurez ensuite accès à vos notes et à celles de vos projets. Check v2.5 · Conçu par Hugo N. · 2026 · Sauvegarde · Suggestion / bug",
+  "hors-ligne:texte": "Check Notes et tâches Lecture seule Se connecter Vos notes, sur tous vos postes Check utilise votre compte Index : notes perso, et notes partagées avec l'équipe de chaque projet. Se connecter Check v2.5 · Conçu par Hugo N. · 2026 · Sauvegarde · Suggestion / bug",
+  "reprise:texte": "Reprendre les notes de ce navigateur 3 note(s). Choisissez où ranger chaque catégorie. Un projet existant du même nom est réutilisé. Chantier 1 · 2 Notes perso Projet « Chantier 1 » Perso · 1 Notes perso Projet « Perso » Plus tard Importer Close",
+  "mesures:notes": {
+    "titre": "Check — notes et tâches",
+    "lang": "fr",
+    "viewportMeta": true,
+    "h1": 1,
+    "h2": 2,
+    "debordementHorizontal": false,
+    "largeurDoc": 1440,
+    "largeurFenetre": 1440,
+    "champs": 8,
+    "champsSansEtiquette": [],
+    "interactifs": 36,
+    "sansNom": [],
+    "cibles_sous_24px": 10,
+    "taillesTexte": {
+      "10": 1,
+      "11": 12,
+      "12": 16,
+      "13": 2,
+      "14": 12,
+      "16": 1,
+      "17": 1,
+      "18": 3
+    },
+    "tailleMin": 10,
+    "octetsTransferes": 1262170,
+    "octetsJS": 1175098,
+    "nbRequetes": 61,
+    "domContentLoaded": 65,
+    "load": 107,
+    "chargement_ms": 731
+  },
+  "axe:notes": [
+    {
+      "regle": "color-contrast",
+      "impact": "serious",
+      "aide": "Elements must meet minimum color contrast ratio thresholds",
+      "occurrences": 1,
+      "exemple": "<div data-title=\"\" class=\"\">3 note(s) importée(s).</div>",
+      "cible": "div[data-title=\"\"]"
+    },
+    {
+      "regle": "label-content-name-mismatch",
+      "impact": "serious",
+      "aide": "Elements must have their visible text as part of their accessible name",
+      "occurrences": 1,
+      "exemple": "<button type=\"button\" id=\"radix-_r_0_\" aria-haspopup=\"menu\" aria-expanded=\"false\" data-state=\"closed\" class=\"flex items-center gap-1 rounded",
+      "cible": "#radix-_r_0_"
+    }
+  ],
+  "note:vide": {
+    "notes": 3,
+    "toasts": "1 note en retard · trier par échéance"
+  },
+  "note:espaces": {
+    "notes": 3,
+    "toasts": "1 note en retard · trier par échéance"
+  },
+  "note:balise": {
+    "notes": 4,
+    "toasts": "1 note en retard · trier par échéance"
+  },
+  "note:long": {
+    "notes": 5,
+    "toasts": "1 note en retard · trier par échéance"
+  },
+  "note:emoji": {
+    "notes": 6,
+    "toasts": "1 note en retard · trier par échéance"
+  },
+  "volume:1500-notes": {
+    "ms": 5538,
+    "affichees": 1506
+  },
+  "volume:recherche-ms": 1024,
+  "pdf:bouton": 1,
+  "boutons": "Check | Déconnexion | Ajouter | + Nouveau projet | Perso\nVisible par vous seul\n1504 | Chantier 1\n1 membre\n2 | À faire\n505 | En cours\n0 | Réglé\n500 | Nettoyer | PDF | trier par échéance | À faire | À faire | À faire | À faire | À faire | En attente | En attente | Réglé | À faire | À faire | En attente | Réglé | À faire | En attente | Réglé | À faire | En attente | Réglé | À faire | En attente | Réglé | À faire | En attente | Réglé | À faire | En attente | Réglé | À faire",
+  "mesures:mobile": {
+    "titre": "Check — notes et tâches",
+    "lang": "fr",
+    "viewportMeta": true,
+    "h1": 1,
+    "h2": 1,
+    "debordementHorizontal": true,
+    "largeurDoc": 441,
+    "largeurFenetre": 390,
+    "champs": 0,
+    "champsSansEtiquette": [],
+    "interactifs": 7,
+    "sansNom": [],
+    "cibles_sous_24px": 3,
+    "taillesTexte": {
+      "12": 5,
+      "13": 1,
+      "14": 2,
+      "16": 2,
+      "17": 1
+    },
+    "tailleMin": 12,
+    "octetsTransferes": 1262170,
+    "octetsJS": 1175098,
+    "nbRequetes": 5,
+    "domContentLoaded": 79,
+    "load": 121,
+    "chargement_ms": 754
+  },
+  "mesures:tablette": {
+    "titre": "Check — notes et tâches",
+    "lang": "fr",
+    "viewportMeta": true,
+    "h1": 1,
+    "h2": 1,
+    "debordementHorizontal": false,
+    "largeurDoc": 768,
+    "largeurFenetre": 768,
+    "champs": 0,
+    "champsSansEtiquette": [],
+    "interactifs": 7,
+    "sansNom": [],
+    "cibles_sous_24px": 4,
+    "taillesTexte": {
+      "12": 5,
+      "13": 1,
+      "14": 2,
+      "16": 2,
+      "17": 1
+    },
+    "tailleMin": 12,
+    "octetsTransferes": 1262272,
+    "octetsJS": 1175098,
+    "nbRequetes": 5,
+    "domContentLoaded": 124,
+    "load": 182,
+    "chargement_ms": 824
+  },
+  "mesures:tablette-connecte": {
+    "titre": "Check — notes et tâches",
+    "lang": "fr",
+    "viewportMeta": true,
+    "h1": 1,
+    "h2": 2,
+    "debordementHorizontal": false,
+    "largeurDoc": 768,
+    "largeurFenetre": 768,
+    "champs": 8,
+    "champsSansEtiquette": [],
+    "interactifs": 7581,
+    "sansNom": [],
+    "cibles_sous_24px": 1519,
+    "taillesTexte": {
+      "10": 1,
+      "11": 1523,
+      "12": 3034,
+      "13": 1,
+      "14": 1521,
+      "16": 1,
+      "17": 1,
+      "18": 3
+    },
+    "tailleMin": 10,
+    "octetsTransferes": 1262272,
+    "octetsJS": 1175098,
+    "nbRequetes": 51,
+    "domContentLoaded": 124,
+    "load": 182,
+    "chargement_ms": 824
+  },
+  "axe:sombre": [
+    {
+      "regle": "label-content-name-mismatch",
+      "impact": "serious",
+      "aide": "Elements must have their visible text as part of their accessible name",
+      "occurrences": 1,
+      "exemple": "<button type=\"button\" id=\"radix-_r_0_\" aria-haspopup=\"menu\" aria-expanded=\"false\" data-state=\"closed\" class=\"flex items-center gap-1 rounded",
+      "cible": "#radix-_r_0_"
+    }
+  ]
+}
