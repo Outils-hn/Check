@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 2.9 — 1er novembre 2026
+
+- Nouveauté : le menu des applis de Check propose maintenant « Accueil » en premier, comme dans les autres applis.
+
 ## 2.8 — 1er novembre 2026
 
 - Nouveauté : les noms de projet et de collègue ne sont plus coupés dans la saisie d'une note, et la fenêtre « Projet et équipe » ne déborde plus.
