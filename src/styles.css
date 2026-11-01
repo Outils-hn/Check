@@ -402,5 +402,11 @@ body { border-top: 3px solid var(--app); }
 .bandeau-icone svg { width: 16px; height: 16px; }
 .bandeau-statut { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; color: var(--muted-foreground); white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 .bandeau-statut.ouvert { border-color: var(--app); color: var(--app-ink); }
+@media (max-width: 640px) {
+  .bandeau-in { padding: 0 12px; gap: 8px; }
+  .bandeau-statut { display: none; }
+  .bandeau-btn { height: 40px; }
+  .bandeau-icone { width: 40px; height: 40px; }
+}
 .bandeau-marque > svg:first-child { width: 22px; height: 22px; }
 .page { width: 100%; max-width: 1440px; margin-left: auto; margin-right: auto; padding-left: 32px; padding-right: 32px; }
