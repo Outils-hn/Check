@@ -9,7 +9,7 @@ import { Bandeau } from "./Bandeau";
 import { ConnexionDialog } from "./ConnexionDialog";
 
 const THEME_KEY = "check-theme";
-// Reglage commun a toutes les applis (meme site) : le choix clair / sombre suit d\'une appli a l\'autre.
+// Reglage commun a toutes les applis (meme site) : le choix clair / sombre suit d'une appli a l\'autre.
 const SHARED_THEME_KEY = "outils-theme";
 
 /** Theme clair / sombre retenu sur l'ordinateur ; la classe est posee avant l'affichage (voir __root.tsx). */
