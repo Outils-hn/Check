@@ -1,4 +1,3 @@
-import { jsPDF } from "jspdf";
 import { LIBELLE, type Statut } from "./notes";
 import { installerPolicesPDF } from "./pdf-fonts";
 
@@ -19,6 +18,8 @@ const STATUS_COLORS: Record<string, { bg: [number, number, number]; fg: [number,
 };
 
 export async function exportNotesPdf(notes: NotePdf[], titre = "Rapport de suivi") {
+  // jsPDF ne se charge qu'au premier export : demarrage plus leger
+  const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   // Police livree avec l'appli : accents corrects (« Créée », « Échéance »)
   await installerPolicesPDF(doc);

@@ -16,13 +16,14 @@ import {
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
-import { exportNotesPdf } from "@/lib/pdf-export";
 import { ProjetDialog } from "@/components/check/ProjetDialog";
 import { RepriseDialog, type PlanReprise } from "@/components/check/RepriseDialog";
 import { ConnexionDialog } from "@/components/check/ConnexionDialog";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" });
 const fmtJour = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" });
+const PAGE = 50;
+const MAX_NOTE = 4000;
 const DOT: Record<Statut, string> = { todo: "var(--st-todo)", in_progress: "var(--st-progress)", waiting: "var(--st-waiting)", done: "var(--st-done)" };
 
 export default function NotesApp() {
@@ -49,7 +50,7 @@ export default function NotesApp() {
 function Carnet() {
   const { uid } = useCompte();
   const moi = uid!;
-  const { projets, membres, notes, chargement, erreur } = useDonnees();
+  const { projets, membres, notes, chargement, erreur, recharger } = useDonnees();
   const comptes = useComptes();
   const act = useActions();
   useDirect();
@@ -75,6 +76,8 @@ function Carnet() {
   const [reprise, setReprise] = useState<PlanReprise | null>(null);
   const [glisse, setGlisse] = useState<string | null>(null);
   const [survol, setSurvol] = useState<string | null>(null);
+  const [limite, setLimite] = useState(PAGE);
+  const [vide, setVide] = useState(false);
 
   const projetDe = useMemo(() => new Map(projets.map((p) => [p.id, p])), [projets]);
   const nomDe = (id: string | null) => nomProjet(id ? projetDe.get(id) : null);
@@ -106,7 +109,9 @@ function Carnet() {
     return () => window.removeEventListener("keydown", k);
   }, []);
 
+  useEffect(() => { setLimite(PAGE); }, [f]);
   const visibles = useMemo(() => filtrer(notes, f, moi, nomDe), [notes, f, moi, projetDe]); // eslint-disable-line react-hooks/exhaustive-deps
+  const affichees = useMemo(() => visibles.slice(0, limite), [visibles, limite]);
   const vivantes = notes.filter((n) => !n.supprime_le && !n.archive);
   const pourMoi = vivantes.filter((n) => n.pour === moi && n.statut !== "done").length;
   const enRetard = vivantes.filter((n) => n.statut !== "done" && etatEcheance(n.echeance) === "retard").length;
@@ -117,10 +122,10 @@ function Carnet() {
 
   const ajouter = async () => {
     const t = texte.trim();
-    if (!t) return;
+    if (!t) { setVide(true); saisie.current?.focus(); return; }
     const projet_id = formProjet === PERSO ? null : formProjet;
     const r = await act.ajouterNote({ texte: t, projet_id, statut: formStatut, echeance: formEcheance || null, pour: projet_id ? formPour || null : null, ordre: ordreEnTete(notes) });
-    if (r) { setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); }
+    if (r) { setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); }
   };
 
   const supprimer = async (n: Note) => {
@@ -142,6 +147,7 @@ function Carnet() {
     if (!visibles.length) return toast.error("Aucune note à exporter.");
     const titre = f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : f.vue === "pour-moi" ? "Notes pour moi" : "Rapport de suivi";
     try {
+      const { exportNotesPdf } = await import("@/lib/pdf-export");
       await exportNotesPdf(visibles.map((n) => ({ texte: n.texte, projet: nomDe(n.projet_id), pour: n.pour ? personne(n.pour) : null, statut: n.statut, flash: n.flash, created_at: n.created_at, echeance: n.echeance, regle_le: n.regle_le })), titre);
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
@@ -152,7 +158,8 @@ function Carnet() {
     return (
       <div className="panel mx-auto mt-10 max-w-lg p-6 text-sm">
         <h2 className="font-semibold">{pasPrete ? "Base pas encore préparée" : "Base injoignable"}</h2>
-        <p className="mt-2 text-muted-foreground">{pasPrete ? "Les tables de Check n'existent pas encore dans le projet Supabase d'Index : lancer supabase/check-index.sql dans le SQL Editor." : "Vérifiez la connexion puis rechargez la page."}</p>
+        <p className="mt-2 text-muted-foreground">{pasPrete ? "Les tables de Check n'existent pas encore dans le projet Supabase d'Index : lancer supabase/check-index.sql dans le SQL Editor." : "Vérifiez la connexion, puis réessayez."}</p>
+        {!pasPrete && <Button className="mt-4" onClick={() => recharger()}>Réessayer</Button>}
       </div>
     );
   }
@@ -165,7 +172,12 @@ function Carnet() {
           <h2 className="card-title mb-3">Nouvelle note</h2>
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); ajouter(); }}>
             <Textarea ref={saisie} rows={3} className="resize-none" autoFocus aria-label="Texte de la note" placeholder="Écrivez votre note, Entrée pour ajouter…" value={texte}
-              onChange={(e) => setTexte(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ajouter(); } }} />
+              maxLength={MAX_NOTE} aria-invalid={vide || undefined} aria-describedby="aide-saisie"
+              onChange={(e) => { setTexte(e.target.value); if (vide) setVide(false); }} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ajouter(); } }} />
+            <p id="aide-saisie" role={vide ? "alert" : undefined} className={cn("-mt-1 text-xs", vide ? "text-destructive" : "sr-only")}>
+              {vide ? "Écrivez d'abord quelque chose à ajouter." : "Entrée pour ajouter, Maj + Entrée pour un retour à la ligne."}
+            </p>
+            {texte.length >= MAX_NOTE - 500 && <p className="-mt-1 text-right text-xs tabular-nums text-muted-foreground" aria-live="polite">{texte.length} / {MAX_NOTE}</p>}
             <div className="grid grid-cols-2 gap-2">
               <select className="field" aria-label="Projet de la note" value={formProjet} onChange={(e) => { setFormProjet(e.target.value); setFormPour(""); }}>
                 <option value={PERSO}>Perso</option>
@@ -223,7 +235,7 @@ function Carnet() {
           <div role="tablist" aria-label="Vue" className="flex rounded-md border border-border p-0.5 text-sm">
             {([["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
               <button key={v} role="tab" aria-selected={f.vue === v} data-state={f.vue === v ? "active" : "inactive"} onClick={() => maj({ vue: v })}
-                className={cn("rounded px-2.5 py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
+                className={cn("rounded px-2.5 py-2 md:py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
             ))}
           </div>
           <div className="relative min-w-[220px] flex-1">
@@ -257,7 +269,7 @@ function Carnet() {
           </div>
         ) : (
           <ul className="panel divide-y divide-border overflow-hidden">
-            {visibles.map((n) => (
+            {affichees.map((n) => (
               <LigneNote key={n.id} n={n} projet={nomDe(n.projet_id)} pour={personne(n.pour)} auteur={n.projet_id && n.auteur !== moi ? personne(n.auteur) : null}
                 glisser={glisserActif} enGlisse={glisse === n.id} survol={survol === n.id && glisse !== n.id}
                 onDragStart={() => setGlisse(n.id)} onDragOver={() => glisse && setSurvol(n.id)} onDragEnd={() => { setGlisse(null); setSurvol(null); }}
@@ -271,6 +283,11 @@ function Carnet() {
                 onDetruire={() => act.supprimerDefinitivement(n.id)} />
             ))}
           </ul>
+        )}
+        {visibles.length > affichees.length && (
+          <div className="text-center">
+            <Button variant="outline" onClick={() => setLimite((l) => l + PAGE)}>Afficher la suite ({visibles.length - affichees.length} restante{visibles.length - affichees.length > 1 ? "s" : ""})</Button>
+          </div>
         )}
       </section>
 
@@ -298,7 +315,7 @@ function Carnet() {
 function LigneProjet({ nom, detail, n, actif, onClick, onReglages }: { nom: string; detail?: string; n: number; actif: boolean; onClick: (e: React.MouseEvent) => void; onReglages?: () => void }) {
   return (
     <li className={cn("group flex items-center gap-1 rounded-md", actif ? "bg-muted" : "hover:bg-muted/60")}>
-      <button className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-1.5 text-left" onClick={onClick} aria-pressed={actif}>
+      <button className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left md:py-1.5" onClick={onClick} aria-pressed={actif}>
         <span className="min-w-0">
           <span className={cn("block truncate", actif && "font-medium")}>{nom}</span>
           {detail && <span className="block text-[11px] text-muted-foreground">{detail}</span>}
@@ -306,7 +323,7 @@ function LigneProjet({ nom, detail, n, actif, onClick, onReglages }: { nom: stri
         <span className="text-xs tabular-nums text-muted-foreground">{n}</span>
       </button>
       {onReglages && (
-        <button className="mr-1 rounded p-1 text-muted-foreground opacity-60 hover:bg-background hover:text-foreground group-hover:opacity-100" onClick={onReglages} aria-label={`Projet et équipe : ${nom}`}>
+        <button className="mr-1 rounded p-3 text-muted-foreground opacity-60 md:p-1 hover:bg-background hover:text-foreground group-hover:opacity-100" onClick={onReglages} aria-label={`Projet et équipe : ${nom}`}>
           <Settings2 className="size-3.5" />
         </button>
       )}
@@ -324,25 +341,25 @@ function LigneNote(props: {
   const retard = ech === "retard" && n.statut !== "done";
   const proche = ech === "proche" && n.statut !== "done";
   const corbeille = !!n.supprime_le;
-  const btn = "inline-flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground";
+  const btn = "inline-flex size-11 items-center justify-center rounded md:size-7 text-muted-foreground hover:bg-muted hover:text-foreground";
   return (
     <li data-note={n.id} draggable={props.glisser}
       onDragStart={(e) => { if (!props.glisser) return; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", n.id); props.onDragStart(); }}
       onDragOver={(e) => { if (!props.glisser) return; e.preventDefault(); props.onDragOver(); }}
       onDrop={(e) => { if (!props.glisser) return; e.preventDefault(); props.onDrop(); }}
       onDragEnd={props.onDragEnd}
-      className={cn("group grid grid-cols-[1.25rem_9rem_6.5rem_minmax(0,1fr)_9.5rem_auto] items-center gap-3 px-3 py-2 text-sm",
+      className={cn("group grid grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3 py-2.5 text-sm md:grid-cols-[1.25rem_9rem_6.5rem_minmax(0,1fr)_9.5rem_auto] md:py-2",
         retard && "bg-[color-mix(in_oklab,var(--destructive)_5%,transparent)]", props.enGlisse && "opacity-40", props.survol && "shadow-[inset_0_2px_0_var(--app)]",
         n.flash && n.statut !== "done" && !corbeille && "flash-row")}>
       <span className={cn("text-muted-foreground/60", props.glisser ? "cursor-grab hover:text-foreground" : "opacity-30")} title={props.glisser ? "Glisser pour réordonner" : "Vue Actives en tri manuel pour réordonner"} aria-hidden="true">
         <GripVertical className="size-3.5" />
       </span>
-      <span className="truncate text-xs text-muted-foreground" title={props.projet}>{props.projet}</span>
-      <button onClick={props.onStatut} disabled={corbeille} className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted"
+      <span className="min-w-0 truncate text-xs text-muted-foreground" title={props.projet}>{props.projet}</span>
+      <button onClick={props.onStatut} disabled={corbeille} className="inline-flex min-h-9 w-fit items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 text-xs hover:bg-muted md:min-h-0 md:px-2"
         title="Cliquer pour passer au statut suivant" aria-label={`Statut : ${LIBELLE[n.statut]}. Passer au suivant`}>
         <span className="size-2 rounded-full" style={{ background: DOT[n.statut] }} />{LIBELLE[n.statut]}
       </button>
-      <div className="min-w-0">
+      <div className="col-span-3 min-w-0 md:col-span-1">
         <p className={cn("whitespace-pre-wrap break-words", n.statut === "done" && "text-muted-foreground line-through")}>{n.texte}</p>
         {(props.pour || props.auteur) && (
           <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -352,7 +369,7 @@ function LigneNote(props: {
           </p>
         )}
       </div>
-      <div className="flex flex-col items-end gap-0.5 text-[11px] leading-tight tabular-nums text-muted-foreground">
+      <div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs leading-tight tabular-nums text-muted-foreground md:col-span-1 md:flex-col md:items-end md:text-[11px]">
         <span className="inline-flex items-center gap-1"><CalendarDays className="size-3" /> {fmtDate(n.created_at)}</span>
         {n.statut === "done" && n.regle_le ? (
           <span className="inline-flex items-center gap-1" style={{ color: "var(--st-done)" }}><Check className="size-3" /> Réglée le {fmtDate(n.regle_le)}</span>
@@ -360,7 +377,7 @@ function LigneNote(props: {
           <span className={cn(retard && "font-semibold text-destructive", proche && "text-[var(--st-todo)]")}>Échéance {fmtJour(n.echeance)}</span>
         ) : null}
       </div>
-      <div className="flex items-center opacity-60 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+      <div className="flex items-center justify-end opacity-100 transition-opacity md:opacity-60 focus-within:opacity-100 group-hover:opacity-100">
         {corbeille ? (
           <>
             <button className={btn} onClick={props.onRestaurer} aria-label="Restaurer la note" title="Restaurer"><RotateCcw className="size-3.5" /></button>
