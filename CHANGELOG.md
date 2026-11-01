@@ -4,6 +4,12 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 2.8 — 1er novembre 2026
+
+- Nouveauté : les noms de projet et de collègue ne sont plus coupés dans la saisie d'une note, et la fenêtre « Projet et équipe » ne déborde plus.
+- Fenêtre « Projet et équipe » : les champs, la liste de l'équipe et le bouton « Inviter » restent dans la fenêtre ; la confirmation de suppression passe à la ligne au lieu d'être coupée.
+- Saisie d'une note : le projet et le destinataire prennent toute la largeur.
+
 ## 2.7 — 1er novembre 2026
 
 - Nouveauté : sur téléphone, les notes s'affichent en colonne et les boutons sont plus faciles à toucher.

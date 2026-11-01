@@ -155,6 +155,8 @@ try {
   await p.getByRole("button", { name: "Inviter" }).click();
   await p.waitForTimeout(800);
   ok(membre(BOB, projet.id), "Bob invité dans l'équipe du projet");
+  const debordeDialogue = await p.evaluate(() => { const d = document.querySelector('[role="dialog"]'); const R = d.getBoundingClientRect(); return [...d.querySelectorAll("input, select, button, li")].filter((e) => e.getBoundingClientRect().right > R.right + 1).map((e) => e.getAttribute("aria-label") || e.id || e.textContent.trim().slice(0, 20)); });
+  ok(debordeDialogue.length === 0, "fenetre Projet et equipe : rien ne depasse " + debordeDialogue.join(", "));
   await shot(p, "03-equipe");
   await p.getByRole("button", { name: "Fermer" }).click();
 
