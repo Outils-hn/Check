@@ -108,7 +108,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: "try{if(localStorage.getItem('check-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}" }} />
+        <script dangerouslySetInnerHTML={{ __html: "try{if((localStorage.getItem('outils-theme')||localStorage.getItem('check-theme'))==='dark')document.documentElement.classList.add('dark')}catch(e){}" }} />
         <HeadContent />
       </head>
       <body>
