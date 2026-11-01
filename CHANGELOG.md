@@ -4,6 +4,16 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 2.7 — 1er novembre 2026
+
+- Nouveauté : sur téléphone, les notes s'affichent en colonne et les boutons sont plus faciles à toucher.
+- Une note vide n'est plus ignorée en silence : un message l'indique.
+- Les longues listes s'affichent par paquets de 50, avec « Afficher la suite ».
+- Si la base est injoignable, un bouton « Réessayer » évite de recharger la page.
+- Le PDF et ses polices ne se chargent qu'au premier export (démarrage plus léger).
+- Une note est limitée à 4000 caractères, avec un compteur quand on approche.
+- Petits textes gris un peu plus contrastés.
+
 ## 2.6 — 1er novembre 2026
 
 - Nouveauté : le mode clair ou sombre que tu choisis dans une appli est repris dans toutes les autres.

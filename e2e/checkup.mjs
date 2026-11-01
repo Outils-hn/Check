@@ -96,8 +96,8 @@ async function brancher(ctx) {
 
 const b = await chromium.launch();
 const pages = [];
-async function page({ dark = false, anciennes = null } = {}) {
-  const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
+async function page({ dark = false, anciennes = null, largeur = 1440 } = {}) {
+  const ctx = await b.newContext({ viewport: { width: largeur, height: largeur < 600 ? 800 : 900 }, acceptDownloads: true });
   await ctx.addInitScript(([d, a]) => { if (d) localStorage.setItem("check-theme", "dark"); if (a && !localStorage.getItem("check-reprise-faite")) localStorage.setItem("dp-notes-v1", a); }, [dark, anciennes]);
   await brancher(ctx);
   const p = await ctx.newPage();
@@ -157,6 +157,11 @@ try {
   ok(membre(BOB, projet.id), "Bob invité dans l'équipe du projet");
   await shot(p, "03-equipe");
   await p.getByRole("button", { name: "Fermer" }).click();
+
+  // 4b. Note vide : un message, pas de silence
+  etape = "vide";
+  await p.getByLabel("Texte de la note").press("Enter");
+  ok(await p.getByText("Écrivez d'abord quelque chose à ajouter.").isVisible(), "note vide : message affiché");
 
   // 5. Note confiee a Bob
   etape = "note";
@@ -222,6 +227,19 @@ try {
   ok(await p.getByText("Conçu et développé par Hugo N.").isVisible(), "fenêtre À propos");
   await p.keyboard.press("Escape");
   await p.waitForTimeout(800);
+
+  // 8b. Telephone : pas de debordement, cibles tactiles >= 40 px
+  etape = "mobile";
+  const pm = await page({ largeur: 390 });
+  await pm.goto(URL0); await pm.waitForLoadState("networkidle");
+  await seConnecter(pm, "alice@exemple.ch");
+  await shot(pm, "07-mobile");
+  const mesure = await pm.evaluate(() => ({
+    debord: document.documentElement.scrollWidth - window.innerWidth,
+    petits: [...document.querySelectorAll("[data-note] button")].filter((x) => x.offsetParent && (x.getBoundingClientRect().width < 40 || x.getBoundingClientRect().height < 36)).length,
+  }));
+  ok(mesure.debord <= 0, `mobile : aucun débordement horizontal (${mesure.debord} px)`);
+  ok(mesure.petits === 0, `mobile : boutons des notes assez grands (${mesure.petits} trop petits)`);
 
   // 9. Accessibilite, sombre, selecteur
   const axe = await new AxeBuilder({ page: p }).withTags(["wcag2a", "wcag2aa"]).analyze();

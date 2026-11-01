@@ -36,7 +36,7 @@ export function useDonnees() {
   const { uid, valide } = useCompte();
   const q = useQuery({ queryKey: ["check", "donnees", uid], enabled: valide && !!uid, queryFn: () => charger(uid!), staleTime: 15_000, retry: 1 });
 
-  return { ...(q.data ?? vide), chargement: q.isLoading, erreur: q.error as Error | null };
+  return { ...(q.data ?? vide), chargement: q.isLoading, erreur: q.error as Error | null, recharger: () => q.refetch() };
 }
 
 /** Mises a jour en direct : a appeler UNE seule fois (dans le carnet). Ce qu'un collegue ajoute,
