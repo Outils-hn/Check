@@ -179,7 +179,7 @@ function Carnet() {
             </p>
             {texte.length >= MAX_NOTE - 500 && <p className="-mt-1 text-right text-xs tabular-nums text-muted-foreground" aria-live="polite">{texte.length} / {MAX_NOTE}</p>}
             <div className="grid grid-cols-2 gap-2">
-              <select className="field" aria-label="Projet de la note" value={formProjet} onChange={(e) => { setFormProjet(e.target.value); setFormPour(""); }}>
+              <select className="field col-span-2" aria-label="Projet de la note" value={formProjet} onChange={(e) => { setFormProjet(e.target.value); setFormPour(""); }}>
                 <option value={PERSO}>Perso</option>
                 {actifs.map((p) => <option key={p.id} value={p.id}>{nomProjet(p)}</option>)}
               </select>
@@ -187,7 +187,7 @@ function Carnet() {
                 {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
               </select>
               <Input type="date" aria-label="Échéance" value={formEcheance} onChange={(e) => setFormEcheance(e.target.value)} />
-              <select className="field" aria-label="Pour qui" value={formPour} disabled={formProjet === PERSO} onChange={(e) => setFormPour(e.target.value)}
+              <select className="field col-span-2" aria-label="Pour qui" value={formPour} disabled={formProjet === PERSO} onChange={(e) => setFormPour(e.target.value)}
                 title={formProjet === PERSO ? "Une note perso reste pour vous" : undefined}>
                 <option value="">Pour : personne</option>
                 {equipeForm.map((id) => <option key={id} value={id}>Pour : {personne(id)}</option>)}

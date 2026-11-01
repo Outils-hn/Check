@@ -36,14 +36,14 @@ export function ProjetDialog({ open, onOpenChange, projet, onCree }: { open: boo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg [&>*]:min-w-0">
         <DialogHeader>
           <DialogTitle>{projet ? "Projet et équipe" : "Nouveau projet"}</DialogTitle>
           <DialogDescription>{projet ? "Les notes du projet sont visibles par toute l'équipe." : "Vous en serez le premier membre ; invitez ensuite vos collègues."}</DialogDescription>
         </DialogHeader>
-        <form id="form-projet" className="grid grid-cols-[8rem_1fr] gap-3" onSubmit={(e) => { e.preventDefault(); enregistrer(); }}>
+        <form id="form-projet" className="grid grid-cols-[8rem_minmax(0,1fr)] gap-3" onSubmit={(e) => { e.preventDefault(); enregistrer(); }}>
           <div className="space-y-1.5"><Label htmlFor="p-num">Numéro</Label><Input id="p-num" placeholder="facultatif" value={numero} onChange={(e) => setNumero(e.target.value)} /></div>
-          <div className="space-y-1.5"><Label htmlFor="p-nom">Nom *</Label><Input id="p-nom" autoFocus={!projet} value={nom} onChange={(e) => setNom(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label htmlFor="p-nom">Nom *</Label><Input className="min-w-0" id="p-nom" autoFocus={!projet} value={nom} onChange={(e) => setNom(e.target.value)} /></div>
         </form>
         {projet && modifie && <div className="flex justify-end"><Button size="sm" type="submit" form="form-projet">Enregistrer le nom</Button></div>}
 
@@ -52,22 +52,22 @@ export function ProjetDialog({ open, onOpenChange, projet, onCree }: { open: boo
             <h3 className="card-title">Équipe · {equipe.length}</h3>
             <ul className="divide-y divide-border rounded-lg border border-border text-sm">
               {equipe.map((id) => (
-                <li key={id} className="flex items-center justify-between px-3 py-2">
-                  <span>{nomDe(id)}{id === uid && <span className="text-muted-foreground"> (vous)</span>}</span>
+                <li key={id} className="flex items-center justify-between gap-2 px-3 py-2">
+                  <span className="min-w-0 break-words">{nomDe(id)}{id === uid && <span className="text-muted-foreground"> (vous)</span>}</span>
                   {id === uid ? (
-                    <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={async () => { if (await retirer(projet.id, id)) onOpenChange(false); }}><LogOut className="size-3.5" /> Quitter</Button>
+                    <Button size="sm" variant="ghost" className="h-7 shrink-0 gap-1 text-xs" onClick={async () => { if (await retirer(projet.id, id)) onOpenChange(false); }}><LogOut className="size-3.5" /> Quitter</Button>
                   ) : (
-                    <Button size="icon" variant="ghost" className="size-7" onClick={() => retirer(projet.id, id)} aria-label={`Retirer ${nomDe(id)} de l'équipe`}><X className="size-3.5" /></Button>
+                    <Button size="icon" variant="ghost" className="size-7 shrink-0" onClick={() => retirer(projet.id, id)} aria-label={`Retirer ${nomDe(id)} de l'équipe`}><X className="size-3.5" /></Button>
                   )}
                 </li>
               ))}
             </ul>
             <div className="flex gap-2">
-              <select className="field flex-1" aria-label="Collègue à inviter" value={invite} onChange={(e) => setInvite(e.target.value)}>
+              <select className="field min-w-0 flex-1" aria-label="Collègue à inviter" value={invite} onChange={(e) => setInvite(e.target.value)}>
                 <option value="">{invitables.length ? "Inviter un collègue…" : "Tous les comptes validés sont déjà membres"}</option>
                 {invitables.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
               </select>
-              <Button variant="outline" className="gap-1.5" disabled={!invite} onClick={async () => { if (await inviter(projet.id, invite)) setInvite(""); }}><UserPlus className="size-4" /> Inviter</Button>
+              <Button variant="outline" className="shrink-0 gap-1.5" disabled={!invite} onClick={async () => { if (await inviter(projet.id, invite)) setInvite(""); }}><UserPlus className="size-4" /> Inviter</Button>
             </div>
             <p className="text-xs text-muted-foreground">Seuls les comptes validés dans Index apparaissent.</p>
           </section>
@@ -76,7 +76,7 @@ export function ProjetDialog({ open, onOpenChange, projet, onCree }: { open: boo
         <DialogFooter className="sm:justify-between">
           {projet && projet.cree_par === uid ? (
             confirmer ? (
-              <Button variant="ghost" className="gap-1.5 text-destructive hover:text-destructive" onClick={async () => { if (await supprimerProjet(projet.id)) onOpenChange(false); }}>
+              <Button variant="ghost" className="h-auto min-h-9 whitespace-normal gap-1.5 text-left text-destructive hover:text-destructive" onClick={async () => { if (await supprimerProjet(projet.id)) onOpenChange(false); }}>
                 <Trash2 className="size-4" /> Confirmer : supprimer avec ses {nbNotes} note(s)
               </Button>
             ) : (
