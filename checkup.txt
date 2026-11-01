@@ -1,0 +1,33 @@
+OK sans compte : invitation à se connecter
+OK langue de la page = fr
+OK compte non validé : en attente, aucune note
+OK première connexion : reprise des anciennes notes proposée
+NOTE projet cree « Chantier 1 » a l'etape reprise
+OK « Chantier 1 » devenu un projet avec ses 2 notes
+OK « Perso » resté en notes perso
+OK 3 notes affichées après reprise
+OK Bob invité dans l'équipe du projet
+OK fenetre Projet et equipe : rien ne depasse 
+OK note vide : message affiché
+OK note ajoutée avec Entrée, confiée à Bob
+OK « Pour Bob Keller » affiché sous la note
+OK recherche « schuco » trouve Schüco (sans tréma)
+OK Bob voit les 3 notes du projet
+OK Bob ne voit PAS les notes perso d'Alice
+OK onglet « Pour moi · 1 » chez Bob
+OK « Pour moi » : la note confiée
+OK auteur affiché (« par Alice Martin »)
+OK Bob règle la note (statut en un clic)
+OK Alice voit la note réglée par Bob
+OK note mise à la corbeille
+OK « Annuler » la ramène
+OK visible dans la corbeille
+OK restaurée depuis la corbeille
+OK PDF téléchargé (check-rapport-de-suivi-2026-11-01.pdf)
+OK sauvegarde téléchargée (4 notes)
+OK fenêtre À propos
+OK mobile : aucun débordement horizontal (0 px)
+OK mobile : boutons des notes assez grands (0 trop petits)
+OK accessibilité : 0 problème(s)
+OK accessibilité (sombre) : 0 problème(s)
+OK sélecteur : Accueil puis 8 applis (9)
