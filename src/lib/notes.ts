@@ -4,7 +4,7 @@ export type Statut = "todo" | "in_progress" | "waiting" | "done";
 export type Note = {
   id: string; projet_id: string | null; auteur: string; pour: string | null;
   texte: string; statut: Statut; echeance: string | null; flash: boolean; archive: boolean;
-  ordre: number; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
+  ordre: number; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
 };
 export type Projet = { id: string; nom: string; numero: string; cree_par: string | null; archive: boolean };
 export type Membre = { projet_id: string; user_id: string };
@@ -30,9 +30,12 @@ export const nomProjet = (p: Projet | undefined | null) => (!p ? "Perso" : p.num
 
 export type Vue = "actives" | "pour-moi" | "archivees" | "corbeille";
 export type Tri = "manuel" | "recent" | "echeance";
-export type Filtres = { vue: Vue; projets: string[]; statut: Statut | "tous"; q: string; tri: Tri };
+export type Filtres = { vue: Vue; projets: string[]; statut: Statut | "tous"; q: string; tri: Tri; avecReponse?: boolean };
 /** Identifiant de la boite « Perso » dans les filtres de projets. */
 export const PERSO = "__perso__";
+
+/** Reponse affichee : seulement quand la note est reglee (elle est gardee si on la rouvre). */
+export const reponseDe = (n: Pick<Note, "statut" | "reponse">) => (n.statut === "done" ? n.reponse?.trim() ?? "" : "");
 
 export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: string | null) => string): Note[] {
   const mots = sansAccents(f.q).split(/\s+/).filter(Boolean);
@@ -45,8 +48,9 @@ export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: stri
     }
     if (f.projets.length && !f.projets.includes(n.projet_id ?? PERSO)) return false;
     if (f.statut !== "tous" && n.statut !== f.statut) return false;
+    if (f.avecReponse && !reponseDe(n)) return false;
     if (mots.length) {
-      const t = sansAccents(`${n.texte} ${nomDe(n.projet_id)}`);
+      const t = sansAccents(`${n.texte} ${reponseDe(n)} ${nomDe(n.projet_id)}`);
       if (!mots.every((m) => t.includes(m))) return false;
     }
     return true;

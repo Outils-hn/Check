@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { PERSO, aNettoyer, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
+import { PERSO, aNettoyer, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
 import { choixParDefaut, exporter, lireAnciennes, planImport } from "./reprise";
 
 const moi = "u-moi", autre = "u-marc";
 const base = (p: Partial<Note>): Note => ({
   id: "x", projet_id: null, auteur: moi, pour: null, texte: "", statut: "todo", echeance: null, flash: false, archive: false,
-  ordre: 0, regle_le: null, supprime_le: null, created_at: "2026-10-20T08:00:00Z", ...p,
+  ordre: 0, reponse: null, regle_le: null, supprime_le: null, created_at: "2026-10-20T08:00:00Z", ...p,
 });
 const notes: Note[] = [
   base({ id: "a", texte: "Relancer Schüco pour l'imposte", projet_id: "p1", pour: moi, echeance: "2026-10-30", ordre: 2 }),
@@ -85,5 +85,18 @@ describe("reprise et sauvegarde", () => {
     expect(p.projets).toEqual(["Les Pins"]);
     expect(planImport({ notes: JSON.parse(ancien) }, []).notes).toHaveLength(2);
     expect(planImport({ app: "masse" }, []).erreur).toMatch(/pas une sauvegarde Check/);
+  });
+
+  it("reponse : visible seulement si la note est reglee, cherchable, filtre « Avec reponse »", () => {
+    const l: Note[] = [
+      base({ id: "r1", texte: "Quel joint pour la jonction ?", statut: "done", reponse: "Sikaflex, voir fiche Index", projet_id: "p1" }),
+      base({ id: "r2", texte: "Autre question", statut: "done" }),
+      base({ id: "r3", texte: "Rouverte", statut: "todo", reponse: "ancienne reponse" }),
+    ];
+    expect(reponseDe(l[0])).toBe("Sikaflex, voir fiche Index");
+    expect(reponseDe(l[2])).toBe("");
+    expect(ids(filtrer(l, { ...F, q: "sikaflex" }, moi, nomDe))).toEqual(["r1"]);
+    expect(ids(filtrer(l, { ...F, q: "ancienne" }, moi, nomDe))).toEqual([]);
+    expect(ids(filtrer(l, { ...F, avecReponse: true }, moi, nomDe))).toEqual(["r1"]);
   });
 });

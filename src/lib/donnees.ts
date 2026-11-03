@@ -14,7 +14,7 @@ async function charger(uid: string): Promise<Donnees> {
     const [p, m, n] = await Promise.all([
       db.from("check_projets").select("id,nom,numero,cree_par,archive").order("nom"),
       db.from("check_membres").select("projet_id,user_id"),
-      db.from("check_notes").select("id,projet_id,auteur,pour,texte,statut,echeance,flash,archive,ordre,regle_le,supprime_le,created_at,updated_at"),
+      db.from("check_notes").select("id,projet_id,auteur,pour,texte,statut,echeance,flash,archive,ordre,reponse,regle_le,supprime_le,created_at,updated_at"),
     ]);
     const err = p.error || m.error || n.error;
     if (err) throw err;
@@ -77,7 +77,7 @@ function message(e: { message?: string; code?: string }) {
   return "Erreur : " + (e.message ?? "inconnue");
 }
 
-type Champs = Partial<Pick<Note, "projet_id" | "pour" | "texte" | "statut" | "echeance" | "flash" | "archive" | "ordre" | "supprime_le" | "created_at" | "regle_le">>;
+type Champs = Partial<Pick<Note, "projet_id" | "pour" | "texte" | "statut" | "echeance" | "flash" | "archive" | "ordre" | "supprime_le" | "created_at" | "regle_le" | "reponse">>;
 
 export function useActions() {
   const qc = useQueryClient();

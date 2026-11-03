@@ -2,7 +2,7 @@ import { LIBELLE, type Statut } from "./notes";
 import { installerPolicesPDF } from "./pdf-fonts";
 
 /** Une note telle qu'imprimee : projet et personne deja en toutes lettres. */
-export type NotePdf = { texte: string; projet: string; pour: string | null; statut: Statut; flash: boolean; created_at: string; echeance: string | null; regle_le: string | null };
+export type NotePdf = { texte: string; projet: string; pour: string | null; statut: Statut; flash: boolean; created_at: string; echeance: string | null; regle_le: string | null; reponse?: string | null };
 
 function fmtDue(iso: string | null) {
   if (!iso) return null;
@@ -86,12 +86,14 @@ export async function exportNotesPdf(notes: NotePdf[], titre = "Rapport de suivi
         ? `Réglée le ${new Date(n.regle_le).toLocaleDateString("fr-CH")}`
         : null;
     const pourLigne = n.pour ? `Pour : ${n.pour}` : null;
-    const extraLines = (dueLine ? 1 : 0) + (doneLine ? 1 : 0) + (pourLigne ? 1 : 0);
+    const repTexte = n.statut === "done" && n.reponse?.trim() ? n.reponse.trim() : null;
+    const repLines: string[] = repTexte ? doc.splitTextToSize(`Réponse : ${repTexte}`, contentW - cardPadX * 2) : [];
+    const extraLines = (dueLine ? 1 : 0) + (doneLine ? 1 : 0) + (pourLigne ? 1 : 0) + repLines.length;
     const innerH =
       badgeH +
       8 +
       wrapped.length * lineH +
-      (extraLines > 0 ? extraLines * lineH + 4 : 0);
+      (extraLines > 0 ? extraLines * lineH + 4 + (repLines.length ? 4 : 0) : 0);
     const cardH = innerH + cardPadY * 2;
 
     // page-break-inside: avoid
@@ -191,6 +193,14 @@ export async function exportNotesPdf(notes: NotePdf[], titre = "Rapport de suivi
       doc.setFontSize(10);
       doc.setTextColor(22, 101, 52);
       doc.text(doneLine, cx, cy + 10);
+      cy += lineH;
+    }
+    if (repLines.length) {
+      cy += 4;
+      doc.setFont("PlexSans", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...navy);
+      doc.text(repLines, cx, cy + 10);
     }
 
     y += cardH + 10;

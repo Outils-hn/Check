@@ -43,6 +43,10 @@ create table if not exists public.check_notes (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- Reponse a une note reglee (3.0) : facultative, 500 caracteres au plus.
+alter table public.check_notes add column if not exists reponse text;
+alter table public.check_notes drop constraint if exists check_notes_reponse_longueur;
+alter table public.check_notes add constraint check_notes_reponse_longueur check (reponse is null or length(reponse) <= 500);
 create index if not exists check_notes_projet on public.check_notes (projet_id);
 create index if not exists check_notes_pour on public.check_notes (pour);
 

@@ -4,6 +4,14 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.0 — 3 novembre 2026
+
+- Nouveauté : une note réglée peut maintenant avoir une « Réponse » (facultative), visible par toute l'équipe du projet, pour garder la solution d'une question.
+- Au passage d'une note à « Réglé », une notification propose « Ajouter une réponse » ; le champ est aussi dans « Modifier la note ». Notes perso comprises (elles restent privées).
+- La réponse s'affiche sous la note, la recherche la trouve, et le bouton « Avec réponse » ne garde que ces notes.
+- Elle est incluse dans l'export PDF et dans la sauvegarde. 500 caractères au plus.
+- Avant la mise en ligne : une ligne de SQL à lancer une fois dans Supabase (fichier `supabase/check-index.sql`).
+
 ## 2.9 — 1er novembre 2026
 
 - Nouveauté : le menu des applis de Check propose maintenant « Accueil » en premier, comme dans les autres applis.

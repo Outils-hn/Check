@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Inbox, LogIn, Pencil, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Inbox, LogIn, MessageSquareText, Pencil, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useCompte } from "@/lib/compte";
 import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
-  LIBELLE, PERSO, STATUTS, aNettoyer, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
+  LIBELLE, PERSO, STATUTS, aNettoyer, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
@@ -70,6 +70,7 @@ function Carnet() {
 
   // Fenetres
   const [edition, setEdition] = useState<Note | null>(null);
+  const [versReponse, setVersReponse] = useState(false);
   // Garde le projet pendant la fermeture : la fenetre ne bascule pas en « Nouveau projet » en se refermant
   const [projetOuvert, setProjetOuvert] = useState<{ p: Projet | null; open: boolean }>({ p: null, open: false });
   const [nettoyer, setNettoyer] = useState(false);
@@ -110,6 +111,14 @@ function Carnet() {
   }, []);
 
   useEffect(() => { setLimite(PAGE); }, [f]);
+  /** Clic sur la pastille de statut ; en passant a « Reglé », une notification propose d'ajouter une reponse (facultatif). */
+  function statutSuivant(n: Note) {
+    const s = suivant(n.statut);
+    act.modifier(n.id, { statut: s });
+    if (s === "done" && !n.reponse?.trim()) {
+      toast("Note réglée", { duration: 6000, action: { label: "Ajouter une réponse", onClick: () => { setVersReponse(true); setEdition({ ...n, statut: "done" }); } } });
+    }
+  }
   const visibles = useMemo(() => filtrer(notes, f, moi, nomDe), [notes, f, moi, projetDe]); // eslint-disable-line react-hooks/exhaustive-deps
   const affichees = useMemo(() => visibles.slice(0, limite), [visibles, limite]);
   const vivantes = notes.filter((n) => !n.supprime_le && !n.archive);
@@ -148,7 +157,7 @@ function Carnet() {
     const titre = f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : f.vue === "pour-moi" ? "Notes pour moi" : "Rapport de suivi";
     try {
       const { exportNotesPdf } = await import("@/lib/pdf-export");
-      await exportNotesPdf(visibles.map((n) => ({ texte: n.texte, projet: nomDe(n.projet_id), pour: n.pour ? personne(n.pour) : null, statut: n.statut, flash: n.flash, created_at: n.created_at, echeance: n.echeance, regle_le: n.regle_le })), titre);
+      await exportNotesPdf(visibles.map((n) => ({ texte: n.texte, projet: nomDe(n.projet_id), pour: n.pour ? personne(n.pour) : null, statut: n.statut, flash: n.flash, created_at: n.created_at, echeance: n.echeance, regle_le: n.regle_le, reponse: n.reponse })), titre);
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 
@@ -247,6 +256,10 @@ function Carnet() {
             <option value="tous">Tous statuts</option>
             {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
           </select>
+          <button type="button" aria-pressed={!!f.avecReponse} onClick={() => maj({ avecReponse: !f.avecReponse })}
+            className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
+            <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
+          </button>
           <select className="field w-40" aria-label="Trier" value={f.vue === "pour-moi" ? "echeance" : f.tri} disabled={f.vue === "pour-moi"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
             <option value="manuel">Tri : manuel</option>
             <option value="recent">Tri : récent</option>
@@ -274,9 +287,9 @@ function Carnet() {
                 glisser={glisserActif} enGlisse={glisse === n.id} survol={survol === n.id && glisse !== n.id}
                 onDragStart={() => setGlisse(n.id)} onDragOver={() => glisse && setSurvol(n.id)} onDragEnd={() => { setGlisse(null); setSurvol(null); }}
                 onDrop={() => { if (glisse && glisse !== n.id) act.modifier(glisse, { ordre: ordreAvant(visibles, n.id, glisse) }); setGlisse(null); setSurvol(null); }}
-                onStatut={() => act.modifier(n.id, { statut: suivant(n.statut) })}
+                onStatut={() => statutSuivant(n)}
                 onFlash={() => act.modifier(n.id, { flash: !n.flash })}
-                onModifier={() => setEdition(n)}
+                onModifier={() => { setVersReponse(false); setEdition(n); }}
                 onArchiver={() => act.modifier(n.id, { archive: !n.archive })}
                 onSupprimer={() => supprimer(n)}
                 onRestaurer={() => act.restaurer(n.id)}
@@ -291,8 +304,8 @@ function Carnet() {
         )}
       </section>
 
-      {edition && <EditionDialog note={edition} projets={actifs} equipeDe={equipeDe} personne={personne} onClose={() => setEdition(null)}
-        onSave={async (c) => { if (await act.modifier(edition.id, c)) setEdition(null); }} />}
+      {edition && <EditionDialog note={edition} versReponse={versReponse} projets={actifs} equipeDe={equipeDe} personne={personne} onClose={() => { setEdition(null); setVersReponse(false); }}
+        onSave={async (c) => { if (await act.modifier(edition.id, c)) { setEdition(null); setVersReponse(false); } }} />}
       <ProjetDialog open={projetOuvert.open} onOpenChange={(o) => setProjetOuvert((x) => ({ ...x, open: o }))} projet={projetOuvert.p ? projetDe.get(projetOuvert.p.id) ?? null : null}
         onCree={(id) => { setFormProjet(id); setF((x) => ({ ...x, projets: [id] })); }} />
       <RepriseDialog plan={reprise} onClose={() => setReprise(null)} />
@@ -361,6 +374,12 @@ function LigneNote(props: {
       </button>
       <div className="col-span-3 min-w-0 md:col-span-1">
         <p className={cn("whitespace-pre-wrap break-words", n.statut === "done" && "text-muted-foreground line-through")}>{n.texte}</p>
+        {reponseDe(n) && (
+          <p className="mt-1 flex items-start gap-1.5 rounded-md border border-[var(--st-done)]/30 bg-[color-mix(in_oklab,var(--st-done)_8%,transparent)] px-2 py-1 text-[13px] text-foreground" data-reponse>
+            <span className="mt-px shrink-0 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--st-done)" }}>Réponse</span>
+            <span className="whitespace-pre-wrap break-words">{reponseDe(n)}</span>
+          </p>
+        )}
         {(props.pour || props.auteur) && (
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {props.pour && <span className="font-medium text-[var(--app-ink)]">Pour {props.pour}</span>}
@@ -400,7 +419,8 @@ function LigneNote(props: {
   );
 }
 
-function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave }: {
+function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave, versReponse = false }: {
+  versReponse?: boolean;
   note: Note; projets: Projet[]; equipeDe: (pid: string | null) => string[]; personne: (id: string | null) => string | null;
   onClose: () => void; onSave: (c: Partial<Note>) => void;
 }) {
@@ -409,6 +429,7 @@ function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave }: {
   const [statut, setStatut] = useState<Statut>(note.statut);
   const [echeance, setEcheance] = useState(note.echeance ?? "");
   const [pour, setPour] = useState(note.pour ?? "");
+  const [reponse, setReponse] = useState(note.reponse ?? "");
   const equipe = equipeDe(projet);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -417,7 +438,7 @@ function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave }: {
           <DialogTitle>Modifier la note</DialogTitle>
           <DialogDescription className="sr-only">Texte, projet, statut, échéance et personne</DialogDescription>
         </DialogHeader>
-        <form id="form-note" className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (texte.trim()) onSave({ texte: texte.trim(), projet_id: projet === PERSO ? null : projet, statut, echeance: echeance || null, pour: projet === PERSO ? null : pour || null }); }}>
+        <form id="form-note" className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (texte.trim()) onSave({ texte: texte.trim(), projet_id: projet === PERSO ? null : projet, statut, echeance: echeance || null, pour: projet === PERSO ? null : pour || null, reponse: reponse.trim() || null }); }}>
           <Textarea rows={4} aria-label="Texte de la note" value={texte} onChange={(e) => setTexte(e.target.value)} />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label htmlFor="e-projet">Projet</Label>
@@ -439,6 +460,14 @@ function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave }: {
               </select>
             </div>
           </div>
+          {statut === "done" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="e-reponse">Réponse <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
+              <Textarea id="e-reponse" rows={2} maxLength={500} autoFocus={versReponse} placeholder="Ce qu'il faut retenir, pour l'équipe"
+                value={reponse} onChange={(e) => setReponse(e.target.value)} />
+              <p className="text-[11px] text-muted-foreground">{reponse.length} / 500 · visible par ceux qui voient la note.</p>
+            </div>
+          )}
           {projet !== (note.projet_id ?? PERSO) && <p className="note-check">{projet === PERSO ? "La note deviendra perso : l'équipe ne la verra plus." : "La note sera visible par l'équipe de ce projet."}</p>}
         </form>
         <DialogFooter>
