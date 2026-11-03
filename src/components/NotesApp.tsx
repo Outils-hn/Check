@@ -376,7 +376,7 @@ function LigneNote(props: {
         <p className={cn("whitespace-pre-wrap break-words", n.statut === "done" && "text-muted-foreground line-through")}>{n.texte}</p>
         {reponseDe(n) && (
           <p className="mt-1 flex items-start gap-1.5 rounded-md border border-[var(--st-done)]/30 bg-[color-mix(in_oklab,var(--st-done)_8%,transparent)] px-2 py-1 text-[13px] text-foreground" data-reponse>
-            <span className="mt-px shrink-0 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--st-done)" }}>Réponse</span>
+            <span className="mt-px shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-ink)]">Réponse</span>
             <span className="whitespace-pre-wrap break-words">{reponseDe(n)}</span>
           </p>
         )}
