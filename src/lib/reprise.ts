@@ -9,7 +9,7 @@ export const REPRISE_FAITE = "check-reprise-faite";
 type Ancienne = { id?: string; text?: string; category?: string; status?: string; dueDate?: string | null; createdAt?: number; completedAt?: number | null; archived?: boolean; flash?: boolean };
 
 /** Une note a creer dans la base : son projet est designe par son nom (ou null = perso). */
-export type NoteAImporter = { projet: string | null; texte: string; statut: Statut; echeance: string | null; flash: boolean; archive: boolean; created_at: string; regle_le: string | null };
+export type NoteAImporter = { projet: string | null; texte: string; statut: Statut; echeance: string | null; flash: boolean; archive: boolean; created_at: string; regle_le: string | null; reponse?: string | null };
 
 export function lireAnciennes(raw: string | null): { categories: string[]; notes: NoteAImporter[] } {
   let liste: Ancienne[] = [];
@@ -42,7 +42,7 @@ export function exporter(projets: Projet[], notes: Note[], maintenant = new Date
     projets: projets.map((p) => ({ nom: p.nom, numero: p.numero })),
     notes: notes.filter((n) => !n.supprime_le).map((n) => ({
       id: n.id, projet: n.projet_id ? nom.get(n.projet_id) ?? null : null, texte: n.texte, statut: n.statut, echeance: n.echeance,
-      flash: n.flash, archive: n.archive, created_at: n.created_at, regle_le: n.regle_le,
+      flash: n.flash, archive: n.archive, created_at: n.created_at, regle_le: n.regle_le, reponse: n.reponse,
     })),
   };
 }

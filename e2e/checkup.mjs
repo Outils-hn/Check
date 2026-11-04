@@ -195,9 +195,26 @@ try {
   await p2.getByRole("button", { name: /Statut : En cours/ }).click(); await p2.waitForTimeout(400);
   await p2.getByRole("button", { name: /Statut : En attente/ }).click(); await p2.waitForTimeout(800);
   ok(confiee.statut === "done" && !!confiee.regle_le, "Bob règle la note (statut en un clic)");
+  // 6b. Reponse (3.0) : notification apres « Reglé », champ facultatif, affichage, filtre, recherche
+  await p2.getByRole("button", { name: "Ajouter une réponse" }).click(); await p2.waitForTimeout(600);
+  ok(await p2.locator("#e-reponse").isVisible(), "« Ajouter une réponse » ouvre la note avec le champ Réponse");
+  ok(await p2.locator("#e-reponse").evaluate((e) => e === document.activeElement), "le curseur est dans le champ Réponse");
+  await p2.locator("#e-reponse").fill("Indice B validé avec Marc : joint Sikaflex");
+  await p2.getByRole("button", { name: "Enregistrer" }).click(); await p2.waitForTimeout(900);
+  ok(confiee.reponse === "Indice B validé avec Marc : joint Sikaflex", "réponse enregistrée dans la base");
+  await p2.getByRole("tab", { name: "Actives" }).click(); await p2.waitForTimeout(500);
+  ok(await p2.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "la réponse s'affiche sous la note réglée");
+  await shot(p2, "05b-reponse");
+  await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.waitForTimeout(400);
+  ok((await lignesNotes(p2).count()) === 1, "filtre « Avec réponse » : 1 note");
+  await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.waitForTimeout(300);
+  await p2.getByLabel("Rechercher une note").fill("sikaflex"); await p2.waitForTimeout(400);
+  ok((await lignesNotes(p2).count()) === 1, "la recherche trouve aussi le texte de la réponse");
+  await p2.getByLabel("Rechercher une note").press("Escape");
   await shot(p2, "05-bob");
   await p.reload(); await p.waitForLoadState("networkidle"); await p.waitForTimeout(1200);
   ok(await p.getByText(/Réglée le/).first().isVisible(), "Alice voit la note réglée par Bob");
+  ok(await p.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "Alice voit la réponse de Bob");
 
   // 7. Corbeille avec annulation
   const avant = await lignesNotes(p).count();
