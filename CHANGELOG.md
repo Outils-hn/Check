@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.1 — 4 novembre 2026
+
+- Nouveauté : la connexion de Check est maintenant la même que celle d'Index, Masse, Format et Strate : se connecter dans l'une suffit pour toutes. Une seule reconnexion est nécessaire dans Check après cette mise à jour.
+
 ## 3.0 — 3 novembre 2026
 
 - Nouveauté : une note réglée peut maintenant avoir une « Réponse » (facultative), visible par toute l'équipe du projet, pour garder la solution d'une question.

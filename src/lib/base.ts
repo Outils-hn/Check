@@ -9,5 +9,5 @@ export const INDEX_URL = "https://outils-hn.github.io/Index";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const db: any = createClient(BASE_URL, BASE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, storageKey: "check-session", storage: typeof window !== "undefined" ? localStorage : undefined },
+  auth: { persistSession: true, autoRefreshToken: true, storageKey: "sb-ngfzwfbraqkdcocdcmib-auth-token", storage: typeof window !== "undefined" ? localStorage : undefined },
 });
