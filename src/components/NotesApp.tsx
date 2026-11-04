@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useCompte } from "@/lib/compte";
+import { CarnetInvite } from "@/components/check/CarnetInvite";
+import { CLE_INVITE, lireInvite } from "@/lib/notes-invite";
 import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
   LIBELLE, PERSO, STATUTS, aNettoyer, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
@@ -30,6 +32,8 @@ export default function NotesApp() {
   const { pret, uid, valide, enAttente } = useCompte();
   const [connexion, setConnexion] = useState(false);
   if (!pret) return null;
+  // Sans compte : carnet d'essai (5 notes sur ce poste) ; compte non valide : message d'attente
+  if (!uid) return (<><CarnetInvite onConnexion={() => setConnexion(true)} /><ConnexionDialog open={connexion} onOpenChange={setConnexion} /></>);
   if (!valide) {
     return (
       <div className="panel mx-auto mt-16 max-w-md p-6 text-center text-sm">
@@ -91,6 +95,12 @@ function Carnet() {
   useEffect(() => {
     void act.viderCorbeille();
     try {
+      // Notes du carnet d'essai (ecrites sans compte) : proposees en priorite a l'import
+      const essai = lireAnciennes(JSON.stringify(lireInvite(localStorage.getItem(CLE_INVITE))));
+      if (essai.notes.length) {
+        setReprise({ titre: "Reprendre vos notes d'essai", ...essai, apres: () => { try { localStorage.removeItem(CLE_INVITE); } catch { /* bloque */ } } });
+        return;
+      }
       if (localStorage.getItem(REPRISE_FAITE)) return;
       const a = lireAnciennes(localStorage.getItem(ANCIENNES_NOTES));
       if (a.notes.length) setReprise({ titre: "Reprendre les notes de ce navigateur", ...a, apres: () => { try { localStorage.setItem(REPRISE_FAITE, new Date().toISOString()); } catch { /* bloque */ } } });
