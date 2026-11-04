@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LogIn, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ApercuExemple } from "@/components/check/ApercuExemple";
 import { LIBELLE, suivant, type Statut } from "@/lib/notes";
 import {
   CLE_INVITE, MAX_INVITE, MAX_TEXTE_INVITE, ajouterInvite, changerStatutInvite, lireInvite, modifierTexteInvite, peutAjouter, supprimerInvite, type NoteInvite,
@@ -18,7 +19,7 @@ export function CarnetInvite({ onConnexion }: { onConnexion: () => void }) {
   const complet = !peutAjouter(notes);
   const ajouter = () => { if (!texte.trim() || complet) return; maj(ajouterInvite(notes, texte)); setTexte(""); };
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4">
       <section className="panel p-5">
         <h2 className="text-base font-semibold">Essayez Check sans compte</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -26,7 +27,9 @@ export function CarnetInvite({ onConnexion }: { onConnexion: () => void }) {
         </p>
         <Button className="mt-3 gap-1.5" onClick={onConnexion}><LogIn className="size-4" /> Se connecter</Button>
       </section>
-      <section className="panel p-4">
+      <ApercuExemple />
+      <section className="panel space-y-3 p-4">
+        <h2 className="text-base font-semibold">À vous d'essayer, sans compte</h2>
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); ajouter(); }}>
           <Textarea rows={3} className="resize-none" aria-label="Texte de la note" disabled={complet} maxLength={MAX_TEXTE_INVITE}
             placeholder={complet ? `Limite de ${MAX_INVITE} notes atteinte : connectez-vous pour en ajouter.` : "Écrivez votre note, Entrée pour ajouter…"}

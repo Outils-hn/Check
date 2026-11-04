@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.3 — 4 novembre 2026
+
+- Nouveauté : sans compte, la page de Check montre maintenant un carnet d'exemple (notes de chantier avec statuts, projets, échéances, réponses, recherche et filtres) pour voir ce que l'appli sait faire. On peut cliquer dedans, rien n'est enregistré.
+
 ## 3.2 — 4 novembre 2026
 
 - Nouveauté : sans compte, Check propose un carnet d'essai : 5 notes perso gardées sur ce poste pour découvrir l'appli. En se connectant avec son compte Index, ces notes sont proposées à l'import dans le vrai carnet (notes illimitées, projets partagés, tous les postes).
