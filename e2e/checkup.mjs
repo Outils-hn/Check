@@ -126,7 +126,7 @@ try {
   // 1. Sans compte
   const p = await page({ anciennes });
   await p.goto(URL0); await p.waitForLoadState("networkidle");
-  ok(await p.getByText("Vos notes, sur tous vos postes").isVisible(), "sans compte : invitation à se connecter");
+  ok(await p.getByText("Essayez Check sans compte").isVisible(), "sans compte : carnet d'essai et invitation à se connecter");
   ok((await p.getAttribute("html", "lang")) === "fr", "langue de la page = fr");
   await shot(p, "01-accueil");
 
@@ -272,6 +272,29 @@ try {
   await p3.getByRole("button", { name: "Changer d'application" }).click();
   const menu = await p3.getByRole("menuitem").allTextContents();
   ok(menu.length === 9 && /^Accueil/.test(menu[0] ?? ""), `sélecteur : Accueil puis 8 applis (${menu.length})`);
+
+  // 9. Carnet d'essai sans compte : 5 notes sur le poste, puis reprise a la connexion
+  etape = "carnet d'essai";
+  const pe = await page();
+  await pe.goto(URL0); await pe.waitForLoadState("networkidle");
+  const zone = pe.getByLabel("Texte de la note");
+  for (let i = 1; i <= 5; i++) { await zone.fill(`Note d'essai ${i}`); await pe.keyboard.press("Enter"); await pe.waitForTimeout(150); }
+  ok((await lignesNotes(pe).count()) === 5, "carnet d'essai : 5 notes ajoutées");
+  ok(await pe.getByText("5 / 5 notes").isVisible() && await zone.isDisabled(), "carnet d'essai : limite de 5 atteinte, saisie bloquée");
+  await shot(pe, "09-carnet-essai");
+  await lignesNotes(pe).first().getByRole("button", { name: /Statut/ }).click();
+  await pe.reload({ waitUntil: "networkidle" });
+  ok((await lignesNotes(pe).count()) === 5 && await pe.getByText("En cours").first().isVisible(), "carnet d'essai : notes et statut gardés après rechargement");
+  await lignesNotes(pe).last().getByRole("button", { name: "Supprimer la note" }).click();
+  ok((await lignesNotes(pe).count()) === 4 && await zone.isEnabled(), "carnet d'essai : suppression, la saisie se rouvre");
+  const axe3 = await new AxeBuilder({ page: pe }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  ok(axe3.violations.length === 0, `accessibilité (carnet d'essai) : ${axe3.violations.length} problème(s)${axe3.violations.map((v) => ` [${v.id}: ${v.nodes.length}]`).join("")}`);
+  await seConnecter(pe, "bob@exemple.ch");
+  ok(await pe.getByRole("heading", { name: "Reprendre vos notes d'essai" }).isVisible(), "connexion : reprise des notes d'essai proposée");
+  await pe.getByRole("button", { name: "Importer", exact: true }).click();
+  await pe.waitForTimeout(1500);
+  ok(etat.check_notes.filter((x) => x.auteur === BOB && /^Note d'essai/.test(x.texte)).length === 4, "notes d'essai importées dans la base");
+  ok(await pe.evaluate(() => localStorage.getItem("check-notes-invite")) === null, "notes d'essai retirées du poste après l'import");
 } catch (e) {
   ok(false, `arret du check-up : ${e.message.split("\n")[0]}`);
   for (const [i, x] of pages.entries()) await x.screenshot({ path: `${out}/echec-${i}.png`, fullPage: true }).catch(() => {});

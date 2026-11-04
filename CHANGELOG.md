@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.2 — 4 novembre 2026
+
+- Nouveauté : sans compte, Check propose un carnet d'essai : 5 notes perso gardées sur ce poste pour découvrir l'appli. En se connectant avec son compte Index, ces notes sont proposées à l'import dans le vrai carnet (notes illimitées, projets partagés, tous les postes).
+
 ## 3.1 — 4 novembre 2026
 
 - Nouveauté : la connexion de Check est maintenant la même que celle d'Index, Masse, Format et Strate : se connecter dans l'une suffit pour toutes. Une seule reconnexion est nécessaire dans Check après cette mise à jour.
