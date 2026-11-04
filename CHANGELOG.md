@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.4 — 4 novembre 2026
+
+- Nouveauté : en mode sombre, les champs de date (calendrier et chiffres) ne restent plus noirs sur fond sombre : ils suivent le thème et se lisent bien.
+
 ## 3.3 — 4 novembre 2026
 
 - Nouveauté : sans compte, la page de Check montre maintenant un carnet d'exemple (notes de chantier avec statuts, projets, échéances, réponses, recherche et filtres) pour voir ce que l'appli sait faire. On peut cliquer dedans, rien n'est enregistré.
