@@ -282,6 +282,19 @@ try {
   ok((await lignesNotes(pe).count()) === 5, "carnet d'essai : 5 notes ajoutées");
   ok(await pe.getByText("5 / 5 notes").isVisible() && await zone.isDisabled(), "carnet d'essai : limite de 5 atteinte, saisie bloquée");
   await shot(pe, "09-carnet-essai");
+  // Exemple cliquable : filtre, recherche, changement de statut, rien d'enregistre
+  const ex = pe.getByRole("region", { name: "Exemple de carnet" });
+  ok(await ex.getByRole("listitem", { name: "" }).count() >= 0 && (await ex.getByLabel("Notes d'exemple").getByRole("listitem").count()) === 5, "aperçu : 5 notes d'exemple");
+  await ex.getByRole("button", { name: /^En attente/ }).click();
+  ok((await ex.getByLabel("Notes d'exemple").getByRole("listitem").count()) === 2, "aperçu : filtre « En attente » = 2 notes");
+  await ex.getByRole("button", { name: /^Toutes/ }).click();
+  await ex.getByLabel("Rechercher dans l'exemple").fill("ral");
+  ok((await ex.getByLabel("Notes d'exemple").getByRole("listitem").count()) === 1, "aperçu : recherche « ral » = 1 note");
+  await ex.getByLabel("Rechercher dans l'exemple").fill("");
+  await ex.getByRole("button", { name: /Statut : À faire/ }).first().click();
+  ok(await ex.getByRole("button", { name: /^En cours 2/ }).isVisible(), "aperçu : un clic fait avancer le statut");
+  ok(await pe.evaluate(() => Object.keys(localStorage).every((k) => !/exemple|apercu/i.test(k))), "aperçu : rien n'est enregistré");
+  await shot(pe, "09b-apercu");
   await lignesNotes(pe).first().getByRole("button", { name: /Statut/ }).click();
   await pe.reload({ waitUntil: "networkidle" });
   ok((await lignesNotes(pe).count()) === 5 && await pe.getByText("En cours").first().isVisible(), "carnet d'essai : notes et statut gardés après rechargement");
