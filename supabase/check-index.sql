@@ -58,6 +58,14 @@ $$;
 revoke all on function public.check_est_membre(uuid) from public;
 grant execute on function public.check_est_membre(uuid) to authenticated;
 
+-- Un compte est-il valide ? (SECURITY DEFINER : chacun ne voit que son propre profil, la regle d'invitation ne peut pas lire celui des autres)
+create or replace function public.check_compte_valide(u uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles where id = u and approved)
+$$;
+revoke all on function public.check_compte_valide(uuid) from public;
+grant execute on function public.check_compte_valide(uuid) to authenticated;
+
 -- Comptes valides proposes a l'invitation (nom lisible, jamais rien d'autre que nom + email)
 create or replace function public.check_comptes() returns table (id uuid, nom text, email text)
 language sql stable security definer set search_path = public as $$
@@ -134,7 +142,7 @@ create policy "membres lecture" on public.check_membres for select to authentica
   using (public.is_approved() and public.check_est_membre(projet_id));
 create policy "membres invitation" on public.check_membres for insert to authenticated
   with check (public.is_approved() and public.check_est_membre(projet_id) and ajoute_par = auth.uid()
-              and exists (select 1 from public.profiles p where p.id = user_id and p.approved));
+              and public.check_compte_valide(user_id));
 create policy "membres retrait" on public.check_membres for delete to authenticated
   using (public.is_approved() and public.check_est_membre(projet_id));
 
