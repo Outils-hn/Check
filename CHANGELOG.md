@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.6 — 6 novembre 2026
+
+- Le menu des applis propose Joint (en préparation), pour le concepteur seulement : aucune Nouveauté à annoncer à l'équipe.
+
 ## 3.5 — 5 novembre 2026
 
 - Nouveauté : on peut de nouveau inviter un collègue dans un projet (le message « Action refusée : vous n'êtes pas membre » apparaissait à tort).
