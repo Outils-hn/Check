@@ -24,7 +24,7 @@ export function ConnexionDialog({ open, onOpenChange }: { open: boolean; onOpenC
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Connexion</DialogTitle>
-          <DialogDescription>Avec votre compte Index : mêmes email et mot de passe.</DialogDescription>
+          <DialogDescription>Votre compte Index, valable partout.</DialogDescription>
         </DialogHeader>
         <form id="form-connexion" className="space-y-3" onSubmit={(e) => { e.preventDefault(); valider(); }}>
           <div className="space-y-1.5">
@@ -38,8 +38,8 @@ export function ConnexionDialog({ open, onOpenChange }: { open: boolean; onOpenC
           {erreur && <p role="alert" className="text-sm text-destructive">{erreur}</p>}
         </form>
         <p className="text-xs text-muted-foreground">
-          Pas encore de compte ? <a className={lien} href={`${INDEX_URL}/auth`} target="_blank" rel="noopener noreferrer">Créer un compte dans Index</a>.
-          Mot de passe oublié : <a className={lien} href={`${INDEX_URL}/auth`} target="_blank" rel="noopener noreferrer">depuis Index</a>.
+          <span className="block">Pas encore de compte ? <a className={lien} href={`${INDEX_URL}/auth`} target="_blank" rel="noopener noreferrer">Créer un compte dans Index</a>.</span>
+          <span className="block">Mot de passe oublié : <a className={lien} href={`${INDEX_URL}/auth`} target="_blank" rel="noopener noreferrer">depuis Index</a>.</span>
         </p>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Annuler</Button>
