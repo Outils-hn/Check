@@ -6,7 +6,7 @@ import fs from "node:fs";
 
 const out = process.argv[2] || "out";
 const URL0 = "http://127.0.0.1:8080";
-const SB = "https://ngfzwfbraqkdcocdcmib.supabase.co";
+const SB = "https://dtxgvwaqjmmffiiohika.supabase.co";
 const lignes = [];
 let etape = "debut";
 const ok = (cond, msg) => { lignes.push(`${cond ? "OK" : "ECHEC"} ${msg}`); console.log(`${cond ? "OK" : "ECHEC"} ${msg}`); fs.writeFileSync(`${out}/checkup.txt`, lignes.join("\n") + "\n"); };
