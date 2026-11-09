@@ -139,12 +139,13 @@ function Carnet() {
   const nbCorbeille = notes.filter((n) => n.supprime_le).length;
   const glisserActif = f.vue === "actives" && f.tri === "manuel" && !f.q.trim() && f.statut === "tous";
 
+  const [formOuvert, setFormOuvert] = useState(false);
   const ajouter = async () => {
     const t = texte.trim();
     if (!t) { setVide(true); saisie.current?.focus(); return; }
     const projet_id = formProjet === PERSO ? null : formProjet;
     const r = await act.ajouterNote({ texte: t, projet_id, statut: formStatut, echeance: formEcheance || null, pour: projet_id ? formPour || null : null, ordre: ordreEnTete(notes) });
-    if (r) { setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); }
+    if (r) { setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); if (window.matchMedia("(max-width: 1023px)").matches) setFormOuvert(false); }
   };
 
   const supprimer = async (n: Note) => {
@@ -186,8 +187,11 @@ function Carnet() {
   const equipeForm = equipeDe(formProjet);
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="space-y-4">
-        <section className="panel p-4">
+      <aside className="lg:space-y-4 max-lg:contents">
+        <Button type="button" variant="outline" className="w-full gap-1.5 max-lg:order-1 lg:hidden" aria-expanded={formOuvert} onClick={() => setFormOuvert((o) => !o)}>
+          {formOuvert ? "Fermer" : <><Plus className="size-4" aria-hidden="true" />Nouvelle note</>}
+        </Button>
+        <section className={cn("panel p-4 max-lg:order-1", !formOuvert && "max-lg:hidden")}>
           <h2 className="card-title mb-3">Nouvelle note</h2>
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); ajouter(); }}>
             <Textarea ref={saisie} rows={3} className="resize-none" autoFocus aria-label="Texte de la note" placeholder="Écrivez votre note, Entrée pour ajouter…" value={texte}
@@ -216,7 +220,7 @@ function Carnet() {
           </form>
         </section>
 
-        <section className="panel p-4">
+        <section className="panel p-4 max-lg:order-3">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="card-title">Projets</h2>
             <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setProjetOuvert({ p: null, open: true })}>+ Nouveau projet</button>
@@ -239,7 +243,7 @@ function Carnet() {
           )}
         </section>
 
-        <section className="panel grid grid-cols-3 gap-2 p-3 text-center">
+        <section className="panel grid grid-cols-3 gap-2 p-3 text-center max-lg:order-4">
           {(["todo", "in_progress", "done"] as Statut[]).map((s) => (
             <button key={s} className={cn("rounded-md border border-border p-2 hover:bg-muted", f.statut === s && "bg-muted")} onClick={() => maj({ statut: f.statut === s ? "tous" : s })} aria-pressed={f.statut === s}>
               <span className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground"><span className="size-2 rounded-full" style={{ background: DOT[s] }} />{LIBELLE[s]}</span>
@@ -249,7 +253,7 @@ function Carnet() {
         </section>
       </aside>
 
-      <section className="min-w-0 space-y-4">
+      <section className="min-w-0 space-y-4 max-lg:order-2">
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div role="tablist" aria-label="Vue" className="flex rounded-md border border-border p-0.5 text-sm">
             {([["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
@@ -257,12 +261,12 @@ function Carnet() {
                 className={cn("rounded px-2.5 py-2 md:py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
             ))}
           </div>
-          <div className="relative min-w-[220px] flex-1">
+          <div className="relative min-w-[120px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input ref={recherche} className="pl-9 pr-8" placeholder="Rechercher une note…" aria-label="Rechercher une note" value={f.q} onChange={(e) => maj({ q: e.target.value })} onKeyDown={(e) => e.key === "Escape" && maj({ q: "" })} />
             <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-[10px] text-muted-foreground">/</kbd>
           </div>
-          <select className="field w-36" aria-label="Filtrer par statut" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
+          <select className="field w-32" aria-label="Filtrer par statut" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
             <option value="tous">Tous statuts</option>
             {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
           </select>
@@ -270,13 +274,13 @@ function Carnet() {
             className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
             <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
           </button>
-          <select className="field w-40" aria-label="Trier" value={f.vue === "pour-moi" ? "echeance" : f.tri} disabled={f.vue === "pour-moi"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
+          <select className="field w-32" aria-label="Trier" value={f.vue === "pour-moi" ? "echeance" : f.tri} disabled={f.vue === "pour-moi"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
             <option value="manuel">Tri : manuel</option>
             <option value="recent">Tri : récent</option>
             <option value="echeance">Tri : échéance</option>
           </select>
           <div className="ml-auto flex gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setNettoyer(true)} title="Archiver les notes réglées depuis plus de 7 jours"><Sparkles className="size-4" /> Nettoyer</Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setNettoyer(true)} title="Archiver les notes réglées depuis plus de 7 jours"><Sparkles className="size-4" /><span className="lg:max-2xl:sr-only">Nettoyer</span></Button>
             <Button size="sm" className="gap-1.5" onClick={pdf}><FileDown className="size-4" /> PDF</Button>
           </div>
         </div>
