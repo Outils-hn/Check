@@ -187,11 +187,11 @@ function Carnet() {
   const equipeForm = equipeDe(formProjet);
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="space-y-4">
-        <Button type="button" variant="outline" className="w-full gap-1.5 lg:hidden" aria-expanded={formOuvert} onClick={() => setFormOuvert((o) => !o)}>
+      <aside className="lg:space-y-4 max-lg:contents">
+        <Button type="button" variant="outline" className="w-full gap-1.5 max-lg:order-1 lg:hidden" aria-expanded={formOuvert} onClick={() => setFormOuvert((o) => !o)}>
           {formOuvert ? "Fermer" : <><Plus className="size-4" aria-hidden="true" />Nouvelle note</>}
         </Button>
-        <section className={cn("panel p-4", !formOuvert && "max-lg:hidden")}>
+        <section className={cn("panel p-4 max-lg:order-1", !formOuvert && "max-lg:hidden")}>
           <h2 className="card-title mb-3">Nouvelle note</h2>
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); ajouter(); }}>
             <Textarea ref={saisie} rows={3} className="resize-none" autoFocus aria-label="Texte de la note" placeholder="Écrivez votre note, Entrée pour ajouter…" value={texte}
@@ -220,7 +220,7 @@ function Carnet() {
           </form>
         </section>
 
-        <section className="panel p-4">
+        <section className="panel p-4 max-lg:order-3">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="card-title">Projets</h2>
             <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setProjetOuvert({ p: null, open: true })}>+ Nouveau projet</button>
@@ -243,7 +243,7 @@ function Carnet() {
           )}
         </section>
 
-        <section className="panel grid grid-cols-3 gap-2 p-3 text-center">
+        <section className="panel grid grid-cols-3 gap-2 p-3 text-center max-lg:order-4">
           {(["todo", "in_progress", "done"] as Statut[]).map((s) => (
             <button key={s} className={cn("rounded-md border border-border p-2 hover:bg-muted", f.statut === s && "bg-muted")} onClick={() => maj({ statut: f.statut === s ? "tous" : s })} aria-pressed={f.statut === s}>
               <span className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground"><span className="size-2 rounded-full" style={{ background: DOT[s] }} />{LIBELLE[s]}</span>
@@ -253,7 +253,7 @@ function Carnet() {
         </section>
       </aside>
 
-      <section className="min-w-0 space-y-4">
+      <section className="min-w-0 space-y-4 max-lg:order-2">
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div role="tablist" aria-label="Vue" className="flex rounded-md border border-border p-0.5 text-sm">
             {([["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
