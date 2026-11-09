@@ -28,7 +28,7 @@ export function etatEcheance(iso: string | null, maintenant = new Date()): "aucu
 /** Projet affiche : « 24-118 · Résidence Les Pins » ou le nom seul. */
 export const nomProjet = (p: Projet | undefined | null) => (!p ? "Perso" : p.numero ? `${p.numero} · ${p.nom}` : p.nom);
 
-export type Vue = "actives" | "pour-moi" | "archivees" | "corbeille";
+export type Vue = "aujourdhui" | "actives" | "pour-moi" | "archivees" | "corbeille";
 export type Tri = "manuel" | "recent" | "echeance";
 export type Filtres = { vue: Vue; projets: string[]; statut: Statut | "tous"; q: string; tri: Tri; avecReponse?: boolean };
 /** Identifiant de la boite « Perso » dans les filtres de projets. */
@@ -36,6 +36,23 @@ export const PERSO = "__perso__";
 
 /** Reponse affichee : seulement quand la note est reglee (elle est gardee si on la rouvre). */
 export const reponseDe = (n: Pick<Note, "statut" | "reponse">) => (n.statut === "done" ? n.reponse?.trim() ?? "" : "");
+
+/** Date locale du jour au format AAAA-MM-JJ. */
+export const jourIso = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** « Aujourd'hui » : pas reglee, et (confiee a moi, ou echeance aujourd'hui / depassee). */
+export const pourAujourdhui = (n: Pick<Note, "statut" | "pour" | "echeance">, moi: string, jour = jourIso()) =>
+  n.statut !== "done" && (n.pour === moi || (!!n.echeance && n.echeance <= jour));
+
+/** Cherche « #mot » dans le texte : si le mot designe un projet (nom ou numero, sans accents), on le retire du texte et on rend le projet. */
+export function projetDepuisTexte(texte: string, projets: Projet[]): { texte: string; projetId: string | null } {
+  for (const m of texte.matchAll(/(^|\s)#([^\s#]+)/g)) {
+    const mot = sansAccents(m[2]);
+    const p = projets.find((x) => sansAccents(x.numero) === mot) ?? projets.find((x) => sansAccents(x.nom).replace(/\s+/g, "").startsWith(mot) || sansAccents(x.nom).split(/\s+/).includes(mot));
+    if (p) return { texte: texte.replace(m[0], m[1]).replace(/\s{2,}/g, " ").trim(), projetId: p.id };
+  }
+  return { texte, projetId: null };
+}
 
 export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: string | null) => string): Note[] {
   const mots = sansAccents(f.q).split(/\s+/).filter(Boolean);
@@ -45,6 +62,7 @@ export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: stri
       if (n.supprime_le) return false;
       if (f.vue === "archivees" ? !n.archive : n.archive) return false;
       if (f.vue === "pour-moi" && (n.pour !== moi || n.statut === "done")) return false;
+      if (f.vue === "aujourdhui" && !pourAujourdhui(n, moi)) return false;
     }
     if (f.projets.length && !f.projets.includes(n.projet_id ?? PERSO)) return false;
     if (f.statut !== "tous" && n.statut !== f.statut) return false;
@@ -57,7 +75,7 @@ export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: stri
   });
   const parEcheance = (a: Note, b: Note) =>
     !a.echeance && !b.echeance ? b.created_at.localeCompare(a.created_at) : !a.echeance ? 1 : !b.echeance ? -1 : a.echeance.localeCompare(b.echeance);
-  const tri = f.vue === "pour-moi" ? "echeance" : f.tri;
+  const tri = f.vue === "pour-moi" || f.vue === "aujourdhui" ? "echeance" : f.tri;
   return res.sort(tri === "manuel" ? (a, b) => a.ordre - b.ordre || b.created_at.localeCompare(a.created_at)
     : tri === "recent" ? (a, b) => b.created_at.localeCompare(a.created_at) : parEcheance);
 }
