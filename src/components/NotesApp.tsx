@@ -274,10 +274,10 @@ function Carnet() {
 
       <section className="min-w-0 space-y-4 max-lg:order-2">
         <div className="panel flex flex-wrap items-center gap-2 p-3">
-          <div role="tablist" aria-label="Vue" className="flex rounded-md border border-border p-0.5 text-sm">
+          <div role="tablist" aria-label="Vue" className="flex max-w-full overflow-x-auto whitespace-nowrap rounded-md border border-border p-0.5 text-sm">
             {([["aujourdhui", `Aujourd'hui${aujourdhui ? ` · ${aujourdhui}` : ""}`], ["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
               <button key={v} role="tab" aria-selected={f.vue === v} data-state={f.vue === v ? "active" : "inactive"} onClick={() => maj({ vue: v })}
-                className={cn("rounded px-2.5 py-2 md:py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
+                className={cn("rounded px-2 py-2 md:py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
             ))}
           </div>
           <div className="relative min-w-[120px] flex-1">
@@ -289,9 +289,9 @@ function Carnet() {
             <option value="tous">Tous statuts</option>
             {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
           </select>
-          <button type="button" aria-pressed={!!f.avecReponse} onClick={() => maj({ avecReponse: !f.avecReponse })}
+          <button type="button" aria-pressed={!!f.avecReponse} title="Seulement les notes avec une réponse" onClick={() => maj({ avecReponse: !f.avecReponse })}
             className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
-            <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
+            <MessageSquareText className="size-3.5" aria-hidden="true" /><span className="lg:max-2xl:sr-only">Avec réponse</span>
           </button>
           <select className="field w-32" aria-label="Trier" value={f.vue === "pour-moi" || f.vue === "aujourdhui" ? "echeance" : f.tri} disabled={f.vue === "pour-moi" || f.vue === "aujourdhui"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
             <option value="manuel">Tri : manuel</option>
