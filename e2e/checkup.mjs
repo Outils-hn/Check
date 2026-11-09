@@ -188,6 +188,8 @@ try {
   ok((await lignesNotes(p2).count()) === 3, "Bob voit les 3 notes du projet");
   ok(!(await p2.getByText("Rendez-vous garage").count()), "Bob ne voit PAS les notes perso d'Alice");
   ok(await p2.getByRole("tab", { name: /Pour moi · 1/ }).isVisible(), "onglet « Pour moi · 1 » chez Bob");
+  ok(await p2.getByRole("tab", { name: /Aujourd'hui · \d/ }).isVisible(), "onglet « Aujourd'hui » avec son compteur chez Bob");
+  ok(/^\(\d+\) Check/.test(await p2.title()), `titre de l'onglet avec le nombre à traiter (${await p2.title()})`);
   await p2.getByRole("tab", { name: /Pour moi/ }).click();
   ok((await lignesNotes(p2).count()) === 1, "« Pour moi » : la note confiée");
   ok(await p2.getByText("par Alice Martin").isVisible(), "auteur affiché (« par Alice Martin »)");

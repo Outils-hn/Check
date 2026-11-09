@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PERSO, aNettoyer, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
+import { PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
 import { choixParDefaut, exporter, lireAnciennes, planImport } from "./reprise";
 import { MAX_INVITE, ajouterInvite, changerStatutInvite, lireInvite, modifierTexteInvite, supprimerInvite } from "./notes-invite";
 
@@ -129,4 +129,28 @@ describe("carnet d'essai sans compte", () => {
     expect(lireInvite("pas du json")).toEqual([]);
     expect(lireInvite('{"a":1}')).toEqual([]);
   });
+});
+
+describe("Aujourd'hui", () => {
+  it("en retard, du jour ou confiee a moi ; jamais reglee", () => {
+    expect(pourAujourdhui(base({ echeance: "2026-10-30" }), moi, "2026-11-01")).toBe(true);
+    expect(pourAujourdhui(base({ echeance: "2026-11-01" }), moi, "2026-11-01")).toBe(true);
+    expect(pourAujourdhui(base({ echeance: "2026-11-02" }), moi, "2026-11-01")).toBe(false);
+    expect(pourAujourdhui(base({ pour: moi }), moi, "2026-11-01")).toBe(true);
+    expect(pourAujourdhui(base({ pour: autre }), moi, "2026-11-01")).toBe(false);
+    expect(pourAujourdhui(base({ pour: moi, statut: "done", echeance: "2026-10-01" }), moi, "2026-11-01")).toBe(false);
+  });
+});
+
+describe("#projet dans le texte", () => {
+  const ps: Projet[] = [
+    { id: "p1", nom: "Résidence Les Pins", numero: "24-118", cree_par: null, archive: false },
+    { id: "p2", nom: "Gare Cornavin", numero: "", cree_par: null, archive: false },
+  ];
+  it("par numero, par mot du nom, sans accents ; le tag disparait", () => {
+    expect(projetDepuisTexte("Relancer Schüco #24-118", ps)).toEqual({ texte: "Relancer Schüco", projetId: "p1" });
+    expect(projetDepuisTexte("#cornavin vérifier cotes", ps)).toEqual({ texte: "vérifier cotes", projetId: "p2" });
+    expect(projetDepuisTexte("Appeler #residence", ps).projetId).toBe("p1");
+  });
+  it("tag inconnu : texte inchange", () => expect(projetDepuisTexte("Faire #truc", ps)).toEqual({ texte: "Faire #truc", projetId: null }));
 });

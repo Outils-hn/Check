@@ -14,7 +14,7 @@ import { CarnetInvite } from "@/components/check/CarnetInvite";
 import { CLE_INVITE, lireInvite } from "@/lib/notes-invite";
 import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
-  LIBELLE, PERSO, STATUTS, aNettoyer, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
+  LIBELLE, PERSO, STATUTS, aNettoyer, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
@@ -132,6 +132,7 @@ function Carnet() {
   const visibles = useMemo(() => filtrer(notes, f, moi, nomDe), [notes, f, moi, projetDe]); // eslint-disable-line react-hooks/exhaustive-deps
   const affichees = useMemo(() => visibles.slice(0, limite), [visibles, limite]);
   const vivantes = notes.filter((n) => !n.supprime_le && !n.archive);
+  const aujourdhui = vivantes.filter((n) => pourAujourdhui(n, moi)).length;
   const pourMoi = vivantes.filter((n) => n.pour === moi && n.statut !== "done").length;
   const enRetard = vivantes.filter((n) => n.statut !== "done" && etatEcheance(n.echeance) === "retard").length;
   const compte = (s: Statut) => vivantes.filter((n) => n.statut === s).length;
@@ -140,10 +141,28 @@ function Carnet() {
   const glisserActif = f.vue === "actives" && f.tri === "manuel" && !f.q.trim() && f.statut === "tous";
 
   const [formOuvert, setFormOuvert] = useState(false);
+  // Le dernier projet choisi est retenu sur ce navigateur
+  const projetRetabli = useRef(false);
+  useEffect(() => {
+    if (projetRetabli.current || !actifs.length) return;
+    projetRetabli.current = true;
+    try { const id = localStorage.getItem("check:dernier-projet"); if (id && actifs.some((p) => p.id === id)) setFormProjet(id); } catch { /* stockage bloque */ }
+  }, [actifs]);
+  useEffect(() => {
+    if (!projetRetabli.current) return;
+    try { if (formProjet === PERSO) localStorage.removeItem("check:dernier-projet"); else localStorage.setItem("check:dernier-projet", formProjet); } catch { /* stockage bloque */ }
+  }, [formProjet]);
+  // Nombre de notes a traiter dans le titre de l'onglet : on le voit sans ouvrir Check
+  useEffect(() => {
+    document.title = `${aujourdhui ? `(${aujourdhui}) ` : ""}Check`;
+  }, [aujourdhui]);
   const ajouter = async () => {
-    const t = texte.trim();
+    // « #chantier » dans le texte : choisit le projet et disparait du texte
+    const tag = projetDepuisTexte(texte.trim(), actifs);
+    const t = tag.texte;
     if (!t) { setVide(true); saisie.current?.focus(); return; }
-    const projet_id = formProjet === PERSO ? null : formProjet;
+    const projet_id = tag.projetId ?? (formProjet === PERSO ? null : formProjet);
+    if (tag.projetId) setFormProjet(tag.projetId);
     const r = await act.ajouterNote({ texte: t, projet_id, statut: formStatut, echeance: formEcheance || null, pour: projet_id ? formPour || null : null, ordre: ordreEnTete(notes) });
     if (r) { setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); if (window.matchMedia("(max-width: 1023px)").matches) setFormOuvert(false); }
   };
@@ -256,7 +275,7 @@ function Carnet() {
       <section className="min-w-0 space-y-4 max-lg:order-2">
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div role="tablist" aria-label="Vue" className="flex rounded-md border border-border p-0.5 text-sm">
-            {([["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
+            {([["aujourdhui", `Aujourd'hui${aujourdhui ? ` · ${aujourdhui}` : ""}`], ["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
               <button key={v} role="tab" aria-selected={f.vue === v} data-state={f.vue === v ? "active" : "inactive"} onClick={() => maj({ vue: v })}
                 className={cn("rounded px-2.5 py-2 md:py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
             ))}
@@ -274,7 +293,7 @@ function Carnet() {
             className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
             <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
           </button>
-          <select className="field w-32" aria-label="Trier" value={f.vue === "pour-moi" ? "echeance" : f.tri} disabled={f.vue === "pour-moi"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
+          <select className="field w-32" aria-label="Trier" value={f.vue === "pour-moi" || f.vue === "aujourdhui" ? "echeance" : f.tri} disabled={f.vue === "pour-moi" || f.vue === "aujourdhui"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
             <option value="manuel">Tri : manuel</option>
             <option value="recent">Tri : récent</option>
             <option value="echeance">Tri : échéance</option>
@@ -292,7 +311,7 @@ function Carnet() {
         {visibles.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
             <Inbox className="mx-auto mb-2 size-7 opacity-50" />
-            {f.vue === "corbeille" ? "La corbeille est vide. Les notes y restent 30 jours." : f.vue === "pour-moi" ? "Aucune note ne vous est confiée." : f.vue === "archivees" ? "Aucune note archivée." : f.q ? `Aucune note ne correspond à « ${f.q} ».` : "Aucune note. Écrivez-en une à gauche (raccourci N)."}
+            {f.vue === "corbeille" ? "La corbeille est vide. Les notes y restent 30 jours." : f.vue === "pour-moi" ? "Aucune note ne vous est confiée." : f.vue === "aujourdhui" ? "Rien d'urgent aujourd'hui : aucune note en retard, du jour ou confiée à vous." : f.vue === "archivees" ? "Aucune note archivée." : f.q ? `Aucune note ne correspond à « ${f.q} ».` : "Aucune note. Écrivez-en une à gauche (raccourci N)."}
           </div>
         ) : (
           <ul className="panel divide-y divide-border overflow-hidden">
