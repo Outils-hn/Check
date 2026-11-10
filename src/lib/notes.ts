@@ -96,3 +96,11 @@ export const ordreEnTete = (notes: Note[]) => (notes.length ? Math.min(...notes.
 /** Notes « Réglé » depuis plus de 7 jours, a archiver par « Nettoyer ». */
 export const aNettoyer = (notes: Note[], maintenant = Date.now()) =>
   notes.filter((n) => !n.archive && !n.supprime_le && n.statut === "done" && n.regle_le && Date.parse(n.regle_le) < maintenant - 7 * 86400000);
+
+/** Nombre de jours de retard d'une echeance (0 si pas en retard). */
+export function joursRetard(echeance: string | null, jour = jourIso()): number {
+  if (!echeance || echeance >= jour) return 0;
+  const a = Date.UTC(+echeance.slice(0, 4), +echeance.slice(5, 7) - 1, +echeance.slice(8, 10));
+  const b = Date.UTC(+jour.slice(0, 4), +jour.slice(5, 7) - 1, +jour.slice(8, 10));
+  return Math.round((b - a) / 86_400_000);
+}

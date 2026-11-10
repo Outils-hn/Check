@@ -288,10 +288,15 @@ try {
 
   // 8. PDF, sauvegarde, a propos
   const dl = p.waitForEvent("download", { timeout: 15000 });
-  await p.getByRole("button", { name: "PDF" }).click();
+  await p.getByRole("button", { name: "PDF", exact: true }).click();
   const pdf = await dl;
   ok(/^check-rapport-de-suivi-.*\.pdf$/.test(pdf.suggestedFilename()), `PDF téléchargé (${pdf.suggestedFilename()})`);
   await pdf.saveAs(`${out}/rapport.pdf`);
+  const dlc = p.waitForEvent("download", { timeout: 15000 });
+  await p.getByRole("button", { name: "PDF en couleurs" }).click();
+  const pdfc = await dlc;
+  ok(/-couleur\.pdf$/.test(pdfc.suggestedFilename()), `PDF en couleurs téléchargé (${pdfc.suggestedFilename()})`);
+  await pdfc.saveAs(`${out}/rapport-couleur.pdf`);
   await p.getByRole("button", { name: "Sauvegarde" }).click();
   const dl2 = p.waitForEvent("download");
   await p.getByRole("button", { name: "Télécharger" }).click();
