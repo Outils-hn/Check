@@ -230,6 +230,7 @@ try {
   ok(await p.locator("[data-retenir]", { hasText: "Coller le joint" }).isVisible(), "« À retenir » : la fiche d'Alice apparaît");
   await shot(p, "08-a-retenir");
   await p2.getByRole("button", { name: /^À retenir/ }).click();
+  await p2.locator("[data-retenir]", { hasText: "Coller le joint" }).waitFor({ timeout: 4000 }).catch(() => {});
   ok(await p2.locator("[data-retenir]", { hasText: "Coller le joint" }).isVisible(), "« À retenir » : Bob voit la fiche d'Alice");
   ok((await p2.getByRole("button", { name: /Supprimer « Coller/ }).count()) === 0, "« À retenir » : Bob ne peut pas supprimer la fiche d'Alice");
   await p2.getByLabel("Rechercher dans À retenir").fill("capot"); ok((await p2.locator("[data-retenir]").count()) === 1, "« À retenir » : recherche");

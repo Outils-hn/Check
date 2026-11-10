@@ -19,7 +19,7 @@ export function useRetenir() {
   const { valide, uid } = useCompte();
   const qc = useQueryClient();
   const q = useQuery({
-    queryKey: ["check", "retenir"], enabled: valide, staleTime: 60_000,
+    queryKey: ["check", "retenir"], enabled: valide, staleTime: 60_000, refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await db.from("check_retenir").select("*").order("created_at", { ascending: false });
       if (error) throw error;
