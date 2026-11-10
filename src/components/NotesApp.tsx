@@ -32,6 +32,7 @@ const fmtJour = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString(
 const PAGE = 50;
 const MAX_NOTE = 4000;
 const CLE_NOTER = "check:noter";
+const CLE_NOTE_LIEE = "check:note"; // ?note=<id> : lien de la recherche de l'Accueil vers une note precise
 const DOT: Record<Statut, string> = { todo: "var(--st-todo)", in_progress: "var(--st-progress)", waiting: "var(--st-waiting)", done: "var(--st-done)" };
 
 export default function NotesApp() {
@@ -42,9 +43,12 @@ export default function NotesApp() {
     try {
       const u = new URL(window.location.href);
       const t = u.searchParams.get("noter");
-      if (!t) return;
-      sessionStorage.setItem(CLE_NOTER, t.slice(0, 2000));
+      const id = u.searchParams.get("note");
+      if (!t && !id) return;
+      if (t) sessionStorage.setItem(CLE_NOTER, t.slice(0, 2000));
+      if (id) sessionStorage.setItem(CLE_NOTE_LIEE, id.slice(0, 60));
       u.searchParams.delete("noter");
+      u.searchParams.delete("note");
       window.history.replaceState(null, "", u.pathname + u.search + u.hash);
     } catch { /* stockage bloque */ }
   }, []);
@@ -91,6 +95,16 @@ function Carnet() {
 
   // Fenetres
   const [edition, setEdition] = useState<Note | null>(null);
+  // Note designee par un lien (?note=<id>) : on ouvre sa fenetre de modification des que les notes sont arrivees
+  useEffect(() => {
+    try {
+      const id = sessionStorage.getItem(CLE_NOTE_LIEE);
+      if (!id || !notes.length) return; // pas encore chargees : on garde le lien en attente
+      sessionStorage.removeItem(CLE_NOTE_LIEE);
+      const n = notes.find((x) => x.id === id);
+      if (n) setEdition(n); else toast.error("Note introuvable : supprimée, ou d'un projet dont vous n'êtes pas membre.");
+    } catch { /* stockage bloque */ }
+  }, [notes]);
   const [versReponse, setVersReponse] = useState(false);
   // Garde le projet pendant la fermeture : la fenetre ne bascule pas en « Nouveau projet » en se refermant
   const [projetOuvert, setProjetOuvert] = useState<{ p: Projet | null; open: boolean }>({ p: null, open: false });
