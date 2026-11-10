@@ -297,6 +297,9 @@ try {
   const pdfc = await dlc;
   ok(/-couleur\.pdf$/.test(pdfc.suggestedFilename()), `PDF en couleurs téléchargé (${pdfc.suggestedFilename()})`);
   await pdfc.saveAs(`${out}/rapport-couleur.pdf`);
+  await p.getByRole("button", { name: "Raccourcis" }).click();
+  ok(await p.getByRole("heading", { name: "Raccourcis clavier" }).isVisible(), "liste des raccourcis affichée");
+  await p.keyboard.press("Escape");
   await p.getByRole("button", { name: "Sauvegarde" }).click();
   const dl2 = p.waitForEvent("download");
   await p.getByRole("button", { name: "Télécharger" }).click();

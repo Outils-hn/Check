@@ -3,12 +3,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { APP_AUTHOR, APP_NAME, APP_TAGLINE, APP_UPDATED, APP_VERSION, APP_YEAR } from "@/lib/version";
 import { CheckMark } from "./CheckMark";
 import { LienRetour } from "./LienRetour";
+import { RaccourcisDialog } from "./RaccourcisDialog";
 import { SauvegardeDialog } from "./SauvegardeDialog";
 
 /** Signature discrete, identique aux autres applis : « Conçu par … » ouvre la fenetre « À propos ». */
 export function AppFooter() {
   const [open, setOpen] = useState(false);
   const [sauvegarde, setSauvegarde] = useState(false);
+  const [raccourcis, setRaccourcis] = useState(false);
   const lien = "text-inherit underline-offset-2 transition-colors hover:text-foreground hover:underline";
   return (
     <footer className="py-4 text-center">
@@ -17,6 +19,7 @@ export function AppFooter() {
         <button type="button" onClick={() => setOpen(true)} className={lien}>Conçu par {APP_AUTHOR}</button>{" "}
         · {APP_YEAR} ·{" "}
         <button type="button" onClick={() => setSauvegarde(true)} className={lien}>Sauvegarde</button>{" "}
+        · <button type="button" onClick={() => setRaccourcis(true)} className={lien}>Raccourcis</button>{" "}
         · <LienRetour app="Check" version={APP_VERSION} className={lien} />
       </p>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -37,6 +40,7 @@ export function AppFooter() {
           <p className="border-t border-border pt-3 text-xs text-muted-foreground">Dernière mise à jour : {APP_UPDATED}</p>
         </DialogContent>
       </Dialog>
+      <RaccourcisDialog open={raccourcis} onOpenChange={setRaccourcis} />
       <SauvegardeDialog open={sauvegarde} onOpenChange={setSauvegarde} />
     </footer>
   );
