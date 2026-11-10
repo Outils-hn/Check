@@ -7,8 +7,8 @@ const RACCOURCIS: { touches: string[]; texte: string }[] = [
   { touches: ["Échap"], texte: "Vider la recherche" },
   { touches: ["Entrée"], texte: "Ajouter la note" },
   { touches: ["Maj", "Entrée"], texte: "Aller à la ligne dans la note" },
-  { touches: ["Ctrl", "clic"], texte: "Choisir plusieurs projets à la fois (⌘ sur Mac)" },
-  { touches: ["Ctrl", "V"], texte: "Coller une capture d'écran dans la note (⌘ sur Mac)" },
+  { touches: ["Ctrl", "clic"], texte: "Choisir plusieurs projets à la fois" },
+  { touches: ["Ctrl", "V"], texte: "Coller une capture d'écran dans la note" },
   { touches: ["?"], texte: "Afficher cette liste" },
 ];
 
