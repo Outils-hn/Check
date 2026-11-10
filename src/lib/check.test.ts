@@ -6,7 +6,7 @@ import { MAX_INVITE, ajouterInvite, changerStatutInvite, lireInvite, modifierTex
 const moi = "u-moi", autre = "u-marc";
 const base = (p: Partial<Note>): Note => ({
   id: "x", projet_id: null, auteur: moi, pour: null, texte: "", statut: "todo", echeance: null, flash: false, archive: false,
-  ordre: 0, reponse: null, regle_le: null, supprime_le: null, created_at: "2026-10-20T08:00:00Z", ...p,
+  ordre: 0, images: [], reponse: null, regle_le: null, supprime_le: null, created_at: "2026-10-20T08:00:00Z", ...p,
 });
 const notes: Note[] = [
   base({ id: "a", texte: "Relancer Schüco pour l'imposte", projet_id: "p1", pour: moi, echeance: "2026-10-30", ordre: 2 }),

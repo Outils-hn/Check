@@ -4,7 +4,7 @@ export type Statut = "todo" | "in_progress" | "waiting" | "done";
 export type Note = {
   id: string; projet_id: string | null; auteur: string; pour: string | null;
   texte: string; statut: Statut; echeance: string | null; flash: boolean; archive: boolean;
-  ordre: number; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
+  ordre: number; images?: string[]; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
 };
 export type Projet = { id: string; nom: string; numero: string; cree_par: string | null; archive: boolean };
 export type Membre = { projet_id: string; user_id: string };
