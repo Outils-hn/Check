@@ -33,7 +33,7 @@ function useTheme() {
 const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleString("fr-CH", { dateStyle: "short", timeStyle: "short" }) : "");
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { pret, uid, email, valide, enAttente } = useCompte();
+  const { pret, uid, email, nom, valide, enAttente } = useCompte();
   const { horsLigne } = useDonnees();
   const [connexion, setConnexion] = useState(false);
   const [dark, setDark] = useTheme();
@@ -54,7 +54,7 @@ export function Shell({ children }: { children: ReactNode }) {
           )}
           {uid && (
             <>
-              {valide && <span className="bandeau-statut ouvert" title={email}>{email}</span>}
+              {valide && <span className="bandeau-statut ouvert" title={email}>{nom || email}</span>}
               {enAttente && <span className="bandeau-statut" title={email}>Compte en attente de validation</span>}
               <button className="bandeau-btn" onClick={() => deconnexion()}><LogOut /> Déconnexion</button>
             </>
