@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.17 — 10 novembre 2026
+
+- Nouveauté : dans la fenêtre « Modifier la note », « Voir l'historique des changements » montre qui a changé quoi et quand (statut, échéance, texte, personne, projet, réponse ; script SQL « check-historique.sql » à lancer une fois).
+
 ## 3.16 — 10 novembre 2026
 
 - Nouveauté : Check peut s'installer comme une appli sur le téléphone (« Ajouter à l'écran d'accueil ») et s'ouvre aussi sans réseau : on retrouve ses notes en lecture, les modifications demandent la connexion.

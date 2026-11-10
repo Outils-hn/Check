@@ -21,7 +21,7 @@ const ALICE = COMPTES["alice@exemple.ch"].id, BOB = COMPTES["bob@exemple.ch"].id
 const parId = (id) => Object.entries(COMPTES).find(([, c]) => c.id === id);
 
 // ---- Base simulee ----
-const etat = { check_projets: [], check_membres: [], check_notes: [], check_retenir: [] };
+const etat = { check_projets: [], check_membres: [], check_notes: [], check_retenir: [], check_notes_histo: [] };
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC", "base64");
 const fichiers = [];
 let n = 0;
@@ -32,6 +32,7 @@ const voit = (t, u, r) => valide(u) && (
   t === "check_projets" ? membre(u, r.id) || r.cree_par === u
   : t === "check_membres" ? membre(u, r.projet_id)
   : t === "check_retenir" ? true
+  : t === "check_notes_histo" ? voit("check_notes", u, etat.check_notes.find((n) => n.id === r.note_id) || { projet_id: null, auteur: null })
   : r.projet_id === null ? r.auteur === u : membre(u, r.projet_id));
 const filtres = (url) => [...url.searchParams.entries()].filter(([k, v]) => !["select", "order", "limit"].includes(k) && v.startsWith("eq.")).map(([k, v]) => [k, v.slice(3)]);
 const correspond = (r, f) => f.every(([k, v]) => String(r[k]) === v);
@@ -96,7 +97,7 @@ async function brancher(ctx) {
     }
     const cibles = etat[t].filter((x) => voit(t, moi, x) && correspond(x, f));
     if (m === "PATCH") {
-      for (const x of cibles) { const avant = { ...x }; Object.assign(x, corps); if (t === "check_notes") { const e = controleNote(x, avant); if (e) { Object.assign(x, avant); return json({ code: "P0001", message: e }, 400); } } }
+      for (const x of cibles) { const avant = { ...x }; if (t === "check_notes" && corps && "statut" in corps && corps.statut !== x.statut) etat.check_notes_histo.push({ id: etat.check_notes_histo.length + 1, note_id: x.id, user_id: moi, le: new Date().toISOString(), champ: "statut", avant: x.statut, apres: corps.statut }); Object.assign(x, corps); if (t === "check_notes") { const e = controleNote(x, avant); if (e) { Object.assign(x, avant); return json({ code: "P0001", message: e }, 400); } } }
       return json([], 200);
     }
     if (m === "DELETE") { etat[t] = etat[t].filter((x) => !cibles.includes(x)); return r.fulfill({ status: 204, body: "" }); }
@@ -220,6 +221,11 @@ try {
   await p2.locator("#e-reponse").fill("Indice B validé avec Marc : joint Sikaflex");
   await p2.getByRole("button", { name: "Enregistrer" }).click(); await p2.waitForTimeout(900);
   ok(confiee.reponse === "Indice B validé avec Marc : joint Sikaflex", "réponse enregistrée dans la base");
+  // Historique : Alice voit que Bob a réglé la note
+  await p.locator("[data-note]", { hasText: "Contrôler" }).getByRole("button", { name: "Modifier la note" }).click(); await p.waitForTimeout(400);
+  await p.getByRole("button", { name: "Voir l'historique des changements" }).click(); await p.waitForTimeout(700);
+  ok(/Bob/.test(await p.locator("[data-histo]").innerText()) || (await p.locator("[data-histo]").innerText()).includes("Statut"), "Historique : la liste des changements s'affiche");
+  await p.keyboard.press("Escape"); await p.waitForTimeout(300);
   await p2.getByRole("tab", { name: "Actives" }).click(); await p2.waitForTimeout(500);
   ok(await p2.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "la réponse s'affiche sous la note réglée");
   await shot(p2, "05b-reponse");

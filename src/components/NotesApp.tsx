@@ -18,6 +18,7 @@ import {
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
+import { decrire, useHistorique } from "@/lib/historique";
 import { Miniatures } from "@/components/check/Miniatures";
 import { MAX_IMAGES, compresser } from "@/lib/images";
 import { Retenir } from "@/components/check/Retenir";
@@ -549,6 +550,10 @@ function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave, ver
   const [pour, setPour] = useState(note.pour ?? "");
   const [reponse, setReponse] = useState(note.reponse ?? "");
   const equipe = equipeDe(projet);
+  const [voirHisto, setVoirHisto] = useState(false);
+  const histo = useHistorique(note.id, voirHisto);
+  const nomPersonne = (id: string | null) => personne(id) ?? "Un collègue";
+  const nomDuProjet = (id: string | null) => { const p = projets.find((x) => x.id === id); return id ? (p ? nomProjet(p) : "un projet") : "Perso"; };
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
@@ -588,6 +593,21 @@ function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave, ver
           )}
           {projet !== (note.projet_id ?? PERSO) && <p className="note-check">{projet === PERSO ? "La note deviendra perso : l'équipe ne la verra plus." : "La note sera visible par l'équipe de ce projet."}</p>}
         </form>
+        <div className="text-sm">
+          <button type="button" className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground" aria-expanded={voirHisto} onClick={() => setVoirHisto((v) => !v)}>
+            {voirHisto ? "Masquer l'historique" : "Voir l'historique des changements"}
+          </button>
+          {voirHisto && (
+            <div className="mt-2 max-h-44 overflow-y-auto rounded-md border border-border p-2" data-histo>
+              {histo.isLoading ? <p className="text-xs text-muted-foreground">Chargement…</p>
+                : histo.isError ? <p className="text-xs text-muted-foreground">L'historique n'est pas encore activé (script SQL « check-historique.sql » à lancer une fois).</p>
+                : !histo.data?.length ? <p className="text-xs text-muted-foreground">Aucun changement depuis la création.</p>
+                : <ul className="space-y-1.5 text-xs">{histo.data.map((e) => (
+                    <li key={e.id}><span className="font-medium">{nomPersonne(e.user_id)}</span> · <span className="tabular-nums text-muted-foreground">{new Date(e.le).toLocaleString("fr-CH", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span><br />{decrire(e, nomPersonne, nomDuProjet)}</li>
+                  ))}</ul>}
+            </div>
+          )}
+        </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Annuler</Button>
           <Button type="submit" form="form-note" disabled={!texte.trim()}>Enregistrer</Button>
