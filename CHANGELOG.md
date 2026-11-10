@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.25 — 10 novembre 2026
+
+- Nouveauté : dans le menu des applis, la ligne « Rechercher » est alignée avec les autres.
+
 ## 3.24 — 10 novembre 2026
 
 - Nouveauté : un lien avec ?note=… ouvre directement la note choisie (c'est ce que fait la recherche Ctrl+K de l'Accueil).
