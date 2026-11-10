@@ -222,10 +222,11 @@ try {
     ok(!pn.url().includes("noter="), "« Noter dans Check » : adresse nettoyée"); await pn.close(); }
   // « À retenir » : visible par tout le bureau ; seul l'auteur supprime
   await p.getByRole("button", { name: /^À retenir/ }).click();
-  await p.getByLabel("L'essentiel en une phrase").fill("Coller le joint avant la pose du capot");
-  await p.getByLabel("Détail").fill("Retour de l'atelier : sinon le capot ne ferme plus.");
-  await p.getByLabel("Sujet").fill("Atelier");
-  await p.getByRole("button", { name: "Ajouter", exact: true }).click(); await p.waitForTimeout(400);
+  const zr = p.locator('section[aria-label="À retenir"]');
+  await zr.getByLabel("L'essentiel en une phrase").fill("Coller le joint avant la pose du capot");
+  await zr.getByLabel("Détail").fill("Retour de l'atelier : sinon le capot ne ferme plus.");
+  await zr.getByLabel("Sujet").fill("Atelier");
+  await zr.getByRole("button", { name: "Ajouter", exact: true }).click(); await p.waitForTimeout(400);
   ok(await p.locator("[data-retenir]", { hasText: "Coller le joint" }).isVisible(), "« À retenir » : la fiche d'Alice apparaît");
   await shot(p, "08-a-retenir");
   await p2.getByRole("button", { name: /^À retenir/ }).click();
