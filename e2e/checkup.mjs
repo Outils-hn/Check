@@ -241,6 +241,11 @@ try {
   { const pn = await p.context().newPage(); await pn.goto(URL0 + "?noter=" + encodeURIComponent("Fiche Sika : à vérifier")); await pn.waitForLoadState("networkidle");
     ok((await pn.locator("textarea").first().inputValue()) === "Fiche Sika : à vérifier", "« Noter dans Check » : texte repris dans la saisie");
     ok(!pn.url().includes("noter="), "« Noter dans Check » : adresse nettoyée"); await pn.close(); }
+  // Lien direct vers une note (recherche Ctrl+K de l'Accueil) : sa fenêtre de modification s'ouvre
+  { const idNote = etat.check_notes.find((n) => !n.supprime_le && n.texte)?.id;
+    const pn = await p.context().newPage(); await pn.goto(URL0 + "?note=" + idNote); await pn.waitForLoadState("networkidle"); await pn.waitForTimeout(1500);
+    ok(await pn.getByRole("dialog").isVisible(), "Lien ?note= : la fenêtre de la note s'ouvre");
+    ok(!pn.url().includes("note="), "Lien ?note= : adresse nettoyée"); await pn.close(); }
   // « À retenir » : visible par tout le bureau ; seul l'auteur supprime
   await p.getByRole("button", { name: /^À retenir/ }).click();
   const zr = p.locator('section[aria-label="À retenir"]');
