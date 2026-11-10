@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
+import { joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
 import { choixParDefaut, exporter, lireAnciennes, planImport } from "./reprise";
 import { MAX_INVITE, ajouterInvite, changerStatutInvite, lireInvite, modifierTexteInvite, supprimerInvite } from "./notes-invite";
 
@@ -153,4 +153,12 @@ describe("#projet dans le texte", () => {
     expect(projetDepuisTexte("Appeler #residence", ps).projetId).toBe("p1");
   });
   it("tag inconnu : texte inchange", () => expect(projetDepuisTexte("Faire #truc", ps)).toEqual({ texte: "Faire #truc", projetId: null }));
+});
+
+describe("PDF : retards", () => {
+  it("compte les jours de retard", () => {
+    expect(joursRetard("2026-11-05", "2026-11-10")).toBe(5);
+    expect(joursRetard("2026-11-10", "2026-11-10")).toBe(0);
+    expect(joursRetard(null, "2026-11-10")).toBe(0);
+  });
 });

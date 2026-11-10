@@ -47,3 +47,22 @@ export function useUrlsImages(chemins: string[]) {
   });
   return q.data ?? {};
 }
+
+/** Vignettes pour le PDF en couleurs : telecharge, reduit a 600 px, JPEG. Les echecs sont ignores. */
+export async function chargerImagesPdf(chemins: string[]): Promise<Record<string, { data: string; w: number; h: number }>> {
+  const sortie: Record<string, { data: string; w: number; h: number }> = {};
+  if (!chemins.length) return sortie;
+  const { data } = await db.storage.from(BUCKET).createSignedUrls(chemins, 300);
+  await Promise.all((data ?? []).map(async (d: { path: string; signedUrl: string }) => {
+    try {
+      const blob = await (await fetch(d.signedUrl)).blob();
+      const bmp = await createImageBitmap(blob);
+      const e = Math.min(1, 600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(bmp.width * e)); c.height = Math.max(1, Math.round(bmp.height * e));
+      const g = c.getContext("2d")!; g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+      sortie[d.path] = { data: c.toDataURL("image/jpeg", 0.8), w: c.width, h: c.height };
+    } catch { /* image ignoree */ }
+  }));
+  return sortie;
+}

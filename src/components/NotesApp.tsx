@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
 import { decrire, useHistorique } from "@/lib/historique";
 import { Miniatures } from "@/components/check/Miniatures";
-import { MAX_IMAGES, compresser } from "@/lib/images";
+import { MAX_IMAGES, chargerImagesPdf, compresser } from "@/lib/images";
 import { Retenir } from "@/components/check/Retenir";
 import { useRetenir } from "@/lib/retenir";
 import { ProjetDialog } from "@/components/check/ProjetDialog";
@@ -237,12 +237,14 @@ function Carnet() {
     if (!multi) { setFormProjet(id); setFormPour(""); }
   };
 
-  const pdf = async () => {
+  const pdf = async (couleur = false) => {
     if (!visibles.length) return toast.error("Aucune note à exporter.");
     const titre = f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : f.vue === "pour-moi" ? "Notes pour moi" : "Rapport de suivi";
+    const filtres = [f.projets.length > 1 ? `${f.projets.length} projets` : "", f.vue === "aujourdhui" ? "Aujourd'hui" : f.vue === "archivees" ? "Archivées" : f.vue === "pour-moi" ? "Pour moi" : "", f.statut !== "tous" ? LIBELLE[f.statut] : "", f.q ? `Recherche « ${f.q} »` : ""].filter(Boolean).join(" · ");
     try {
       const { exportNotesPdf } = await import("@/lib/pdf-export");
-      await exportNotesPdf(visibles.map((n) => ({ texte: n.texte, projet: nomDe(n.projet_id), pour: n.pour ? personne(n.pour) : null, statut: n.statut, flash: n.flash, created_at: n.created_at, echeance: n.echeance, regle_le: n.regle_le, reponse: n.reponse })), titre);
+      const imagesPdf = couleur ? await chargerImagesPdf(visibles.flatMap((n) => n.images ?? [])).catch(() => ({})) : undefined;
+      await exportNotesPdf(visibles.map((n) => ({ texte: n.texte, projet: nomDe(n.projet_id), pour: n.pour ? personne(n.pour) : null, statut: n.statut, flash: n.flash, created_at: n.created_at, echeance: n.echeance, regle_le: n.regle_le, reponse: n.reponse, images: n.images })), titre, { couleur, filtres, imagesPdf, auteur: comptes.find((c) => c.id === moi)?.nom });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 
@@ -375,7 +377,8 @@ function Carnet() {
           </select>
           <div className="ml-auto flex gap-2">
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setNettoyer(true)} title="Archiver les notes réglées depuis plus de 7 jours"><Sparkles className="size-4" /><span className="lg:max-2xl:sr-only">Nettoyer</span></Button>
-            <Button size="sm" className="gap-1.5" onClick={pdf}><FileDown className="size-4" /> PDF</Button>
+            <Button size="sm" className="gap-1.5" onClick={() => pdf(false)}><FileDown className="size-4" /> PDF</Button>
+            <Button size="sm" variant="outline" aria-label="PDF en couleurs" title="PDF en couleurs" onClick={() => pdf(true)}><Palette className="size-4" /></Button>
           </div>
         </div>
 
