@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.19 — 10 novembre 2026
+
+- Nouveauté : dans le PDF en couleurs, le bandeau du haut est plus fin et plus discret.
+
 ## 3.18 — 10 novembre 2026
 
 - Nouveauté : le PDF est refait, sobre et classe : notes regroupées par projet, chiffres clés (en retard, urgentes…), retards bien visibles. Le petit bouton palette à côté de « PDF » imprime une version en couleurs, avec les images jointes.
