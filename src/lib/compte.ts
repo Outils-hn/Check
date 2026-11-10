@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { nomAffiche } from "./nom-affiche";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { db } from "@/lib/base";
@@ -26,7 +27,7 @@ export function useCompte() {
       return !!data;
     },
   });
-  return { pret, session, uid, email: session?.user?.email ?? "", valide: !!uid && valide.data === true, enAttente: !!uid && valide.data === false };
+  return { pret, session, uid, email: session?.user?.email ?? "", nom: nomAffiche(session?.user), valide: !!uid && valide.data === true, enAttente: !!uid && valide.data === false };
 }
 
 export async function connexion(email: string, motDePasse: string): Promise<string | null> {
