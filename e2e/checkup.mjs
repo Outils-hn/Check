@@ -107,7 +107,7 @@ async function brancher(ctx) {
 const b = await chromium.launch();
 const pages = [];
 async function page({ dark = false, anciennes = null, largeur = 1440 } = {}) {
-  const ctx = await b.newContext({ viewport: { width: largeur, height: largeur < 600 ? 800 : 900 }, acceptDownloads: true });
+  const ctx = await b.newContext({ viewport: { width: largeur, height: largeur < 600 ? 800 : 900 }, acceptDownloads: true, serviceWorkers: "block" });
   await ctx.addInitScript(([d, a]) => { if (d) localStorage.setItem("check-theme", "dark"); if (a && !localStorage.getItem("check-reprise-faite")) localStorage.setItem("dp-notes-v1", a); }, [dark, anciennes]);
   await brancher(ctx);
   const p = await ctx.newPage();
@@ -136,6 +136,12 @@ try {
   // 1. Sans compte
   const p = await page({ anciennes });
   await p.goto(URL0); await p.waitForLoadState("networkidle");
+  { const man = await p.locator('link[rel="manifest"]').getAttribute("href");
+    const rep = man ? await p.request.get(new URL(man, p.url()).href) : null;
+    const j = rep && rep.ok() ? await rep.json().catch(() => null) : null;
+    ok(!!j && j.display === "standalone" && j.icons?.length >= 2, "Installation : manifeste présent (icônes, mode application)");
+    const sw = await p.request.get(new URL("sw.js", p.url()).href);
+    ok(sw.ok() && (await sw.text()).includes("check-"), "Hors ligne : service worker servi"); }
   ok(await p.getByText("Essayez Check sans compte").isVisible(), "sans compte : carnet d'essai et invitation à se connecter");
   ok((await p.getAttribute("html", "lang")) === "fr", "langue de la page = fr");
   await shot(p, "01-accueil");
