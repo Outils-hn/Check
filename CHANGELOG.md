@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.15 — 10 novembre 2026
+
+- Nouveauté : on peut joindre des photos ou des captures d'écran à une note (3 au plus, compressées automatiquement ; script SQL « check-images.sql » à lancer une fois).
+
 ## 3.14 — 10 novembre 2026
 
 - Nouveauté : nouvelle page « À retenir » : les retours de l'atelier et bonnes pratiques, visibles par tout le bureau, avec recherche (script SQL « check-retenir.sql » à lancer une fois).

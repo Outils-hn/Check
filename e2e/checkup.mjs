@@ -22,6 +22,8 @@ const parId = (id) => Object.entries(COMPTES).find(([, c]) => c.id === id);
 
 // ---- Base simulee ----
 const etat = { check_projets: [], check_membres: [], check_notes: [], check_retenir: [] };
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC", "base64");
+const fichiers = [];
 let n = 0;
 const uid = () => `00000000-0000-4000-8000-${String(++n).padStart(12, "0")}`;
 const valide = (u) => !!u && !!parId(u)?.[1].valide;
@@ -62,6 +64,13 @@ async function brancher(ctx) {
     if (u.pathname === "/rest/v1/rpc/is_approved") return json(valide(moi));
     if (u.pathname === "/rest/v1/rpc/check_comptes") return json(valide(moi) ? Object.entries(COMPTES).filter(([, c]) => c.valide).map(([email, c]) => ({ id: c.id, nom: c.nom, email })) : []);
     if (u.pathname === "/rest/v1/rpc/check_vider_corbeille") return r.fulfill({ status: 204, body: "" });
+    if (u.pathname.startsWith("/storage/v1/")) { // stockage des images : simule
+      if (req.method() === "POST" && u.pathname.startsWith("/storage/v1/object/sign/")) { const { paths } = JSON.parse(req.postData() || "{}"); return json(paths.map((p) => ({ path: p, signedURL: `/object/sign/check-images/${p}?token=x`, error: null }))); }
+      if (req.method() === "GET") return r.fulfill({ status: 200, contentType: "image/png", body: PNG });
+      if (req.method() === "POST") { fichiers.push(decodeURIComponent(u.pathname.replace("/storage/v1/object/check-images/", ""))); return json({ Key: "check-images/x", Id: "x" }); }
+      if (req.method() === "DELETE") { const { prefixes } = JSON.parse(req.postData() || "{}"); for (const x of prefixes || []) { const i = fichiers.indexOf(x); if (i >= 0) fichiers.splice(i, 1); } return json([]); }
+      return json([]);
+    }
     const t = u.pathname.replace("/rest/v1/", "");
     if (!(t in etat)) return json([]);
     const m = req.method();
@@ -77,7 +86,7 @@ async function brancher(ctx) {
         if (t === "check_membres" && (!membre(moi, x.projet_id) || !valide(x.user_id))) return refus();
         if (t === "check_notes") {
           if (x.auteur !== moi || (x.projet_id && !membre(moi, x.projet_id))) return refus();
-          Object.assign(x, { statut: "todo", flash: false, archive: false, ordre: 0, pour: null, echeance: null, supprime_le: null, regle_le: null, ...x });
+          Object.assign(x, { images: [], statut: "todo", flash: false, archive: false, ordre: 0, pour: null, echeance: null, supprime_le: null, regle_le: null, ...x });
           const e = controleNote(x, null); if (e) return json({ code: "P0001", message: e }, 400);
         }
       }
@@ -236,6 +245,16 @@ try {
   await p2.getByLabel("Rechercher dans À retenir").fill("capot"); ok((await p2.locator("[data-retenir]").count()) === 1, "« À retenir » : recherche");
   await p2.getByRole("button", { name: "Retour à mes notes" }).click();
   await p.getByRole("button", { name: "Retour à mes notes" }).click();
+  // Images : photo jointe à la création, compressée puis envoyée ; retirée avec la note supprimée
+  await p.locator("textarea").first().fill("Note avec photo");
+  await p.locator("[data-fichier-form]").setInputFiles({ name: "capture.png", mimeType: "image/png", buffer: PNG });
+  await p.locator("[data-form-image]").waitFor({ timeout: 5000 });
+  await p.getByRole("button", { name: "Ajouter", exact: true }).first().click(); await p.waitForTimeout(800);
+  const nImg = etat.check_notes.find((x) => x.texte === "Note avec photo");
+  ok(!!nImg && nImg.images.length === 1 && fichiers.length === 1 && fichiers[0].startsWith(nImg.id + "/"), "image : envoyée et rattachée à la note");
+  ok(await p.locator("[data-note]", { hasText: "Note avec photo" }).locator("[data-images] img").first().isVisible(), "image : miniature affichée sur la note");
+  await shot(p, "09-image");
+  await p.locator("[data-note]", { hasText: "Note avec photo" }).getByRole("button", { name: "Mettre à la corbeille" }).click(); await p.waitForTimeout(300);
   ok(await p.getByText(/Réglée le/).first().isVisible(), "Alice voit la note réglée par Bob");
   ok(await p.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "Alice voit la réponse de Bob");
 

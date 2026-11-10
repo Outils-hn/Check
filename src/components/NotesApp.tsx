@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import {
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
+import { Miniatures } from "@/components/check/Miniatures";
+import { MAX_IMAGES, compresser } from "@/lib/images";
 import { Retenir } from "@/components/check/Retenir";
 import { useRetenir } from "@/lib/retenir";
 import { ProjetDialog } from "@/components/check/ProjetDialog";
@@ -105,9 +107,17 @@ function Carnet() {
   const actifs = projets.filter((p) => !p.archive);
   const archives = projets.filter((p) => p.archive);
 
+  // Corbeille de plus de 30 jours videe (images comprises), une fois les notes chargees
+  const corbeilleVidee = useRef(false);
+  useEffect(() => {
+    if (chargement || corbeilleVidee.current) return;
+    corbeilleVidee.current = true;
+    void act.viderCorbeilleAvecImages(notes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chargement]);
+
   // Premiere connexion : reprise des notes restees dans ce navigateur ; corbeille de plus de 30 jours videe
   useEffect(() => {
-    void act.viderCorbeille();
     try {
       // Notes du carnet d'essai (ecrites sans compte) : proposees en priorite a l'import
       const essai = lireAnciennes(JSON.stringify(lireInvite(localStorage.getItem(CLE_INVITE))));
@@ -156,6 +166,24 @@ function Carnet() {
 
   const [formOuvert, setFormOuvert] = useState(false);
   const [retenir, setRetenir] = useState(false);
+  const [formImages, setFormImages] = useState<{ blob: Blob; url: string }[]>([]);
+  const [compression, setCompression] = useState(false);
+  const fichierForm = useRef<HTMLInputElement>(null);
+  /** Photos ou captures du formulaire : compressees tout de suite, envoyees quand la note est ajoutee. */
+  const joindre = async (fichiers: File[]) => {
+    const libres = MAX_IMAGES - formImages.length;
+    const images = fichiers.filter((f) => f.type.startsWith("image/"));
+    if (!images.length) return;
+    if (images.length > libres) toast.message(`${MAX_IMAGES} images au plus par note.`);
+    setCompression(true);
+    try {
+      const faites = [];
+      for (const f of images.slice(0, Math.max(0, libres))) faites.push(await compresser(f));
+      setFormImages((l) => [...l, ...faites.map((blob) => ({ blob, url: URL.createObjectURL(blob) }))]);
+    } catch { toast.error("Cette image n'a pas pu être préparée."); }
+    finally { setCompression(false); }
+  };
+  const viderFormImages = () => { formImages.forEach((i) => URL.revokeObjectURL(i.url)); setFormImages([]); };
   const nbRetenir = useRetenir().fiches.length;
   // Texte venu d'une autre appli (« Noter dans Check ») : on ouvre la saisie, prete a valider
   useEffect(() => {
@@ -190,7 +218,7 @@ function Carnet() {
     const projet_id = tag.projetId ?? (formProjet === PERSO ? null : formProjet);
     if (tag.projetId) setFormProjet(tag.projetId);
     const r = await act.ajouterNote({ texte: t, projet_id, statut: formStatut, echeance: formEcheance || null, pour: projet_id ? formPour || null : null, ordre: ordreEnTete(notes) });
-    if (r) { setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); if (window.matchMedia("(max-width: 1023px)").matches) setFormOuvert(false); }
+    if (r) { if (formImages.length) { await act.ajouterImages(r, formImages.map((i) => i.blob)); viderFormImages(); } setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); if (window.matchMedia("(max-width: 1023px)").matches) setFormOuvert(false); }
   };
 
   const supprimer = async (n: Note) => {
@@ -241,11 +269,26 @@ function Carnet() {
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); ajouter(); }}>
             <Textarea ref={saisie} rows={3} className="resize-none" autoFocus aria-label="Texte de la note" placeholder="Écrivez votre note, Entrée pour ajouter…" value={texte}
               maxLength={MAX_NOTE} aria-invalid={vide || undefined} aria-describedby="aide-saisie"
+              onPaste={(e) => { const f = [...e.clipboardData.files].filter((x) => x.type.startsWith("image/")); if (f.length) { e.preventDefault(); void joindre(f); } }}
               onChange={(e) => { setTexte(e.target.value); if (vide) setVide(false); }} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ajouter(); } }} />
             <p id="aide-saisie" role={vide ? "alert" : undefined} className={cn("-mt-1 text-xs", vide ? "text-destructive" : "sr-only")}>
               {vide ? "Écrivez d'abord quelque chose à ajouter." : "Entrée pour ajouter, Maj + Entrée pour un retour à la ligne."}
             </p>
             {texte.length >= MAX_NOTE - 500 && <p className="-mt-1 text-right text-xs tabular-nums text-muted-foreground" aria-live="polite">{texte.length} / {MAX_NOTE}</p>}
+            <div className="flex flex-wrap items-center gap-2">
+              <input ref={fichierForm} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label="Choisir des images" data-fichier-form
+                onChange={(e) => { void joindre([...(e.target.files ?? [])]); e.target.value = ""; }} />
+              <Button type="button" variant="ghost" size="sm" className="gap-1.5" disabled={formImages.length >= MAX_IMAGES || compression} onClick={() => fichierForm.current?.click()}>
+                <ImagePlus className="size-4" aria-hidden="true" />{compression ? "Préparation…" : "Photo ou capture"}
+              </Button>
+              {formImages.map((i) => (
+                <span key={i.url} className="relative" data-form-image>
+                  <img src={i.url} alt="Image à joindre" className="h-10 w-auto rounded border border-border object-cover" />
+                  <button type="button" className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full border border-border bg-background text-xs leading-none" aria-label="Retirer cette image"
+                    onClick={() => { URL.revokeObjectURL(i.url); setFormImages((l) => l.filter((x) => x !== i)); }}>×</button>
+                </span>
+              ))}
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <select className="field col-span-2" aria-label="Projet de la note" value={formProjet} onChange={(e) => { setFormProjet(e.target.value); setFormPour(""); }}>
                 <option value={PERSO}>Perso</option>
@@ -357,7 +400,9 @@ function Carnet() {
                 onArchiver={() => act.modifier(n.id, { archive: !n.archive })}
                 onSupprimer={() => supprimer(n)}
                 onRestaurer={() => act.restaurer(n.id)}
-                onDetruire={() => act.supprimerDefinitivement(n.id)} />
+                onDetruire={() => act.supprimerDefinitivement(n)}
+                onAjouterImage={async (f) => { const libres = MAX_IMAGES - (n.images?.length ?? 0); const l = f.filter((x) => x.type.startsWith("image/")).slice(0, libres); if (!l.length) return; try { await act.ajouterImages(n, await Promise.all(l.map(compresser))); } catch { toast.error("Cette image n'a pas pu être préparée."); } }}
+                onRetirerImage={(c) => act.retirerImage(n, c)} />
             ))}
           </ul>
         )}
@@ -412,7 +457,9 @@ function LigneNote(props: {
   n: Note; projet: string; pour: string | null; auteur: string | null; glisser: boolean; enGlisse: boolean; survol: boolean;
   onDragStart: () => void; onDragOver: () => void; onDragEnd: () => void; onDrop: () => void;
   onStatut: () => void; onFlash: () => void; onModifier: () => void; onArchiver: () => void; onSupprimer: () => void; onRestaurer: () => void; onDetruire: () => void;
+  onAjouterImage: (f: File[]) => void; onRetirerImage: (chemin: string) => void;
 }) {
+  const fichier = useRef<HTMLInputElement>(null);
   const { n } = props;
   const ech = etatEcheance(n.echeance);
   const retard = ech === "retard" && n.statut !== "done";
@@ -444,6 +491,7 @@ function LigneNote(props: {
             <span className="whitespace-pre-wrap break-words">{reponseDe(n)}</span>
           </p>
         )}
+        <Miniatures chemins={n.images ?? []} modifiable={!corbeille} onRetirer={props.onRetirerImage} />
         {(props.pour || props.auteur) && (
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {props.pour && <span className="font-medium text-[var(--app-ink)]">Pour {props.pour}</span>}
@@ -471,6 +519,12 @@ function LigneNote(props: {
             <button className={cn(btn, n.flash && "text-[#EA580C] opacity-100")} onClick={props.onFlash} aria-pressed={n.flash} aria-label={n.flash ? "Retirer l'urgence" : "Marquer comme urgent"} title={n.flash ? "Retirer l'urgence" : "Urgent"}>
               <Zap className={cn("size-3.5", n.flash && "fill-current")} />
             </button>
+            {(n.images?.length ?? 0) < MAX_IMAGES && (
+              <>
+                <input ref={fichier} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label="Ajouter une image à la note" onChange={(e) => { props.onAjouterImage([...(e.target.files ?? [])]); e.target.value = ""; }} />
+                <button className={btn} onClick={() => fichier.current?.click()} aria-label="Ajouter une image" title="Ajouter une photo ou une capture"><ImagePlus className="size-3.5" /></button>
+              </>
+            )}
             <button className={btn} onClick={props.onModifier} aria-label="Modifier la note" title="Modifier"><Pencil className="size-3.5" /></button>
             <button className={btn} onClick={props.onArchiver} aria-label={n.archive ? "Désarchiver" : "Archiver"} title={n.archive ? "Désarchiver" : "Archiver"}>
               {n.archive ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}

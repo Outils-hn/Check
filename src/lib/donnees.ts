@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BUCKET, extension } from "@/lib/images";
 import { toast } from "sonner";
 import { db } from "@/lib/base";
 import { useCompte } from "@/lib/compte";
@@ -14,7 +15,7 @@ async function charger(uid: string): Promise<Donnees> {
     const [p, m, n] = await Promise.all([
       db.from("check_projets").select("id,nom,numero,cree_par,archive").order("nom"),
       db.from("check_membres").select("projet_id,user_id"),
-      db.from("check_notes").select("id,projet_id,auteur,pour,texte,statut,echeance,flash,archive,ordre,reponse,regle_le,supprime_le,created_at,updated_at"),
+      db.from("check_notes").select("*"),
     ]);
     const err = p.error || m.error || n.error;
     if (err) throw err;
@@ -67,6 +68,11 @@ export function useComptes() {
   return q.data ?? [];
 }
 
+/** Efface des fichiers du stockage (sans bruit si ca echoue : ils resteront simplement orphelins). */
+async function effacerFichiers(chemins: string[]) {
+  if (!chemins.length) return;
+  try { await db.storage.from(BUCKET).remove(chemins); } catch { /* reseau */ }
+}
 const OFFLINE = "Base injoignable : vérifiez la connexion, rien n'a été enregistré.";
 function message(e: { message?: string; code?: string }) {
   if (/fetch|network|Load failed/i.test(e.message ?? "")) return OFFLINE;
@@ -77,7 +83,7 @@ function message(e: { message?: string; code?: string }) {
   return "Erreur : " + (e.message ?? "inconnue");
 }
 
-type Champs = Partial<Pick<Note, "projet_id" | "pour" | "texte" | "statut" | "echeance" | "flash" | "archive" | "ordre" | "supprime_le" | "created_at" | "regle_le" | "reponse">>;
+type Champs = Partial<Pick<Note, "images" | "projet_id" | "pour" | "texte" | "statut" | "echeance" | "flash" | "archive" | "ordre" | "supprime_le" | "created_at" | "regle_le" | "reponse">>;
 
 export function useActions() {
   const qc = useQueryClient();
@@ -100,7 +106,28 @@ export function useActions() {
     modifier,
     mettreCorbeille: (id: string) => modifier(id, { supprime_le: new Date().toISOString() }),
     restaurer: (id: string) => modifier(id, { supprime_le: null }),
-    supprimerDefinitivement: (id: string) => run(db.from("check_notes").delete().eq("id", id)),
+    supprimerDefinitivement: async (n: Note) => { await effacerFichiers(n.images ?? []); return run(db.from("check_notes").delete().eq("id", n.id)); },
+    /** Envoie les images (deja compressees) puis les ajoute a la note. */
+    ajouterImages: async (n: Note, blobs: Blob[]) => {
+      const chemins: string[] = [];
+      for (const b of blobs) {
+        const chemin = `${n.id}/${crypto.randomUUID()}.${extension(b)}`;
+        const { error } = await db.storage.from(BUCKET).upload(chemin, b, { contentType: b.type, upsert: false });
+        if (error) { toast.error("Image non envoyée : " + (error.message ?? "erreur")); break; }
+        chemins.push(chemin);
+      }
+      if (!chemins.length) return false;
+      const ok = await modifier(n.id, { images: [...(n.images ?? []), ...chemins] });
+      if (!ok) await effacerFichiers(chemins);
+      return !!ok;
+    },
+    retirerImage: async (n: Note, chemin: string) => { const ok = await modifier(n.id, { images: (n.images ?? []).filter((c) => c !== chemin) }); if (ok) await effacerFichiers([chemin]); return !!ok; },
+    /** Corbeille de plus de 30 jours : images effacees, puis notes videes par la base. */
+    viderCorbeilleAvecImages: async (notes: Note[]) => {
+      const vieilles = notes.filter((n) => n.supprime_le && Date.parse(n.supprime_le) < Date.now() - 30 * 86400000);
+      await effacerFichiers(vieilles.flatMap((n) => n.images ?? []));
+      return run(db.rpc("check_vider_corbeille"), true);
+    },
     viderCorbeille: () => run(db.rpc("check_vider_corbeille"), true),
     creerProjet: (nom: string, numero: string) => run<Projet>(db.from("check_projets").insert({ nom: nom.trim(), numero: numero.trim(), cree_par: uid }).select().single()),
     modifierProjet: (id: string, champs: Partial<Pick<Projet, "nom" | "numero" | "archive">>) => run(db.from("check_projets").update({ ...champs, updated_at: new Date().toISOString() }).eq("id", id)),
