@@ -340,7 +340,7 @@ try {
   ok(axe2.violations.length === 0, `accessibilité (sombre) : ${axe2.violations.length} problème(s)${axe2.violations.map((v) => ` [${v.id}: ${v.nodes.length} ${v.nodes[0]?.target}]`).join("")}`);
   await p3.getByRole("button", { name: "Changer d'application" }).click();
   const menu = await p3.getByRole("menuitem").allTextContents();
-  ok(menu.length === 12 && /^Accueil/.test(menu[0] ?? ""), `sélecteur : Accueil, Rechercher puis 10 applis (${menu.length})`);
+  ok(menu.length === 11 && /^Accueil/.test(menu[0] ?? ""), `sélecteur : Accueil puis 10 applis (${menu.length})`);
 
   // 9. Carnet d'essai sans compte : 5 notes sur le poste, puis reprise a la connexion
   etape = "carnet d'essai";
