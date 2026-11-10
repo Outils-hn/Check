@@ -240,7 +240,7 @@ function Carnet() {
   const pdf = async (couleur = false) => {
     if (!visibles.length) return toast.error("Aucune note à exporter.");
     const titre = f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : f.vue === "pour-moi" ? "Notes pour moi" : "Rapport de suivi";
-    const filtres = [f.projets.length > 1 ? `${f.projets.length} projets` : "", f.vue === "aujourdhui" ? "Aujourd'hui" : f.vue === "archives" ? "Archivées" : f.vue === "pour-moi" ? "Pour moi" : "", f.statut !== "tous" ? LIBELLE[f.statut] : "", f.q ? `Recherche « ${f.q} »` : ""].filter(Boolean).join(" · ");
+    const filtres = [f.projets.length > 1 ? `${f.projets.length} projets` : "", f.vue === "aujourdhui" ? "Aujourd'hui" : f.vue === "archivees" ? "Archivées" : f.vue === "pour-moi" ? "Pour moi" : "", f.statut !== "tous" ? LIBELLE[f.statut] : "", f.q ? `Recherche « ${f.q} »` : ""].filter(Boolean).join(" · ");
     try {
       const { exportNotesPdf } = await import("@/lib/pdf-export");
       const imagesPdf = couleur ? await chargerImagesPdf(visibles.flatMap((n) => n.images ?? [])).catch(() => ({})) : undefined;
