@@ -255,6 +255,7 @@ try {
   ok(await p.locator("[data-note]", { hasText: "Note avec photo" }).locator("[data-images] img").first().isVisible(), "image : miniature affichée sur la note");
   await shot(p, "09-image");
   await p.locator("[data-note]", { hasText: "Note avec photo" }).getByRole("button", { name: "Mettre à la corbeille" }).click(); await p.waitForTimeout(300);
+  await p.getByText("Note mise à la corbeille").waitFor({ state: "hidden", timeout: 9000 }).catch(() => {});
   ok(await p.getByText(/Réglée le/).first().isVisible(), "Alice voit la note réglée par Bob");
   ok(await p.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "Alice voit la réponse de Bob");
 

@@ -177,7 +177,7 @@ function Carnet() {
     if (images.length > libres) toast.message(`${MAX_IMAGES} images au plus par note.`);
     setCompression(true);
     try {
-      const faites = [];
+      const faites: Blob[] = [];
       for (const f of images.slice(0, Math.max(0, libres))) faites.push(await compresser(f));
       setFormImages((l) => [...l, ...faites.map((blob) => ({ blob, url: URL.createObjectURL(blob) }))]);
     } catch { toast.error("Cette image n'a pas pu être préparée."); }
