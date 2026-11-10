@@ -254,8 +254,9 @@ try {
   ok(!!nImg && nImg.images.length === 1 && fichiers.length === 1 && fichiers[0].startsWith(nImg.id + "/"), "image : envoyée et rattachée à la note");
   ok(await p.locator("[data-note]", { hasText: "Note avec photo" }).locator("[data-images] img").first().isVisible(), "image : miniature affichée sur la note");
   await shot(p, "09-image");
-  await p.locator("[data-note]", { hasText: "Note avec photo" }).getByRole("button", { name: "Mettre à la corbeille" }).click(); await p.waitForTimeout(300);
-  await p.getByText("Note mise à la corbeille").waitFor({ state: "hidden", timeout: 9000 }).catch(() => {});
+  // la note d'essai disparait de la base simulée, puis la page est rechargée (le reste du parcours repart de l'état d'avant)
+  etat.check_notes = etat.check_notes.filter((x) => x !== nImg); fichiers.length = 0;
+  await p.reload(); await p.waitForLoadState("networkidle");
   ok(await p.getByText(/Réglée le/).first().isVisible(), "Alice voit la note réglée par Bob");
   ok(await p.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "Alice voit la réponse de Bob");
 
