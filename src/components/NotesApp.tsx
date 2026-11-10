@@ -357,7 +357,7 @@ function Carnet() {
                 className={cn("rounded px-2 py-2 md:py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
             ))}
           </div>
-          <div className="relative min-w-[120px] flex-1">
+          <div className="relative min-w-[200px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input ref={recherche} className="pl-9 pr-8" placeholder="Rechercher une note…" aria-label="Rechercher une note" value={f.q} onChange={(e) => maj({ q: e.target.value })} onKeyDown={(e) => e.key === "Escape" && maj({ q: "" })} />
             <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-[10px] text-muted-foreground">/</kbd>
