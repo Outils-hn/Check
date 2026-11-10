@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.21 — 10 novembre 2026
+
+- Nouveauté : la liste des raccourcis clavier est dans le pied de page (« Raccourcis ») ou en tapant « ? ».
+
 ## 3.20 — 10 novembre 2026
 
 - Nouveauté : la case « Rechercher une note » n'est plus coupée sur les écrans moyens.
