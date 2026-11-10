@@ -9,7 +9,7 @@ const RACCOURCIS: { touches: string[]; texte: string }[] = [
   { touches: ["Maj", "Entrée"], texte: "Aller à la ligne dans la note" },
   { touches: ["Ctrl", "clic"], texte: "Choisir plusieurs projets à la fois" },
   { touches: ["Ctrl", "V"], texte: "Coller une capture d'écran dans la note" },
-  { touches: ["Ctrl", "K"], texte: "Rechercher dans toutes les applis (ouvre l'Accueil)" },
+  { touches: ["Ctrl", "K"], texte: "Rechercher dans toutes les applis" },
   { touches: ["?"], texte: "Afficher cette liste" },
 ];
 
