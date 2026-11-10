@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SeulementNavigateur } from "../components/SeulementNavigateur";
 import { Toaster } from "sonner";
 import { Shell } from "@/components/check/Shell";
+import { enregistrerHorsLigne } from "@/lib/hors-ligne";
 
 function NotFoundComponent() {
   return (
@@ -82,6 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Check — notes et tâches" },
       { name: "description", content: "Notes et tâches du bureau d'études, perso ou en équipe" },
+      { name: "theme-color", content: "#4338CA" },
       { property: "og:title", content: "Check — notes et tâches" },
       { property: "og:description", content: "Notes et tâches du bureau d'études, perso ou en équipe" },
       { property: "og:type", content: "website" },
@@ -93,6 +95,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: `${import.meta.env.BASE_URL}manifest.webmanifest` },
+      { rel: "apple-touch-icon", href: `${import.meta.env.BASE_URL}icone-192.png` },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" },
@@ -121,6 +125,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => { enregistrerHorsLigne(); }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
