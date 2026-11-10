@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.13 — 10 novembre 2026
+
+- Nouveauté : Check accepte un texte venu d'une autre appli (bouton « Noter dans Check ») : la saisie s'ouvre avec le texte prêt à valider.
+
 ## 3.12 — 9 novembre 2026
 
 - Nouveauté : nouvel onglet « Aujourd'hui » (notes en retard, du jour ou confiées à vous), le nombre s'affiche aussi dans l'onglet du navigateur ; on peut taper #chantier dans une note pour la ranger dans ce projet, et Check retient le dernier projet choisi.

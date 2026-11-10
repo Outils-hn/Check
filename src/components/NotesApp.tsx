@@ -26,11 +26,23 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("fr-CH", { day
 const fmtJour = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" });
 const PAGE = 50;
 const MAX_NOTE = 4000;
+const CLE_NOTER = "check:noter";
 const DOT: Record<Statut, string> = { todo: "var(--st-todo)", in_progress: "var(--st-progress)", waiting: "var(--st-waiting)", done: "var(--st-done)" };
 
 export default function NotesApp() {
   const { pret, uid, valide, enAttente } = useCompte();
   const [connexion, setConnexion] = useState(false);
+  // Lien « Noter dans Check » des autres applis : ?noter=texte -> texte garde le temps de la connexion, adresse nettoyee
+  useEffect(() => {
+    try {
+      const u = new URL(window.location.href);
+      const t = u.searchParams.get("noter");
+      if (!t) return;
+      sessionStorage.setItem(CLE_NOTER, t.slice(0, 2000));
+      u.searchParams.delete("noter");
+      window.history.replaceState(null, "", u.pathname + u.search + u.hash);
+    } catch { /* stockage bloque */ }
+  }, []);
   if (!pret) return null;
   // Sans compte : carnet d'essai (5 notes sur ce poste) ; compte non valide : message d'attente
   if (!uid) return (<><CarnetInvite onConnexion={() => setConnexion(true)} /><ConnexionDialog open={connexion} onOpenChange={setConnexion} /></>);
@@ -141,6 +153,16 @@ function Carnet() {
   const glisserActif = f.vue === "actives" && f.tri === "manuel" && !f.q.trim() && f.statut === "tous";
 
   const [formOuvert, setFormOuvert] = useState(false);
+  // Texte venu d'une autre appli (« Noter dans Check ») : on ouvre la saisie, prete a valider
+  useEffect(() => {
+    try {
+      const t = sessionStorage.getItem(CLE_NOTER);
+      if (!t) return;
+      sessionStorage.removeItem(CLE_NOTER);
+      setTexte(t); setFormOuvert(true);
+      requestAnimationFrame(() => { saisie.current?.focus(); saisie.current?.setSelectionRange(t.length, t.length); });
+    } catch { /* stockage bloque */ }
+  }, []);
   // Le dernier projet choisi est retenu sur ce navigateur
   const projetRetabli = useRef(false);
   useEffect(() => {

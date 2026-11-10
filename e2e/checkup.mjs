@@ -215,6 +215,10 @@ try {
   await p2.getByLabel("Rechercher une note").press("Escape");
   await shot(p2, "05-bob");
   await p.reload(); await p.waitForLoadState("networkidle"); await p.waitForTimeout(1200);
+  // Lien « Noter dans Check » depuis une autre appli : le texte arrive prêt à valider, l'adresse est nettoyée
+  { const pn = await p.context().newPage(); await pn.goto(URL0 + "?noter=" + encodeURIComponent("Fiche Sika : à vérifier")); await pn.waitForLoadState("networkidle");
+    ok((await pn.locator("textarea").first().inputValue()) === "Fiche Sika : à vérifier", "« Noter dans Check » : texte repris dans la saisie");
+    ok(!pn.url().includes("noter="), "« Noter dans Check » : adresse nettoyée"); await pn.close(); }
   ok(await p.getByText(/Réglée le/).first().isVisible(), "Alice voit la note réglée par Bob");
   ok(await p.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "Alice voit la réponse de Bob");
 
