@@ -244,7 +244,7 @@ try {
   // Lien direct vers une note (recherche Ctrl+K de l'Accueil) : sa fenêtre de modification s'ouvre
   { const idNote = etat.check_notes.find((n) => !n.supprime_le && n.texte)?.id;
     const pn = await p.context().newPage(); await pn.goto(URL0 + "?note=" + idNote); await pn.waitForLoadState("networkidle"); await pn.waitForTimeout(1500);
-    ok(await pn.getByRole("dialog").isVisible(), "Lien ?note= : la fenêtre de la note s'ouvre");
+    ok(await pn.getByRole("dialog").isVisible(), `Lien ?note= : la fenêtre de la note s'ouvre (id ${idNote}) ${(await pn.locator("body").innerText()).replace(/\s+/g, " ").slice(0, 300)}`);
     ok(!pn.url().includes("note="), "Lien ?note= : adresse nettoyée"); await pn.close(); }
   // « À retenir » : visible par tout le bureau ; seul l'auteur supprime
   await p.getByRole("button", { name: /^À retenir/ }).click();
