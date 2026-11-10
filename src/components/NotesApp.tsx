@@ -95,17 +95,16 @@ function Carnet() {
 
   // Fenetres
   const [edition, setEdition] = useState<Note | null>(null);
-  // Note designee par un lien (?note=<id>) : on ouvre sa fenetre de modification des que les notes sont chargees
+  // Note designee par un lien (?note=<id>) : on ouvre sa fenetre de modification des que les notes sont arrivees
   useEffect(() => {
-    if (chargement) return;
     try {
       const id = sessionStorage.getItem(CLE_NOTE_LIEE);
-      if (!id) return;
+      if (!id || !notes.length) return; // pas encore chargees : on garde le lien en attente
       sessionStorage.removeItem(CLE_NOTE_LIEE);
       const n = notes.find((x) => x.id === id);
       if (n) setEdition(n); else toast.error("Note introuvable : supprimée, ou d'un projet dont vous n'êtes pas membre.");
     } catch { /* stockage bloque */ }
-  }, [chargement, notes]);
+  }, [notes]);
   const [versReponse, setVersReponse] = useState(false);
   // Garde le projet pendant la fermeture : la fenetre ne bascule pas en « Nouveau projet » en se refermant
   const [projetOuvert, setProjetOuvert] = useState<{ p: Projet | null; open: boolean }>({ p: null, open: false });
