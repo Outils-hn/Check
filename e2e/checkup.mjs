@@ -21,7 +21,7 @@ const ALICE = COMPTES["alice@exemple.ch"].id, BOB = COMPTES["bob@exemple.ch"].id
 const parId = (id) => Object.entries(COMPTES).find(([, c]) => c.id === id);
 
 // ---- Base simulee ----
-const etat = { check_projets: [], check_membres: [], check_notes: [] };
+const etat = { check_projets: [], check_membres: [], check_notes: [], check_retenir: [] };
 let n = 0;
 const uid = () => `00000000-0000-4000-8000-${String(++n).padStart(12, "0")}`;
 const valide = (u) => !!u && !!parId(u)?.[1].valide;
@@ -29,6 +29,7 @@ const membre = (u, p) => etat.check_membres.some((m) => m.projet_id === p && m.u
 const voit = (t, u, r) => valide(u) && (
   t === "check_projets" ? membre(u, r.id) || r.cree_par === u
   : t === "check_membres" ? membre(u, r.projet_id)
+  : t === "check_retenir" ? true
   : r.projet_id === null ? r.auteur === u : membre(u, r.projet_id));
 const filtres = (url) => [...url.searchParams.entries()].filter(([k, v]) => !["select", "order", "limit"].includes(k) && v.startsWith("eq.")).map(([k, v]) => [k, v.slice(3)]);
 const correspond = (r, f) => f.every(([k, v]) => String(r[k]) === v);
@@ -219,6 +220,22 @@ try {
   { const pn = await p.context().newPage(); await pn.goto(URL0 + "?noter=" + encodeURIComponent("Fiche Sika : à vérifier")); await pn.waitForLoadState("networkidle");
     ok((await pn.locator("textarea").first().inputValue()) === "Fiche Sika : à vérifier", "« Noter dans Check » : texte repris dans la saisie");
     ok(!pn.url().includes("noter="), "« Noter dans Check » : adresse nettoyée"); await pn.close(); }
+  // « À retenir » : visible par tout le bureau ; seul l'auteur supprime
+  await p.getByRole("button", { name: /^À retenir/ }).click();
+  const zr = p.locator('section[aria-label="À retenir"]');
+  await zr.getByLabel("L'essentiel en une phrase").fill("Coller le joint avant la pose du capot");
+  await zr.getByLabel("Détail").fill("Retour de l'atelier : sinon le capot ne ferme plus.");
+  await zr.getByLabel("Sujet").fill("Atelier");
+  await zr.getByRole("button", { name: "Ajouter", exact: true }).click(); await p.waitForTimeout(400);
+  ok(await p.locator("[data-retenir]", { hasText: "Coller le joint" }).isVisible(), "« À retenir » : la fiche d'Alice apparaît");
+  await shot(p, "08-a-retenir");
+  await p2.getByRole("button", { name: /^À retenir/ }).click();
+  await p2.locator("[data-retenir]", { hasText: "Coller le joint" }).waitFor({ timeout: 4000 }).catch(() => {});
+  ok(await p2.locator("[data-retenir]", { hasText: "Coller le joint" }).isVisible(), "« À retenir » : Bob voit la fiche d'Alice");
+  ok((await p2.getByRole("button", { name: /Supprimer « Coller/ }).count()) === 0, "« À retenir » : Bob ne peut pas supprimer la fiche d'Alice");
+  await p2.getByLabel("Rechercher dans À retenir").fill("capot"); ok((await p2.locator("[data-retenir]").count()) === 1, "« À retenir » : recherche");
+  await p2.getByRole("button", { name: "Retour à mes notes" }).click();
+  await p.getByRole("button", { name: "Retour à mes notes" }).click();
   ok(await p.getByText(/Réglée le/).first().isVisible(), "Alice voit la note réglée par Bob");
   ok(await p.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "Alice voit la réponse de Bob");
 

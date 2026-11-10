@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Inbox, LogIn, MessageSquareText, Pencil, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import {
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
+import { Retenir } from "@/components/check/Retenir";
+import { useRetenir } from "@/lib/retenir";
 import { ProjetDialog } from "@/components/check/ProjetDialog";
 import { RepriseDialog, type PlanReprise } from "@/components/check/RepriseDialog";
 import { ConnexionDialog } from "@/components/check/ConnexionDialog";
@@ -153,6 +155,8 @@ function Carnet() {
   const glisserActif = f.vue === "actives" && f.tri === "manuel" && !f.q.trim() && f.statut === "tous";
 
   const [formOuvert, setFormOuvert] = useState(false);
+  const [retenir, setRetenir] = useState(false);
+  const nbRetenir = useRetenir().fiches.length;
   // Texte venu d'une autre appli (« Noter dans Check ») : on ouvre la saisie, prete a valider
   useEffect(() => {
     try {
@@ -261,6 +265,10 @@ function Carnet() {
           </form>
         </section>
 
+        <Button type="button" variant={retenir ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:order-1" aria-pressed={retenir} onClick={() => setRetenir((r) => !r)}>
+          <Pin className="size-4" aria-hidden="true" />{retenir ? "Retour à mes notes" : `À retenir${nbRetenir ? ` · ${nbRetenir}` : ""}`}
+        </Button>
+
         <section className="panel p-4 max-lg:order-3">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="card-title">Projets</h2>
@@ -294,7 +302,8 @@ function Carnet() {
         </section>
       </aside>
 
-      <section className="min-w-0 space-y-4 max-lg:order-2">
+      {retenir && <Retenir moi={moi} comptes={comptes} />}
+      <section className={cn("min-w-0 space-y-4 max-lg:order-2", retenir && "hidden")}>
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div role="tablist" aria-label="Vue" className="flex max-w-full overflow-x-auto whitespace-nowrap rounded-md border border-border p-0.5 text-sm">
             {([["aujourdhui", `Aujourd'hui${aujourdhui ? ` · ${aujourdhui}` : ""}`], ["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (

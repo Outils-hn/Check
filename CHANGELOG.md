@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.14 — 10 novembre 2026
+
+- Nouveauté : nouvelle page « À retenir » : les retours de l'atelier et bonnes pratiques, visibles par tout le bureau, avec recherche (script SQL « check-retenir.sql » à lancer une fois).
+
 ## 3.13 — 10 novembre 2026
 
 - Nouveauté : Check accepte un texte venu d'une autre appli (bouton « Noter dans Check ») : la saisie s'ouvre avec le texte prêt à valider.
