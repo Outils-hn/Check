@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronRight, FileDown, ListChecks, MessageSquareText, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, ChevronRight, FileDown, ListChecks, MessageSquareText, Pencil, RotateCcw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { groupesAtelier, nomProjet, type GroupeAtelier, type Note, type Projet } from "@/lib/notes";
+import { groupesAtelier, nomProjet, sansAccents, type GroupeAtelier, type Note, type Projet } from "@/lib/notes";
 
 const CLE_REPLIS = "check:taches-ouvertes";
 const libelleTache = (t: string) => (t ? `Tâche ${t}` : "Sans numéro de tâche");
@@ -22,14 +22,35 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
   const [texte, setTexte] = useState("");
   const [ouverts, setOuverts] = useState<Record<string, boolean>>(lireEtat);
   const [aSupprimer, setASupprimer] = useState<GroupeAtelier | null>(null);
-  const groupes = useMemo(() => groupesAtelier(notes, nomDe), [notes, nomDe]);
-  const tachesConnues = useMemo(() => [...new Set(groupes.filter((g) => g.projet_id === projet && g.tache).map((g) => g.tache))], [groupes, projet]);
-  const enAttente = groupes.filter((g) => g.enAttente.length);
+  const [q, setQ] = useState("");
+  const recherche = useRef<HTMLInputElement>(null);
+  const tous = useMemo(() => groupesAtelier(notes, nomDe), [notes, nomDe]);
+  // Recherche : numero de tache, projet, questions et reponses (sans accents) ; la tache est montree entiere des qu'un mot s'y trouve
+  const groupes = useMemo(() => {
+    const mots = sansAccents(q).split(/\s+/).filter(Boolean);
+    if (!mots.length) return tous;
+    return tous.filter((g) => {
+      const t = sansAccents([libelleTache(g.tache), nomDe(g.projet_id), ...[...g.enAttente, ...g.reglees].flatMap((n) => [n.texte, n.reponse ?? ""])].join(" "));
+      return mots.every((m) => t.includes(m));
+    });
+  }, [tous, q, nomDe]);
+  // « / » : place le curseur dans la recherche
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (e.key !== "/" || /INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable || e.ctrlKey || e.metaKey || e.altKey) return;
+      e.preventDefault(); recherche.current?.focus();
+    };
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, []);
+  const tachesConnues = useMemo(() => [...new Set(tous.filter((g) => g.projet_id === projet && g.tache).map((g) => g.tache))], [groupes, projet]);
+  const enAttente = tous.filter((g) => g.enAttente.length);
   // Ouverte par defaut tant qu'il reste des questions sans reponse, repliee quand tout est regle ; le choix de chacun est retenu sur ce poste
-  const ouvert = (g: GroupeAtelier) => ouverts[g.cle] ?? g.enAttente.length > 0;
+  const ouvert = (g: GroupeAtelier) => (q.trim() ? true : ouverts[g.cle] ?? g.enAttente.length > 0);
   const regler = (etat: Record<string, boolean>) => { setOuverts(etat); try { localStorage.setItem(CLE_REPLIS, JSON.stringify(etat)); } catch { /* stockage bloque */ } };
   const basculer = (g: GroupeAtelier) => regler({ ...ouverts, [g.cle]: !ouvert(g) });
-  const toutOuvrir = (o: boolean) => regler(Object.fromEntries(groupes.map((g) => [g.cle, o])));
+  const toutOuvrir = (o: boolean) => regler(Object.fromEntries(tous.map((g) => [g.cle, o])));
 
   const ajouter = async () => {
     if (!texte.trim() || !projet) return;
@@ -63,15 +84,34 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
             <select className="field" aria-label="Projet" value={projet} onChange={(e) => setProjet(e.target.value)}>
               {projets.map((p) => <option key={p.id} value={p.id}>{nomProjet(p)}</option>)}
             </select>
-            <Input value={tache} maxLength={60} list="taches-connues" onChange={(e) => setTache(e.target.value)} placeholder="N° de tâche" aria-label="Numéro de tâche" />
-            <datalist id="taches-connues">{tachesConnues.map((t) => <option key={t} value={t} />)}</datalist>
+            <Input value={tache} maxLength={60} onChange={(e) => setTache(e.target.value)} placeholder="N° de tâche" aria-label="Numéro de tâche" />
+            {tachesConnues.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 text-xs sm:col-span-2" aria-label="Tâches de ce projet">
+                <span className="text-muted-foreground">Tâches du projet :</span>
+                {tachesConnues.map((t) => (
+                  <button key={t} type="button" aria-pressed={tache === t} onClick={() => setTache(t)}
+                    className={`rounded-full border border-border px-2.5 py-0.5 hover:bg-muted ${tache === t ? "bg-muted font-medium" : ""}`}>{t}</button>
+                ))}
+              </div>
+            )}
             <Input className="sm:col-span-2" value={texte} maxLength={500} onChange={(e) => setTexte(e.target.value)} placeholder="Votre question, Entrée pour ajouter" aria-label="Votre question" />
             <Button type="submit" className="sm:col-span-2" disabled={!texte.trim()}>Ajouter la question</Button>
           </form>
         )}
       </div>
 
-      {groupes.length > 1 && (
+      {tous.length > 0 && (
+        <div className="panel p-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Input ref={recherche} className="pl-9 pr-8" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Escape" && setQ("")}
+              placeholder="Rechercher une tâche, une question, une réponse…" aria-label="Rechercher une tâche" />
+            <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-[10px] text-muted-foreground">/</kbd>
+          </div>
+        </div>
+      )}
+
+      {groupes.length > 1 && !q.trim() && (
         <div className="flex justify-end gap-3 text-xs text-muted-foreground">
           <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => toutOuvrir(true)}>Tout déplier</button>
           <button type="button" className="underline underline-offset-2 hover:text-foreground" onClick={() => toutOuvrir(false)}>Tout replier</button>
@@ -80,7 +120,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
 
       {groupes.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-          <MessageSquareText className="mx-auto mb-2 size-7 opacity-50" aria-hidden="true" />Aucune question pour le moment.
+          <MessageSquareText className="mx-auto mb-2 size-7 opacity-50" aria-hidden="true" />{q.trim() ? `Aucune tâche ne correspond à « ${q.trim()} ».` : "Aucune question pour le moment."}
         </div>
       ) : groupes.map((g) => {
         const o = ouvert(g);

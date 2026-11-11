@@ -289,6 +289,19 @@ try {
   await p.getByLabel(/^Réponse/).fill("5 mm, cale en nylon");
   await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 1 && await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "5 mm" }).isVisible(), "réponse saisie, la question passe en réglée");
+  // Recherche de tache et choix d'une tache existante en un clic
+  await za.getByLabel("Numéro de tâche").fill("");
+  ok(await za.getByRole("button", { name: "1234", exact: true }).isVisible() && await za.getByRole("button", { name: "200", exact: true }).isVisible(), "tâches du projet proposées en un clic");
+  await za.getByRole("button", { name: "200", exact: true }).click();
+  ok((await za.getByLabel("Numéro de tâche").inputValue()) === "200", "un clic sur une tâche remplit le numéro");
+  await za.getByLabel("Rechercher une tâche").fill("lisse");
+  ok((await p.locator("[data-tache]").count()) === 1 && await p.locator('[data-tache="1234"]').isVisible(), "recherche « lisse » : seule la tâche 1234");
+  await za.getByLabel("Rechercher une tâche").fill("fer plat");
+  ok((await p.locator("[data-tache]").count()) === 1 && await p.locator('[data-tache="200"]').isVisible(), "recherche « fer plat » : seule la tâche 200");
+  await za.getByLabel("Rechercher une tâche").fill("zzz");
+  ok(await p.getByText(/Aucune tâche ne correspond/).isVisible(), "recherche sans résultat : message");
+  await za.getByLabel("Rechercher une tâche").press("Escape");
+  ok((await p.locator("[data-tache]").count()) === 2, "Échap vide la recherche");
   // Rouvrir une question reglee, la reregler ; le PDF d'une tache reprend aussi les questions reglees
   await p.locator("[data-reglee]", { hasText: "Quel jeu" }).getByRole("button", { name: "Rouvrir la question" }).click(); await p.waitForTimeout(800);
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 2 && !(await p.locator("[data-reglee]").count()), "question rouverte : elle repasse en attente");

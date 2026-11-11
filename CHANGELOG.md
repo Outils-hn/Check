@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.34 — 11 novembre 2026
+
+- Nouveauté : dans « Questions Tâches », une barre de recherche (touche /) retrouve une tâche, une question ou une réponse, et les tâches déjà utilisées du projet se choisissent d'un clic au lieu de la grande liste déroulante.
+
 ## 3.33 — 11 novembre 2026
 
 - Nouveauté : dans « Questions Tâches », une question réglée peut être rouverte, sa réponse corrigée ou la question supprimée ; le PDF d'une tâche reprend aussi ses questions réglées avec leur réponse.
