@@ -57,6 +57,7 @@ export function projetDepuisTexte(texte: string, projets: Projet[]): { texte: st
 export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: string | null) => string): Note[] {
   const mots = sansAccents(f.q).split(/\s+/).filter(Boolean);
   const res = notes.filter((n) => {
+    if (n.atelier) return false; // les questions de tache vivent dans « Questions Tâches »
     if (f.vue === "corbeille") { if (!n.supprime_le) return false; }
     else {
       if (n.supprime_le) return false;
@@ -95,7 +96,7 @@ export const ordreEnTete = (notes: Note[]) => (notes.length ? Math.min(...notes.
 
 /** Notes « Réglé » depuis plus de 7 jours, a archiver par « Nettoyer ». */
 export const aNettoyer = (notes: Note[], maintenant = Date.now()) =>
-  notes.filter((n) => !n.archive && !n.supprime_le && n.statut === "done" && n.regle_le && Date.parse(n.regle_le) < maintenant - 7 * 86400000);
+  notes.filter((n) => !n.atelier && !n.archive && !n.supprime_le && n.statut === "done" && n.regle_le && Date.parse(n.regle_le) < maintenant - 7 * 86400000);
 
 /** Nombre de jours de retard d'une echeance (0 si pas en retard). */
 export function joursRetard(echeance: string | null, jour = jourIso()): number {

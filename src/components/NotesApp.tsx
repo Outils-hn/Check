@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Wrench, Zap,
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, ListChecks, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -171,13 +171,13 @@ function Carnet() {
   }
   const visibles = useMemo(() => filtrer(notes, f, moi, nomDe), [notes, f, moi, projetDe]); // eslint-disable-line react-hooks/exhaustive-deps
   const affichees = useMemo(() => visibles.slice(0, limite), [visibles, limite]);
-  const vivantes = notes.filter((n) => !n.supprime_le && !n.archive);
+  const vivantes = notes.filter((n) => !n.supprime_le && !n.archive && !n.atelier);
   const aujourdhui = vivantes.filter((n) => pourAujourdhui(n, moi)).length;
   const pourMoi = vivantes.filter((n) => n.pour === moi && n.statut !== "done").length;
   const enRetard = vivantes.filter((n) => n.statut !== "done" && etatEcheance(n.echeance) === "retard").length;
   const compte = (s: Statut) => vivantes.filter((n) => n.statut === s).length;
   const nbProjet = (id: string) => vivantes.filter((n) => (n.projet_id ?? PERSO) === id).length;
-  const nbCorbeille = notes.filter((n) => n.supprime_le).length;
+  const nbCorbeille = notes.filter((n) => n.supprime_le && !n.atelier).length;
   const glisserActif = f.vue === "actives" && f.tri === "manuel" && !f.q.trim() && f.statut === "tous";
 
   const [formOuvert, setFormOuvert] = useState(false);
@@ -329,7 +329,7 @@ function Carnet() {
         </section>
 
         <Button type="button" variant={atelier ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:order-1" aria-pressed={atelier} onClick={() => { setAtelier((a) => !a); setRetenir(false); }}>
-          <Wrench className="size-4" aria-hidden="true" />{atelier ? "Retour à mes notes" : `Atelier / Montage${nbAtelier ? ` · ${nbAtelier}` : ""}`}
+          <ListChecks className="size-4" aria-hidden="true" />{atelier ? "Retour à mes notes" : `Questions Tâches${nbAtelier ? ` · ${nbAtelier}` : ""}`}
         </Button>
         <Button type="button" variant={retenir ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:order-1" aria-pressed={retenir} onClick={() => { setRetenir((r) => !r); setAtelier(false); }}>
           <Pin className="size-4" aria-hidden="true" />{retenir ? "Retour à mes notes" : `À retenir${nbRetenir ? ` · ${nbRetenir}` : ""}`}
@@ -370,10 +370,11 @@ function Carnet() {
 
       {retenir && <Retenir moi={moi} comptes={comptes} />}
       {atelier && (
-        <Atelier notes={notes} projets={actifs} projetInitial={formProjet} nomDe={nomDe}
+        <Atelier notes={notes} projets={actifs} projetInitial={formProjet} nomDe={nomDe} auteur={comptes.find((c) => c.id === moi)?.nom}
           onAjouter={async (q) => !!(await act.ajouterNote({ texte: q.texte, projet_id: q.projet_id, tache: q.tache || null, atelier: true, statut: "todo", ordre: ordreEnTete(notes) }))}
           onRepondre={(n) => { setVersReponse(true); setEdition({ ...n, statut: "done" }); }}
-          onSupprimer={(n) => void supprimer(n)} />
+          onSupprimer={async (n) => { if (await act.mettreCorbeille(n.id)) toast("Question supprimée", { action: { label: "Annuler", onClick: () => act.restaurer(n.id) }, duration: 6000 }); }}
+          onSupprimerTache={async (g) => { for (const n of [...g.enAttente, ...g.reglees]) await act.supprimerDefinitivement(n); toast.success("Tâche supprimée"); }} />
       )}
       <section className={cn("min-w-0 space-y-4 max-lg:order-2", (retenir || atelier) && "hidden")}>
         <div className="panel flex flex-wrap items-center gap-2 p-3">
@@ -521,7 +522,6 @@ function LigneNote(props: {
             <span className="whitespace-pre-wrap break-words">{reponseDe(n)}</span>
           </p>
         )}
-        {n.atelier && <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--app-ink)]" data-atelier><Wrench className="size-3" aria-hidden="true" />Atelier / Montage{n.tache ? ` · tâche ${n.tache}` : ""}</p>}
         <Miniatures chemins={n.images ?? []} modifiable={!corbeille} onRetirer={props.onRetirerImage} />
         {(props.pour || props.auteur) && (
           <p className="mt-0.5 text-[11px] text-muted-foreground">

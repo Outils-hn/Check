@@ -1,4 +1,4 @@
--- « Atelier / Montage » (Check 3.31) : questions a poser a l'atelier ou aux monteurs, rangees par numero de tache dans un projet.
+-- « Questions Tâches » (Check 3.31) : questions a poser a l'atelier ou aux monteurs, rangees par numero de tache dans un projet.
 -- A coller UNE FOIS dans Supabase > projet d'Index > SQL Editor > New query > Run. Relancer le script ne casse rien.
 -- Une question = une note de projet marquee « atelier », avec le numero de tache ; elle garde la reponse,
 -- l'equipe du projet, la corbeille et l'historique comme toute note. Aucune nouvelle table, aucune regle d'acces modifiee.

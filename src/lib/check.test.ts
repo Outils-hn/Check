@@ -187,5 +187,10 @@ describe("atelier / montage", () => {
     const g = groupesAtelier([q({ id: "a", tache: "Façade A" }), q({ id: "b", tache: "facade a" })], nomDe);
     expect(g.length).toBe(1);
   });
+  it("les questions n'apparaissent dans aucune liste de notes, ni dans « Nettoyer »", () => {
+    const toutes = [...liste, q({ id: "q10", statut: "done", tache: "5", regle_le: "2026-10-01T08:00:00Z" })];
+    for (const vue of ["actives", "pour-moi", "aujourdhui", "archivees", "corbeille"] as const) expect(ids(filtrer(toutes, { ...F, vue }, moi, nomDe)).filter((i) => i.startsWith("q") && i !== "q8")).toEqual([]);
+    expect(ids(aNettoyer(toutes))).toEqual([]);
+  });
   it("compte les questions sans reponse", () => expect(nbQuestionsAtelier(liste)).toBe(3));
 });

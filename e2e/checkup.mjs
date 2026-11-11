@@ -262,34 +262,60 @@ try {
   await p2.getByLabel("Rechercher dans À retenir").fill("capot"); ok((await p2.locator("[data-retenir]").count()) === 1, "« À retenir » : recherche");
   await p2.getByRole("button", { name: "Retour à mes notes" }).click();
   await p.getByRole("button", { name: "Retour à mes notes" }).click();
-  // « Atelier / Montage » : questions par tache, feuille a imprimer, reponse a la main puis saisie
-  etape = "atelier";
-  await p.evaluate(() => { window.print = () => { window.__feuille = document.getElementById("feuille-atelier")?.innerText ?? ""; window.__classe = document.body.classList.contains("impression-atelier"); window.dispatchEvent(new Event("afterprint")); }; });
-  await p.getByRole("button", { name: /^Atelier \/ Montage/ }).click();
-  const za = p.locator('section[aria-label="Atelier / Montage"]');
+  // « Questions Tâches » : questions par tache, PDF a emporter, reponse saisie, repli, suppression de la tache
+  etape = "questions taches";
+  const nbListe = await lignesNotes(p).count();
+  await p.getByRole("button", { name: /^Questions Tâches/ }).click();
+  const za = p.locator('section[aria-label="Questions Tâches"]');
   await za.getByLabel("Projet", { exact: true }).selectOption({ label: "Chantier 1" });
   await za.getByLabel("Numéro de tâche").fill("1234");
-  await za.getByLabel(/^Question pour l'atelier/).fill("Quel jeu sous la lisse ?"); await za.getByLabel(/^Question pour l'atelier/).press("Enter"); await p.waitForTimeout(500);
-  await za.getByLabel(/^Question pour l'atelier/).fill("Cale de 3 ou de 5 ?"); await za.getByLabel(/^Question pour l'atelier/).press("Enter"); await p.waitForTimeout(500);
-  ok((await p.locator("[data-question]").count()) === 2 && await p.locator('[data-tache="1234"]').isVisible(), "atelier : 2 questions rangées sous la tâche 1234");
-  ok(etat.check_notes.filter((x) => x.atelier && x.tache === "1234" && x.projet_id === projet.id).length === 2, "atelier : questions enregistrées comme notes de projet");
-  ok(await p.getByRole("button", { name: /^Atelier \/ Montage · 2|Retour à mes notes/ }).first().isVisible(), "atelier : bouton actif");
-  await p.locator('[data-tache="1234"]').getByRole("button", { name: "Imprimer" }).click(); await p.waitForTimeout(400);
-  const feuille = await p.evaluate(() => window.__feuille);
-  ok(/Tâche 1234/.test(feuille) && /Quel jeu sous la lisse/.test(feuille) && /Cale de 3 ou de 5/.test(feuille) && await p.evaluate(() => window.__classe), "atelier : la feuille à imprimer contient la tâche et les questions");
-  ok(!(await p.locator("#feuille-atelier").count()), "atelier : feuille retirée après l'impression");
-  await shot(p, "08b-atelier");
+  await za.getByLabel("Votre question").fill("Quel jeu sous la lisse ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
+  await za.getByLabel("Votre question").fill("Cale de 3 ou de 5 ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
+  await za.getByLabel("Numéro de tâche").fill("200");
+  await za.getByLabel("Votre question").fill("Autre tâche : longueur du fer plat ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
+  ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 2 && (await p.locator('[data-tache="200"] [data-question]').count()) === 1, "questions rangées sous leur tâche (1234 : 2, 200 : 1)");
+  ok(etat.check_notes.filter((x) => x.atelier && x.projet_id === projet.id).length === 3, "questions enregistrées comme notes de projet");
+  await shot(p, "08b-questions-taches");
+  const dlq = p.waitForEvent("download");
+  await p.locator('[data-tache="1234"]').getByRole("button", { name: /^PDF de/ }).click();
+  const pdfq = await dlq;
+  ok(/^check-questions-taches-\d{4}-\d{2}-\d{2}\.pdf$/.test(pdfq.suggestedFilename()) && fs.statSync(await pdfq.path()).size > 1500, `export PDF des questions (${pdfq.suggestedFilename()})`);
   await p2.reload({ waitUntil: "networkidle" }); // le direct est simule : on recharge pour voir ce qu'Alice vient d'ajouter
-  await p2.getByRole("button", { name: /^Atelier \/ Montage/ }).click();
+  ok((await lignesNotes(p2).count()) === nbListe, "les questions n'apparaissent pas dans la liste des notes");
+  await p2.getByRole("button", { name: /^Questions Tâches/ }).click();
   await p2.locator("[data-question]").first().waitFor({ timeout: 4000 }).catch(() => {});
-  ok((await p2.locator("[data-question]").count()) === 2, "atelier : Bob voit les questions de l'équipe");
+  ok((await p2.locator("[data-question]").count()) === 3, "Bob voit les questions de l'équipe");
   await p2.getByRole("button", { name: "Retour à mes notes" }).click();
   await p.locator("[data-question]", { hasText: "Quel jeu" }).getByRole("button", { name: "Répondre" }).click();
   await p.getByLabel(/^Réponse/).fill("5 mm, cale en nylon");
   await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
-  ok((await p.locator("[data-question]").count()) === 1 && await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "5 mm" }).isVisible(), "atelier : réponse saisie, la question passe en réglée");
+  ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 1 && await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "5 mm" }).isVisible(), "réponse saisie, la question passe en réglée");
+  // Replier / deplier une tache
+  const entete = p.locator('[data-tache="1234"]').getByRole("button", { expanded: true }).first();
+  await entete.click();
+  ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 0 && await p.locator('[data-tache="1234"]').getByRole("button", { expanded: false }).isVisible(), "tâche repliée : questions masquées");
+  ok((await p.locator('[data-tache="200"] [data-question]').count()) === 1, "l'autre tâche reste dépliée");
+  await p.reload({ waitUntil: "networkidle" });
+  await p.getByRole("button", { name: /^Questions Tâches/ }).click();
+  ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 0, "le repli est retenu après rechargement");
+  await p.locator('[data-tache="1234"]').getByRole("button", { expanded: false }).click();
+  ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 1, "tâche dépliée à nouveau");
+  // Suppression d'une tache et de ses questions (avec confirmation)
+  await p.getByRole("button", { name: /^Supprimer tâche 1234/ }).click();
+  ok(await p.getByRole("dialog").getByText(/n'a pas encore de réponse/).isVisible(), "confirmation : prévient qu'une question n'a pas de réponse");
+  await p.getByRole("dialog").getByRole("button", { name: "Annuler" }).click();
+  ok(etat.check_notes.filter((x) => x.atelier && x.tache === "1234").length === 2, "annuler ne supprime rien");
+  await p.getByRole("button", { name: /^Supprimer tâche 1234/ }).click();
+  await p.getByRole("dialog").getByRole("button", { name: "Supprimer la tâche" }).click(); await p.waitForTimeout(1200);
+  ok(!(await p.locator('[data-tache="1234"]').count()) && etat.check_notes.filter((x) => x.atelier && x.tache === "1234").length === 0, "tâche 1234 et ses questions supprimées");
+  ok(etat.check_notes.filter((x) => x.atelier && x.tache === "200").length === 1, "l'autre tâche est intacte");
   await p.getByRole("button", { name: "Retour à mes notes" }).click();
-  ok(await p.locator("[data-atelier]", { hasText: "tâche 1234" }).first().isVisible(), "atelier : repère « Atelier / Montage · tâche 1234 » sur la note");
+  // Nettoyage : la derniere tache disparait aussi, la suite du check-up retrouve ses 4 notes
+  await p.getByRole("button", { name: /^Questions Tâches/ }).click();
+  await p.getByRole("button", { name: /^Supprimer tâche 200/ }).click();
+  await p.getByRole("dialog").getByRole("button", { name: "Supprimer la tâche" }).click(); await p.waitForTimeout(1000);
+  ok(etat.check_notes.filter((x) => x.atelier).length === 0, "toutes les questions supprimées");
+  await p.getByRole("button", { name: "Retour à mes notes" }).click();
   // Images : photo jointe à la création, compressée puis envoyée ; retirée avec la note supprimée
   await p.locator("textarea").first().fill("Note avec photo");
   await p.locator("[data-fichier-form]").setInputFiles({ name: "capture.png", mimeType: "image/png", buffer: PNG });
@@ -337,7 +363,7 @@ try {
   const dl2 = p.waitForEvent("download");
   await p.getByRole("button", { name: "Télécharger" }).click();
   const sauvegarde = JSON.parse(fs.readFileSync(await (await dl2).path(), "utf8"));
-  ok(sauvegarde.app === "check" && sauvegarde.notes.length === 6, "sauvegarde téléchargée (6 notes, questions atelier comprises)");
+  ok(sauvegarde.app === "check" && sauvegarde.notes.length === 4, "sauvegarde téléchargée (4 notes)");
   await p.keyboard.press("Escape");
   await p.getByRole("button", { name: /Conçu par/ }).click();
   ok(await p.getByText("Conçu et développé par Hugo N.").isVisible(), "fenêtre À propos");

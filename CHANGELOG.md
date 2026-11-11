@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.32 — 11 novembre 2026
+
+- Nouveauté : « Atelier / Montage » devient « Questions Tâches » : le bouton PDF sort la feuille à emporter, chaque tâche se replie et se supprime avec ses questions une fois réglée, et ces questions ne s'affichent plus dans la liste des notes.
+
 ## 3.31 — 11 novembre 2026
 
 - Nouveauté : « Atelier / Montage » : notez vos questions pour l'atelier ou les monteurs, rangées par tâche dans un projet. Un bouton imprime la feuille (cases à cocher et lignes pour écrire), puis vous saisissez les réponses à votre retour ; elles restent visibles pour l'équipe.
