@@ -320,14 +320,20 @@ try {
   ok((await p.locator("[data-tache]").count()) === 1 && await p.locator('[data-tache="300"]').isVisible(), "filtre « Fournisseur » : seule la tâche 300");
   await za.getByRole("button", { name: "Tous", exact: true }).click();
   ok((await p.locator("[data-tache]").count()) === 3, "filtre « Tous » : les 3 tâches");
-  await p.getByRole("button", { name: "Nommer Tâche 200" }).click();
-  await p.getByRole("dialog").getByLabel("Nom de la tâche").fill("Fers plats");
+  await p.getByRole("button", { name: "Modifier Tâche 200" }).click();
+  await p.getByRole("dialog").getByLabel(/^Nom de la tâche/).fill("Fers plats");
   await p.getByRole("dialog").getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
   ok(await p.locator('[data-tache="200"]').getByText(/Tâche 200 · Fers plats/).isVisible(), "tâche 200 renommée avec le crayon");
+  // Changer le numero d'une tache : toutes ses questions suivent
+  await p.getByRole("button", { name: "Modifier Tâche 300" }).click();
+  await p.getByRole("dialog").getByLabel("Numéro de tâche").fill("350");
+  await p.getByRole("dialog").getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(1000);
+  ok(await p.locator('[data-tache="350"]').getByText(/Tâche 350 · Façade nord/).isVisible() && !(await p.locator('[data-tache="300"]').count()), "numéro de tâche modifié (300 → 350), le nom reste");
+  ok(etat.check_notes.filter((x) => x.atelier && x.tache === "350").length === 2 && !etat.check_notes.some((x) => x.tache === "300"), "toutes les questions de la tâche suivent le nouveau numéro");
   await za.getByLabel("Rechercher une tâche").fill("façade nord");
-  ok((await p.locator("[data-tache]").count()) === 1 && await p.locator('[data-tache="300"]').isVisible(), "la recherche trouve une tâche par son nom");
+  ok((await p.locator("[data-tache]").count()) === 1 && await p.locator('[data-tache="350"]').isVisible(), "la recherche trouve une tâche par son nom");
   await za.getByLabel("Rechercher une tâche").press("Escape");
-  await p.getByRole("button", { name: /^Supprimer Tâche 300/ }).click();
+  await p.getByRole("button", { name: /^Supprimer Tâche 350/ }).click();
   await p.getByRole("dialog").getByRole("button", { name: "Supprimer la tâche" }).click(); await p.waitForTimeout(800);
   // Rouvrir une question reglee, la reregler ; le PDF d'une tache reprend aussi les questions reglees
   await p.locator("[data-reglee]", { hasText: "Quel jeu" }).getByRole("button", { name: "Rouvrir la question" }).click(); await p.waitForTimeout(800);

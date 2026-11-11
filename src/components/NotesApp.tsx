@@ -375,7 +375,7 @@ function Carnet() {
           onRepondre={(n) => { setVersReponse(true); setEdition({ ...n, statut: "done" }); }}
           onRouvrir={(n) => void act.modifier(n.id, { statut: "todo" })}
           onSupprimer={async (n) => { if (await act.mettreCorbeille(n.id)) toast("Question supprimée", { action: { label: "Annuler", onClick: () => act.restaurer(n.id) }, duration: 6000 }); }}
-          onRenommerTache={async (g, nom) => { for (const n of [...g.enAttente, ...g.reglees]) await act.modifier(n.id, { tache_nom: nom || null }); toast.success(nom ? "Tâche nommée" : "Nom retiré"); }}
+          onRenommerTache={async (g, c) => { for (const n of [...g.enAttente, ...g.reglees]) await act.modifier(n.id, { tache: c.tache || null, tache_nom: c.nom || null }); toast.success("Tâche modifiée"); }}
           onSupprimerTache={async (g) => { for (const n of [...g.enAttente, ...g.reglees]) await act.supprimerDefinitivement(n); toast.success("Tâche supprimée"); }} />
       )}
       <section className={cn("min-w-0 space-y-4 max-lg:order-2", (retenir || atelier) && "hidden")}>
