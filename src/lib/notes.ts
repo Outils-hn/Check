@@ -4,7 +4,7 @@ export type Statut = "todo" | "in_progress" | "waiting" | "done";
 export type Note = {
   id: string; projet_id: string | null; auteur: string; pour: string | null;
   texte: string; statut: Statut; echeance: string | null; flash: boolean; archive: boolean;
-  ordre: number; atelier?: boolean; tache?: string | null; tache_nom?: string | null; images?: string[]; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
+  ordre: number; atelier?: boolean; tache?: string | null; tache_nom?: string | null; destinataire?: string | null; fournisseur?: string | null; images?: string[]; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
 };
 export type Projet = { id: string; nom: string; numero: string; cree_par: string | null; archive: boolean };
 export type Membre = { projet_id: string; user_id: string };
@@ -106,6 +106,14 @@ export function joursRetard(echeance: string | null, jour = jourIso()): number {
   return Math.round((b - a) / 86_400_000);
 }
 
+/** A qui s'adresse une question de tache. Sans destinataire (anciennes questions) : l'atelier. */
+export type Dest = "atelier" | "montage" | "fournisseur";
+export const DESTS: Dest[] = ["atelier", "montage", "fournisseur"];
+export const LIBELLE_DEST: Record<Dest, string> = { atelier: "Atelier", montage: "Montage", fournisseur: "Fournisseur" };
+export const destDe = (n: Pick<Note, "destinataire">): Dest => (n.destinataire === "montage" || n.destinataire === "fournisseur" ? n.destinataire : "atelier");
+/** « Fournisseur · Schüco » ou « Atelier ». */
+export const etiquetteDest = (n: Pick<Note, "destinataire" | "fournisseur">) => LIBELLE_DEST[destDe(n)] + (destDe(n) === "fournisseur" && n.fournisseur?.trim() ? ` · ${n.fournisseur.trim()}` : "");
+
 /** Question « a demander a l'atelier » : une note de projet marquee Atelier, rangee sous un numero de tache. */
 export type GroupeAtelier = { cle: string; projet_id: string; tache: string; nom: string; enAttente: Note[]; reglees: Note[] };
 
@@ -121,7 +129,8 @@ export function groupesAtelier(notes: Note[], nomDe: (id: string | null) => stri
     if (!g.nom && n.tache_nom?.trim()) g.nom = n.tache_nom.trim(); // le nom est repete sur chaque question de la tache
     m.set(cle, g);
   }
-  const parAncien = (a: Note, b: Note) => a.created_at.localeCompare(b.created_at);
+  // En attente : par destinataire (atelier, montage, fournisseur) puis du plus ancien au plus recent
+  const parAncien = (a: Note, b: Note) => DESTS.indexOf(destDe(a)) - DESTS.indexOf(destDe(b)) || a.created_at.localeCompare(b.created_at);
   const l = [...m.values()];
   for (const g of l) { g.enAttente.sort(parAncien); g.reglees.sort((a, b) => b.created_at.localeCompare(a.created_at)); }
   return l.sort((a, b) => (+!a.enAttente.length - +!b.enAttente.length) || nomDe(a.projet_id).localeCompare(nomDe(b.projet_id), "fr") || a.tache.localeCompare(b.tache, "fr", { numeric: true }));
@@ -129,3 +138,9 @@ export function groupesAtelier(notes: Note[], nomDe: (id: string | null) => stri
 
 /** Nombre de questions encore sans reponse (pour la pastille de l'onglet). */
 export const nbQuestionsAtelier = (notes: Note[]) => notes.filter((n) => n.atelier && n.projet_id && !n.supprime_le && !n.archive && n.statut !== "done").length;
+
+/** Garde seulement les questions d'un destinataire (les taches sans question restante disparaissent). */
+export function filtrerDest(groupes: GroupeAtelier[], dest: Dest | "tous"): GroupeAtelier[] {
+  if (dest === "tous") return groupes;
+  return groupes.map((g) => ({ ...g, enAttente: g.enAttente.filter((n) => destDe(n) === dest), reglees: g.reglees.filter((n) => destDe(n) === dest) })).filter((g) => g.enAttente.length + g.reglees.length > 0);
+}

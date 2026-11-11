@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.36 — 11 novembre 2026
+
+- Nouveauté : dans « Questions Tâches », chaque question a un destinataire : atelier, montage ou fournisseur (avec son nom). Un filtre n'affiche que l'un d'eux. Le PDF général garde les questions atelier et montage, celui d'une tâche reprend tout avec le destinataire.
+
 ## 3.35 — 11 novembre 2026
 
 - Nouveauté : dans « Questions Tâches », on peut donner un nom à une tâche (à la création, ou avec le crayon à côté d'elle) ; il s'affiche à côté du numéro, sur le PDF, et la recherche le trouve.

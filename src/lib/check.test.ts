@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupesAtelier, nbQuestionsAtelier, joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
+import { destDe, etiquetteDest, filtrerDest, groupesAtelier, nbQuestionsAtelier, joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
 import { choixParDefaut, exporter, lireAnciennes, planImport } from "./reprise";
 import { MAX_INVITE, ajouterInvite, changerStatutInvite, lireInvite, modifierTexteInvite, supprimerInvite } from "./notes-invite";
 
@@ -196,6 +196,15 @@ describe("atelier / montage", () => {
     const g = groupesAtelier([q({ id: "n1", tache: "7" }), q({ id: "n2", tache: "7", tache_nom: "Façade nord" })], nomDe);
     expect(g.length).toBe(1);
     expect(g[0].nom).toBe("Façade nord");
+  });
+  it("destinataire : atelier par defaut, tri par destinataire, filtre", () => {
+    const l = [q({ id: "f", tache: "9", destinataire: "fournisseur", fournisseur: "Schüco", created_at: "2026-11-01T08:00:00Z" }), q({ id: "m", tache: "9", destinataire: "montage", created_at: "2026-11-02T08:00:00Z" }), q({ id: "a", tache: "9", created_at: "2026-11-03T08:00:00Z" })];
+    expect(destDe(l[2])).toBe("atelier");
+    expect(etiquetteDest(l[0])).toBe("Fournisseur · Schüco");
+    const g = groupesAtelier(l, nomDe);
+    expect(ids(g[0].enAttente)).toEqual(["a", "m", "f"]);
+    expect(ids(filtrerDest(g, "fournisseur")[0].enAttente)).toEqual(["f"]);
+    expect(filtrerDest(g, "tous")).toBe(g);
   });
   it("compte les questions sans reponse", () => expect(nbQuestionsAtelier(liste)).toBe(3));
 });
