@@ -226,3 +226,55 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
     y += 10;
   }
 }
+
+/** Feuille a emporter a l'atelier ou au montage : une case a cocher et deux lignes pour la reponse sous chaque question. */
+export type TachePdf = { projet: string; tache: string; questions: string[] };
+
+export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: string } = {}) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  await installerPolicesPDF(doc);
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), mx = 48, top = 56, bottom = 56, cw = W - mx * 2;
+  const date = new Date().toLocaleDateString("fr-CH", { day: "numeric", month: "long", year: "numeric" });
+  let y = top;
+  doc.setFont("PlexSans", "bold"); doc.setFontSize(8); doc.setTextColor(...GRIS);
+  doc.text("CHECK", mx, y, { charSpace: 1.5 });
+  doc.setFont("PlexSans", "normal");
+  doc.text([date, opt.auteur].filter(Boolean).join(" · "), W - mx, y, { align: "right" });
+  y += 30;
+  doc.setFont("PlexSans", "bold"); doc.setFontSize(20); doc.setTextColor(...NOIR);
+  doc.text("Questions atelier et montage", mx, y);
+  y += 30;
+  for (const t of taches) {
+    if (y + 90 > H - bottom) { doc.addPage(); y = top; }
+    doc.setFont("PlexSans", "bold"); doc.setFontSize(12); doc.setTextColor(...NOIR);
+    const titre = t.tache ? `Tâche ${t.tache}` : "Sans numéro de tâche";
+    doc.text(titre, mx, y);
+    doc.setFont("PlexSans", "normal"); doc.setFontSize(9); doc.setTextColor(...GRIS);
+    doc.text(t.projet, W - mx, y, { align: "right" });
+    y += 6;
+    doc.setDrawColor(...NOIR); doc.setLineWidth(0.8); doc.line(mx, y, W - mx, y);
+    y += 20;
+    for (const q of t.questions) {
+      doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
+      const lignes: string[] = doc.splitTextToSize(q, cw - 24);
+      const h = lignes.length * 14 + 2 * 20 + 12;
+      if (y + h > H - bottom) { doc.addPage(); y = top; }
+      doc.setDrawColor(...NOIR); doc.setLineWidth(1); doc.rect(mx, y - 9, 10, 10);
+      doc.setTextColor(...NOIR); doc.text(lignes, mx + 24, y);
+      let ly = y + (lignes.length - 1) * 14 + 20;
+      doc.setDrawColor(...GRIS); doc.setLineWidth(0.4);
+      for (let i = 0; i < 2; i++) { doc.line(mx + 24, ly, W - mx, ly); ly += 20; }
+      y = ly + 4;
+    }
+    y += 14;
+  }
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS);
+    doc.text("Check", mx, H - 28);
+    doc.text(`Page ${i} / ${pages}`, W - mx, H - 28, { align: "right" });
+  }
+  doc.save(`check-questions-taches-${new Date().toISOString().slice(0, 10)}.pdf`);
+}

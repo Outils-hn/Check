@@ -429,23 +429,3 @@ body { border-top: 3px solid var(--app); }
 @keyframes vt-out { to { opacity: 0; transform: translateY(-6px); } }
 @keyframes vt-in { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
-
-/* Atelier / Montage : feuille A4 cachee a l'ecran, seule visible a l'impression */
-#feuille-atelier { display: none; }
-@media print {
-  @page { size: A4; margin: 14mm; }
-  body.impression-atelier > *:not(#feuille-atelier) { display: none !important; }
-  body.impression-atelier { background: #fff !important; overflow: visible !important; height: auto !important; }
-  body.impression-atelier #feuille-atelier { display: block; color: #000; font: 12pt/1.4 system-ui, sans-serif; }
-  #feuille-atelier h1 { font-size: 18pt; margin: 0; }
-  #feuille-atelier .feuille-date { margin: 2pt 0 14pt; font-size: 10pt; color: #444; }
-  #feuille-atelier section { break-inside: avoid-page; margin-bottom: 16pt; }
-  #feuille-atelier h2 { font-size: 13pt; margin: 0 0 8pt; padding-bottom: 3pt; border-bottom: 1.5pt solid #000; }
-  #feuille-atelier h2 span { font-weight: 400; color: #333; }
-  #feuille-atelier ol { list-style: none; margin: 0; padding: 0; }
-  #feuille-atelier li { display: flex; gap: 8pt; margin-bottom: 12pt; break-inside: avoid; }
-  #feuille-atelier .feuille-case { flex: none; width: 11pt; height: 11pt; border: 1.2pt solid #000; margin-top: 2pt; }
-  #feuille-atelier li > div { flex: 1; }
-  #feuille-atelier li p { margin: 0 0 2pt; font-weight: 600; white-space: pre-wrap; }
-  #feuille-atelier li i { display: block; height: 17pt; border-bottom: 0.6pt solid #888; }
-}
