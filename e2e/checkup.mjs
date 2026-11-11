@@ -264,7 +264,6 @@ try {
   await p.getByRole("button", { name: "Retour à mes notes" }).click();
   // « Questions Tâches » : questions par tache, PDF a emporter, reponse saisie, repli, suppression de la tache
   etape = "questions taches";
-  const nbListe = await lignesNotes(p).count();
   await p.getByRole("button", { name: /^Questions Tâches/ }).click();
   const za = p.locator('section[aria-label="Questions Tâches"]');
   await za.getByLabel("Projet", { exact: true }).selectOption({ label: "Chantier 1" });
@@ -281,7 +280,7 @@ try {
   const pdfq = await dlq;
   ok(/^check-questions-taches-\d{4}-\d{2}-\d{2}\.pdf$/.test(pdfq.suggestedFilename()) && fs.statSync(await pdfq.path()).size > 1500, `export PDF des questions (${pdfq.suggestedFilename()})`);
   await p2.reload({ waitUntil: "networkidle" }); // le direct est simule : on recharge pour voir ce qu'Alice vient d'ajouter
-  ok((await lignesNotes(p2).count()) === nbListe, "les questions n'apparaissent pas dans la liste des notes");
+  ok(!(await p2.getByText("Quel jeu sous la lisse").count()) && !(await p2.getByText("Cale de 3 ou de 5").count()), "les questions n'apparaissent pas dans la liste des notes");
   await p2.getByRole("button", { name: /^Questions Tâches/ }).click();
   await p2.locator("[data-question]").first().waitFor({ timeout: 4000 }).catch(() => {});
   ok((await p2.locator("[data-question]").count()) === 3, "Bob voit les questions de l'équipe");
@@ -301,18 +300,18 @@ try {
   await p.locator('[data-tache="1234"]').getByRole("button", { expanded: false }).click();
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 1, "tâche dépliée à nouveau");
   // Suppression d'une tache et de ses questions (avec confirmation)
-  await p.getByRole("button", { name: /^Supprimer tâche 1234/ }).click();
+  await p.getByRole("button", { name: /^Supprimer Tâche 1234/ }).click();
   ok(await p.getByRole("dialog").getByText(/n'a pas encore de réponse/).isVisible(), "confirmation : prévient qu'une question n'a pas de réponse");
   await p.getByRole("dialog").getByRole("button", { name: "Annuler" }).click();
   ok(etat.check_notes.filter((x) => x.atelier && x.tache === "1234").length === 2, "annuler ne supprime rien");
-  await p.getByRole("button", { name: /^Supprimer tâche 1234/ }).click();
+  await p.getByRole("button", { name: /^Supprimer Tâche 1234/ }).click();
   await p.getByRole("dialog").getByRole("button", { name: "Supprimer la tâche" }).click(); await p.waitForTimeout(1200);
   ok(!(await p.locator('[data-tache="1234"]').count()) && etat.check_notes.filter((x) => x.atelier && x.tache === "1234").length === 0, "tâche 1234 et ses questions supprimées");
   ok(etat.check_notes.filter((x) => x.atelier && x.tache === "200").length === 1, "l'autre tâche est intacte");
   await p.getByRole("button", { name: "Retour à mes notes" }).click();
   // Nettoyage : la derniere tache disparait aussi, la suite du check-up retrouve ses 4 notes
   await p.getByRole("button", { name: /^Questions Tâches/ }).click();
-  await p.getByRole("button", { name: /^Supprimer tâche 200/ }).click();
+  await p.getByRole("button", { name: /^Supprimer Tâche 200/ }).click();
   await p.getByRole("dialog").getByRole("button", { name: "Supprimer la tâche" }).click(); await p.waitForTimeout(1000);
   ok(etat.check_notes.filter((x) => x.atelier).length === 0, "toutes les questions supprimées");
   await p.getByRole("button", { name: "Retour à mes notes" }).click();
