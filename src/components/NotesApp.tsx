@@ -373,6 +373,7 @@ function Carnet() {
         <Atelier notes={notes} projets={actifs} projetInitial={formProjet} nomDe={nomDe} auteur={comptes.find((c) => c.id === moi)?.nom}
           onAjouter={async (q) => !!(await act.ajouterNote({ texte: q.texte, projet_id: q.projet_id, tache: q.tache || null, atelier: true, statut: "todo", ordre: ordreEnTete(notes) }))}
           onRepondre={(n) => { setVersReponse(true); setEdition({ ...n, statut: "done" }); }}
+          onRouvrir={(n) => void act.modifier(n.id, { statut: "todo" })}
           onSupprimer={async (n) => { if (await act.mettreCorbeille(n.id)) toast("Question supprimée", { action: { label: "Annuler", onClick: () => act.restaurer(n.id) }, duration: 6000 }); }}
           onSupprimerTache={async (g) => { for (const n of [...g.enAttente, ...g.reglees]) await act.supprimerDefinitivement(n); toast.success("Tâche supprimée"); }} />
       )}
