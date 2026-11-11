@@ -289,6 +289,20 @@ try {
   await p.getByLabel(/^Réponse/).fill("5 mm, cale en nylon");
   await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 1 && await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "5 mm" }).isVisible(), "réponse saisie, la question passe en réglée");
+  // Rouvrir une question reglee, la reregler ; le PDF d'une tache reprend aussi les questions reglees
+  await p.locator("[data-reglee]", { hasText: "Quel jeu" }).getByRole("button", { name: "Rouvrir la question" }).click(); await p.waitForTimeout(800);
+  ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 2 && !(await p.locator("[data-reglee]").count()), "question rouverte : elle repasse en attente");
+  await p.locator("[data-question]", { hasText: "Quel jeu" }).getByRole("button", { name: "Répondre" }).click();
+  ok((await p.getByLabel(/^Réponse/).inputValue()) === "5 mm, cale en nylon", "la réponse précédente est gardée à la réouverture");
+  await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
+  await p.locator("[data-reglee]", { hasText: "Quel jeu" }).getByRole("button", { name: "Modifier la réponse" }).click();
+  await p.getByLabel(/^Réponse/).fill("6 mm, cale en nylon");
+  await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
+  ok(await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "6 mm" }).isVisible(), "réponse corrigée après coup");
+  const dlr = p.waitForEvent("download");
+  await p.locator('[data-tache="1234"]').getByRole("button", { name: /^PDF de/ }).click();
+  const pdfr = await dlr;
+  ok(fs.statSync(await pdfr.path()).size > 1500, "PDF d'une tâche avec une question réglée");
   // Replier / deplier une tache
   const entete = p.locator('[data-tache="1234"]').getByRole("button", { expanded: true }).first();
   await entete.click();

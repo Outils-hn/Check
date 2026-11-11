@@ -228,7 +228,7 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
 }
 
 /** Feuille a emporter a l'atelier ou au montage : une case a cocher et deux lignes pour la reponse sous chaque question. */
-export type TachePdf = { projet: string; tache: string; questions: string[] };
+export type TachePdf = { projet: string; tache: string; questions: string[]; reglees?: { question: string; reponse: string }[] };
 
 export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: string } = {}) {
   const { jsPDF } = await import("jspdf");
@@ -266,6 +266,21 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
       doc.setDrawColor(...GRIS); doc.setLineWidth(0.4);
       for (let i = 0; i < 2; i++) { doc.line(mx + 24, ly, W - mx, ly); ly += 20; }
       y = ly + 4;
+    }
+    // Questions deja reglees : case cochee, la reponse prend la place des lignes
+    for (const r of t.reglees ?? []) {
+      doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
+      const lignes: string[] = doc.splitTextToSize(r.question, cw - 24);
+      doc.setFont("PlexSans", "normal"); doc.setFontSize(10);
+      const rep: string[] = r.reponse.trim() ? doc.splitTextToSize(`Réponse : ${r.reponse.trim()}`, cw - 24) : [];
+      const h = lignes.length * 14 + rep.length * 13 + 14;
+      if (y + h > H - bottom) { doc.addPage(); y = top; }
+      doc.setDrawColor(...NOIR); doc.setLineWidth(1); doc.rect(mx, y - 9, 10, 10);
+      doc.line(mx + 2, y - 4, mx + 4.5, y - 1); doc.line(mx + 4.5, y - 1, mx + 8.5, y - 8);
+      doc.setFont("PlexSans", "bold"); doc.setFontSize(11); doc.setTextColor(...GRIS); doc.text(lignes, mx + 24, y);
+      doc.setFont("PlexSans", "normal"); doc.setFontSize(10); doc.setTextColor(...VERT);
+      if (rep.length) doc.text(rep, mx + 24, y + lignes.length * 14);
+      y += h + 6;
     }
     y += 14;
   }

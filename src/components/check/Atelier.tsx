@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronRight, FileDown, ListChecks, MessageSquareText, Trash2 } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, FileDown, ListChecks, MessageSquareText, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,10 @@ const plur = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 const lireEtat = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(CLE_REPLIS) ?? "{}") ?? {}; } catch { return {}; } };
 
 /** Page « Questions Tâches » : les questions a poser a l'atelier ou aux monteurs, par projet et par tache, avec export PDF. */
-export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onSupprimer, onSupprimerTache }: {
+export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onSupprimer, onSupprimerTache }: {
   notes: Note[]; projets: Projet[]; projetInitial: string; nomDe: (id: string | null) => string; auteur?: string;
   onAjouter: (q: { texte: string; projet_id: string; tache: string }) => Promise<boolean>;
-  onRepondre: (n: Note) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>;
+  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>;
 }) {
   const [projet, setProjet] = useState(projets.some((p) => p.id === projetInitial) ? projetInitial : projets[0]?.id ?? "");
   const [tache, setTache] = useState("");
@@ -36,11 +36,13 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
     if (await onAjouter({ texte: texte.trim(), projet_id: projet, tache: tache.trim() })) setTexte(""); // projet et tache restent : on enchaine les questions
   };
 
-  const pdf = async (liste: GroupeAtelier[]) => {
-    if (!liste.length) return toast.error("Aucune question en attente à exporter.");
+  /** « Tout » : seulement les questions en attente, a emporter. Une tache seule : toutes ses questions, les reglees avec leur reponse. */
+  const pdf = async (liste: GroupeAtelier[], avecReglees = false) => {
+    if (!liste.length) return toast.error("Aucune question à exporter.");
     try {
       const { exportQuestionsPdf } = await import("@/lib/pdf-export");
-      await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, questions: g.enAttente.map((n) => n.texte) })), { auteur });
+      await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, questions: g.enAttente.map((n) => n.texte),
+        reglees: avecReglees ? g.reglees.map((n) => ({ question: n.texte, reponse: n.reponse ?? "" })) : [] })), { auteur });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 
@@ -93,7 +95,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                   <span className="block text-[11px] text-muted-foreground">{g.enAttente.length ? `${plur(g.enAttente.length, "question")} en attente` : "Tout est réglé"}{g.reglees.length ? ` · ${plur(g.reglees.length, "réglée")}` : ""}</span>
                 </span>
               </button>
-              <Button size="sm" variant="outline" className="gap-1.5" disabled={!g.enAttente.length} onClick={() => void pdf([g])} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => void pdf([g], true)} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
               <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => setASupprimer(g)} aria-label={`Supprimer ${libelleTache(g.tache)} et ses questions`} title="Supprimer la tâche et ses questions"><Trash2 className="size-3.5" /></button>
             </header>
             {o && (
@@ -108,7 +110,12 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                 ))}
                 {g.reglees.map((n) => (
                   <li key={n.id} className="px-4 py-2.5 text-sm" data-reglee={n.id}>
-                    <p className="whitespace-pre-wrap break-words text-muted-foreground line-through">{n.texte}</p>
+                    <div className="flex items-start gap-3">
+                      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-muted-foreground line-through">{n.texte}</p>
+                      <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => onRepondre(n)} aria-label="Modifier la réponse" title="Modifier la réponse"><Pencil className="size-3.5" /></button>
+                      <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => onRouvrir(n)} aria-label="Rouvrir la question" title="Rouvrir : la question repasse en attente"><RotateCcw className="size-3.5" /></button>
+                      <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
+                    </div>
                     {n.reponse?.trim() && (
                       <p className="mt-1 flex items-start gap-1.5 rounded-md border border-[var(--st-done)]/30 bg-[color-mix(in_oklab,var(--st-done)_8%,transparent)] px-2 py-1 text-[13px]" data-reponse>
                         <span className="mt-px shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-ink)]">Réponse</span>
