@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, ChevronRight, FileDown, ListChecks, MessageSquareText, Pencil, RotateCcw, Search, Trash2 } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, FileDown, ListChecks, MessageSquareText, Pencil, PencilLine, RotateCcw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,18 +8,22 @@ import { groupesAtelier, nomProjet, sansAccents, type GroupeAtelier, type Note, 
 
 const CLE_REPLIS = "check:taches-ouvertes";
 const libelleTache = (t: string) => (t ? `Tâche ${t}` : "Sans numéro de tâche");
+const titreTache = (g: { tache: string; nom: string }) => libelleTache(g.tache) + (g.nom ? ` · ${g.nom}` : "");
 const plur = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 const lireEtat = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(CLE_REPLIS) ?? "{}") ?? {}; } catch { return {}; } };
 
 /** Page « Questions Tâches » : les questions a poser a l'atelier ou aux monteurs, par projet et par tache, avec export PDF. */
-export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onSupprimer, onSupprimerTache }: {
+export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onSupprimer, onSupprimerTache, onRenommerTache }: {
   notes: Note[]; projets: Projet[]; projetInitial: string; nomDe: (id: string | null) => string; auteur?: string;
-  onAjouter: (q: { texte: string; projet_id: string; tache: string }) => Promise<boolean>;
-  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>;
+  onAjouter: (q: { texte: string; projet_id: string; tache: string; tache_nom: string }) => Promise<boolean>;
+  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, nom: string) => Promise<void>;
 }) {
   const [projet, setProjet] = useState(projets.some((p) => p.id === projetInitial) ? projetInitial : projets[0]?.id ?? "");
   const [tache, setTache] = useState("");
   const [texte, setTexte] = useState("");
+  const [nom, setNom] = useState("");
+  const [aRenommer, setARenommer] = useState<GroupeAtelier | null>(null);
+  const [nomSaisi, setNomSaisi] = useState("");
   const [ouverts, setOuverts] = useState<Record<string, boolean>>(lireEtat);
   const [aSupprimer, setASupprimer] = useState<GroupeAtelier | null>(null);
   const [q, setQ] = useState("");
@@ -30,7 +34,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
     const mots = sansAccents(q).split(/\s+/).filter(Boolean);
     if (!mots.length) return tous;
     return tous.filter((g) => {
-      const t = sansAccents([libelleTache(g.tache), nomDe(g.projet_id), ...[...g.enAttente, ...g.reglees].flatMap((n) => [n.texte, n.reponse ?? ""])].join(" "));
+      const t = sansAccents([titreTache(g), nomDe(g.projet_id), ...[...g.enAttente, ...g.reglees].flatMap((n) => [n.texte, n.reponse ?? ""])].join(" "));
       return mots.every((m) => t.includes(m));
     });
   }, [tous, q, nomDe]);
@@ -45,6 +49,8 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
     return () => window.removeEventListener("keydown", k);
   }, []);
   const tachesConnues = useMemo(() => [...new Set(tous.filter((g) => g.projet_id === projet && g.tache).map((g) => g.tache))], [groupes, projet]);
+  // Tache deja connue dans ce projet (meme numero) : on reprend son nom, sans le redemander
+  const existante = tache.trim() ? tous.find((g) => g.projet_id === projet && sansAccents(g.tache) === sansAccents(tache.trim())) : undefined;
   const enAttente = tous.filter((g) => g.enAttente.length);
   // Ouverte par defaut tant qu'il reste des questions sans reponse, repliee quand tout est regle ; le choix de chacun est retenu sur ce poste
   const ouvert = (g: GroupeAtelier) => (q.trim() ? true : ouverts[g.cle] ?? g.enAttente.length > 0);
@@ -54,7 +60,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
 
   const ajouter = async () => {
     if (!texte.trim() || !projet) return;
-    if (await onAjouter({ texte: texte.trim(), projet_id: projet, tache: tache.trim() })) setTexte(""); // projet et tache restent : on enchaine les questions
+    if (await onAjouter({ texte: texte.trim(), projet_id: projet, tache: tache.trim(), tache_nom: existante ? existante.nom : nom.trim() })) setTexte(""); // projet et tache restent : on enchaine les questions
   };
 
   /** « Tout » : seulement les questions en attente, a emporter. Une tache seule : toutes ses questions, les reglees avec leur reponse. */
@@ -62,7 +68,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
     if (!liste.length) return toast.error("Aucune question à exporter.");
     try {
       const { exportQuestionsPdf } = await import("@/lib/pdf-export");
-      await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, questions: g.enAttente.map((n) => n.texte),
+      await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, nom: g.nom, questions: g.enAttente.map((n) => n.texte),
         reglees: avecReglees ? g.reglees.map((n) => ({ question: n.texte, reponse: n.reponse ?? "" })) : [] })), { auteur });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
@@ -85,6 +91,11 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
               {projets.map((p) => <option key={p.id} value={p.id}>{nomProjet(p)}</option>)}
             </select>
             <Input value={tache} maxLength={60} onChange={(e) => setTache(e.target.value)} placeholder="N° de tâche" aria-label="Numéro de tâche" />
+            {existante ? (
+              <p className="text-xs text-muted-foreground sm:col-span-2">Tâche déjà existante{existante.nom ? <> : <strong className="text-foreground">{existante.nom}</strong></> : ""}. La question s'y ajoute.</p>
+            ) : (
+              <Input className="sm:col-span-2" value={nom} maxLength={80} onChange={(e) => setNom(e.target.value)} placeholder="Nom de la tâche (facultatif, ex. Façade nord)" aria-label="Nom de la tâche" />
+            )}
             {tachesConnues.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 text-xs sm:col-span-2" aria-label="Tâches de ce projet">
                 <span className="text-muted-foreground">Tâches du projet :</span>
@@ -126,16 +137,17 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
         const o = ouvert(g);
         const corps = `corps-${g.cle.replace(/[^a-z0-9]/gi, "")}`;
         return (
-          <section key={g.cle} className="panel overflow-hidden" data-tache={g.tache} aria-label={`${nomDe(g.projet_id)} · ${libelleTache(g.tache)}`}>
+          <section key={g.cle} className="panel overflow-hidden" data-tache={g.tache} aria-label={`${nomDe(g.projet_id)} · ${titreTache(g)}`}>
             <header className="flex items-center gap-1 px-2 py-1.5">
               <button type="button" className="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-muted" aria-expanded={o} aria-controls={corps} onClick={() => basculer(g)}>
                 {o ? <ChevronDown className="size-4 shrink-0" aria-hidden="true" /> : <ChevronRight className="size-4 shrink-0" aria-hidden="true" />}
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold">{libelleTache(g.tache)} <span className="font-normal text-muted-foreground">· {nomDe(g.projet_id)}</span></span>
+                  <span className="block truncate text-sm font-semibold">{titreTache(g)} <span className="font-normal text-muted-foreground">· {nomDe(g.projet_id)}</span></span>
                   <span className="block text-[11px] text-muted-foreground">{g.enAttente.length ? `${plur(g.enAttente.length, "question")} en attente` : "Tout est réglé"}{g.reglees.length ? ` · ${plur(g.reglees.length, "réglée")}` : ""}</span>
                 </span>
               </button>
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => void pdf([g], true)} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
+              <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => { setARenommer(g); setNomSaisi(g.nom); }} aria-label={`Nommer ${libelleTache(g.tache)}`} title={g.nom ? "Renommer la tâche" : "Donner un nom à la tâche"}><PencilLine className="size-3.5" /></button>
               <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => setASupprimer(g)} aria-label={`Supprimer ${libelleTache(g.tache)} et ses questions`} title="Supprimer la tâche et ses questions"><Trash2 className="size-3.5" /></button>
             </header>
             {o && (
@@ -169,6 +181,22 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
           </section>
         );
       })}
+
+      <Dialog open={!!aRenommer} onOpenChange={(o) => !o && setARenommer(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nom de {aRenommer ? libelleTache(aRenommer.tache).toLowerCase() : ""}</DialogTitle>
+            <DialogDescription>Facultatif : il s'affiche à côté du numéro, et sur le PDF. Laissez vide pour l'enlever.</DialogDescription>
+          </DialogHeader>
+          <form id="form-nom-tache" onSubmit={async (e) => { e.preventDefault(); const g = aRenommer; setARenommer(null); if (g) await onRenommerTache(g, nomSaisi.trim()); }}>
+            <Input autoFocus value={nomSaisi} maxLength={80} onChange={(e) => setNomSaisi(e.target.value)} placeholder="Ex. Façade nord" aria-label="Nom de la tâche" />
+          </form>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setARenommer(null)}>Annuler</Button>
+            <Button type="submit" form="form-nom-tache">Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!aSupprimer} onOpenChange={(o) => !o && setASupprimer(null)}>
         <DialogContent className="max-w-sm">
