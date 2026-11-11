@@ -83,7 +83,7 @@ function message(e: { message?: string; code?: string }) {
   return "Erreur : " + (e.message ?? "inconnue");
 }
 
-type Champs = Partial<Pick<Note, "images" | "projet_id" | "pour" | "texte" | "statut" | "echeance" | "flash" | "archive" | "ordre" | "supprime_le" | "created_at" | "regle_le" | "reponse">>;
+type Champs = Partial<Pick<Note, "images" | "projet_id" | "pour" | "texte" | "statut" | "echeance" | "flash" | "archive" | "ordre" | "atelier" | "tache" | "supprime_le" | "created_at" | "regle_le" | "reponse">>;
 
 export function useActions() {
   const qc = useQueryClient();

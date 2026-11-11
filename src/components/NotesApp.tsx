@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Wrench, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { CarnetInvite } from "@/components/check/CarnetInvite";
 import { CLE_INVITE, lireInvite } from "@/lib/notes-invite";
 import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
-  LIBELLE, PERSO, STATUTS, aNettoyer, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
+  LIBELLE, PERSO, STATUTS, aNettoyer, nbQuestionsAtelier, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
@@ -22,6 +22,7 @@ import { decrire, useHistorique } from "@/lib/historique";
 import { Miniatures } from "@/components/check/Miniatures";
 import { MAX_IMAGES, chargerImagesPdf, compresser } from "@/lib/images";
 import { Retenir } from "@/components/check/Retenir";
+import { Atelier } from "@/components/check/Atelier";
 import { useRetenir } from "@/lib/retenir";
 import { ProjetDialog } from "@/components/check/ProjetDialog";
 import { RepriseDialog, type PlanReprise } from "@/components/check/RepriseDialog";
@@ -181,6 +182,7 @@ function Carnet() {
 
   const [formOuvert, setFormOuvert] = useState(false);
   const [retenir, setRetenir] = useState(false);
+  const [atelier, setAtelier] = useState(false);
   const [formImages, setFormImages] = useState<{ blob: Blob; url: string }[]>([]);
   const [compression, setCompression] = useState(false);
   const fichierForm = useRef<HTMLInputElement>(null);
@@ -200,6 +202,7 @@ function Carnet() {
   };
   const viderFormImages = () => { formImages.forEach((i) => URL.revokeObjectURL(i.url)); setFormImages([]); };
   const nbRetenir = useRetenir().fiches.length;
+  const nbAtelier = nbQuestionsAtelier(notes);
   // Texte venu d'une autre appli (« Noter dans Check ») : on ouvre la saisie, prete a valider
   useEffect(() => {
     try {
@@ -325,7 +328,10 @@ function Carnet() {
           </form>
         </section>
 
-        <Button type="button" variant={retenir ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:order-1" aria-pressed={retenir} onClick={() => setRetenir((r) => !r)}>
+        <Button type="button" variant={atelier ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:order-1" aria-pressed={atelier} onClick={() => { setAtelier((a) => !a); setRetenir(false); }}>
+          <Wrench className="size-4" aria-hidden="true" />{atelier ? "Retour à mes notes" : `Atelier / Montage${nbAtelier ? ` · ${nbAtelier}` : ""}`}
+        </Button>
+        <Button type="button" variant={retenir ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:order-1" aria-pressed={retenir} onClick={() => { setRetenir((r) => !r); setAtelier(false); }}>
           <Pin className="size-4" aria-hidden="true" />{retenir ? "Retour à mes notes" : `À retenir${nbRetenir ? ` · ${nbRetenir}` : ""}`}
         </Button>
 
@@ -363,7 +369,13 @@ function Carnet() {
       </aside>
 
       {retenir && <Retenir moi={moi} comptes={comptes} />}
-      <section className={cn("min-w-0 space-y-4 max-lg:order-2", retenir && "hidden")}>
+      {atelier && (
+        <Atelier notes={notes} projets={actifs} projetInitial={formProjet} nomDe={nomDe}
+          onAjouter={async (q) => !!(await act.ajouterNote({ texte: q.texte, projet_id: q.projet_id, tache: q.tache || null, atelier: true, statut: "todo", ordre: ordreEnTete(notes) }))}
+          onRepondre={(n) => { setVersReponse(true); setEdition({ ...n, statut: "done" }); }}
+          onSupprimer={(n) => void supprimer(n)} />
+      )}
+      <section className={cn("min-w-0 space-y-4 max-lg:order-2", (retenir || atelier) && "hidden")}>
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div role="tablist" aria-label="Vue" className="flex max-w-full overflow-x-auto whitespace-nowrap rounded-md border border-border p-0.5 text-sm">
             {([["aujourdhui", `Aujourd'hui${aujourdhui ? ` · ${aujourdhui}` : ""}`], ["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
@@ -509,6 +521,7 @@ function LigneNote(props: {
             <span className="whitespace-pre-wrap break-words">{reponseDe(n)}</span>
           </p>
         )}
+        {n.atelier && <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--app-ink)]" data-atelier><Wrench className="size-3" aria-hidden="true" />Atelier / Montage{n.tache ? ` · tâche ${n.tache}` : ""}</p>}
         <Miniatures chemins={n.images ?? []} modifiable={!corbeille} onRetirer={props.onRetirerImage} />
         {(props.pour || props.auteur) && (
           <p className="mt-0.5 text-[11px] text-muted-foreground">
