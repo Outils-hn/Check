@@ -371,7 +371,7 @@ function Carnet() {
       {retenir && <Retenir moi={moi} comptes={comptes} />}
       {atelier && (
         <Atelier notes={notes} projets={actifs} projetInitial={formProjet} nomDe={nomDe} auteur={comptes.find((c) => c.id === moi)?.nom}
-          onAjouter={async (q) => !!(await act.ajouterNote({ texte: q.texte, projet_id: q.projet_id, tache: q.tache || null, tache_nom: q.tache_nom || null, atelier: true, statut: "todo", ordre: ordreEnTete(notes) }))}
+          onAjouter={async (q) => !!(await act.ajouterNote({ texte: q.texte, projet_id: q.projet_id, tache: q.tache || null, tache_nom: q.tache_nom || null, destinataire: q.destinataire, fournisseur: q.fournisseur || null, atelier: true, statut: "todo", ordre: ordreEnTete(notes) }))}
           onRepondre={(n) => { setVersReponse(true); setEdition({ ...n, statut: "done" }); }}
           onRouvrir={(n) => void act.modifier(n.id, { statut: "todo" })}
           onSupprimer={async (n) => { if (await act.mettreCorbeille(n.id)) toast("Question supprimée", { action: { label: "Annuler", onClick: () => act.restaurer(n.id) }, duration: 6000 }); }}
