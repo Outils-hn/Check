@@ -192,5 +192,10 @@ describe("atelier / montage", () => {
     for (const vue of ["actives", "pour-moi", "aujourdhui", "archivees", "corbeille"] as const) expect(ids(filtrer(toutes, { ...F, vue }, moi, nomDe)).filter((i) => i.startsWith("q") && i !== "q8")).toEqual([]);
     expect(ids(aNettoyer(toutes))).toEqual([]);
   });
+  it("reprend le nom de la tache depuis ses questions", () => {
+    const g = groupesAtelier([q({ id: "n1", tache: "7" }), q({ id: "n2", tache: "7", tache_nom: "Façade nord" })], nomDe);
+    expect(g.length).toBe(1);
+    expect(g[0].nom).toBe("Façade nord");
+  });
   it("compte les questions sans reponse", () => expect(nbQuestionsAtelier(liste)).toBe(3));
 });

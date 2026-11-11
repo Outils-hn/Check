@@ -302,6 +302,22 @@ try {
   ok(await p.getByText(/Aucune tâche ne correspond/).isVisible(), "recherche sans résultat : message");
   await za.getByLabel("Rechercher une tâche").press("Escape");
   ok((await p.locator("[data-tache]").count()) === 2, "Échap vide la recherche");
+  // Nom d'une tache : a la creation d'une nouvelle tache, puis renommer avec le crayon
+  await za.getByLabel("Numéro de tâche").fill("300");
+  await za.getByLabel("Nom de la tâche").fill("Façade nord");
+  await za.getByLabel("Votre question").fill("Peinture RAL 7016 ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
+  ok(await p.locator('[data-tache="300"]').getByText(/Tâche 300 · Façade nord/).isVisible(), "tâche créée avec son nom");
+  await za.getByLabel("Numéro de tâche").fill("300");
+  ok(!(await za.getByLabel("Nom de la tâche").count()) && await za.getByText(/Tâche déjà existante/).isVisible(), "tâche existante : le nom n'est pas redemandé");
+  await p.getByRole("button", { name: "Nommer Tâche 200" }).click();
+  await p.getByRole("dialog").getByLabel("Nom de la tâche").fill("Fers plats");
+  await p.getByRole("dialog").getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
+  ok(await p.locator('[data-tache="200"]').getByText(/Tâche 200 · Fers plats/).isVisible(), "tâche 200 renommée avec le crayon");
+  await za.getByLabel("Rechercher une tâche").fill("façade nord");
+  ok((await p.locator("[data-tache]").count()) === 1 && await p.locator('[data-tache="300"]').isVisible(), "la recherche trouve une tâche par son nom");
+  await za.getByLabel("Rechercher une tâche").press("Escape");
+  await p.getByRole("button", { name: /^Supprimer Tâche 300/ }).click();
+  await p.getByRole("dialog").getByRole("button", { name: "Supprimer la tâche" }).click(); await p.waitForTimeout(800);
   // Rouvrir une question reglee, la reregler ; le PDF d'une tache reprend aussi les questions reglees
   await p.locator("[data-reglee]", { hasText: "Quel jeu" }).getByRole("button", { name: "Rouvrir la question" }).click(); await p.waitForTimeout(800);
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 2 && !(await p.locator("[data-reglee]").count()), "question rouverte : elle repasse en attente");

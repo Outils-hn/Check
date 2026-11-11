@@ -8,3 +8,8 @@ alter table public.check_notes add column if not exists tache text;
 alter table public.check_notes drop constraint if exists check_notes_tache_longueur;
 alter table public.check_notes add constraint check_notes_tache_longueur check (tache is null or length(tache) <= 60);
 create index if not exists check_notes_atelier on public.check_notes (projet_id) where atelier;
+
+-- Nom facultatif d'une tache (Check 3.35) : repete sur chaque question de la tache.
+alter table public.check_notes add column if not exists tache_nom text;
+alter table public.check_notes drop constraint if exists check_notes_tache_nom_longueur;
+alter table public.check_notes add constraint check_notes_tache_nom_longueur check (tache_nom is null or length(tache_nom) <= 80);

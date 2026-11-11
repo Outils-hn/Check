@@ -4,7 +4,7 @@ export type Statut = "todo" | "in_progress" | "waiting" | "done";
 export type Note = {
   id: string; projet_id: string | null; auteur: string; pour: string | null;
   texte: string; statut: Statut; echeance: string | null; flash: boolean; archive: boolean;
-  ordre: number; atelier?: boolean; tache?: string | null; images?: string[]; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
+  ordre: number; atelier?: boolean; tache?: string | null; tache_nom?: string | null; images?: string[]; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
 };
 export type Projet = { id: string; nom: string; numero: string; cree_par: string | null; archive: boolean };
 export type Membre = { projet_id: string; user_id: string };
@@ -107,7 +107,7 @@ export function joursRetard(echeance: string | null, jour = jourIso()): number {
 }
 
 /** Question « a demander a l'atelier » : une note de projet marquee Atelier, rangee sous un numero de tache. */
-export type GroupeAtelier = { cle: string; projet_id: string; tache: string; enAttente: Note[]; reglees: Note[] };
+export type GroupeAtelier = { cle: string; projet_id: string; tache: string; nom: string; enAttente: Note[]; reglees: Note[] };
 
 /** Questions de l'atelier regroupees par projet puis par tache ; les taches avec des questions en attente passent d'abord. */
 export function groupesAtelier(notes: Note[], nomDe: (id: string | null) => string): GroupeAtelier[] {
@@ -116,8 +116,9 @@ export function groupesAtelier(notes: Note[], nomDe: (id: string | null) => stri
     if (!n.atelier || !n.projet_id || n.supprime_le || n.archive) continue;
     const tache = (n.tache ?? "").trim();
     const cle = `${n.projet_id}|${sansAccents(tache)}`;
-    const g = m.get(cle) ?? { cle, projet_id: n.projet_id, tache, enAttente: [], reglees: [] };
+    const g = m.get(cle) ?? { cle, projet_id: n.projet_id, tache, nom: "", enAttente: [], reglees: [] };
     (n.statut === "done" ? g.reglees : g.enAttente).push(n);
+    if (!g.nom && n.tache_nom?.trim()) g.nom = n.tache_nom.trim(); // le nom est repete sur chaque question de la tache
     m.set(cle, g);
   }
   const parAncien = (a: Note, b: Note) => a.created_at.localeCompare(b.created_at);

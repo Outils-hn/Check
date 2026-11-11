@@ -228,7 +228,7 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
 }
 
 /** Feuille a emporter a l'atelier ou au montage : une case a cocher et deux lignes pour la reponse sous chaque question. */
-export type TachePdf = { projet: string; tache: string; questions: string[]; reglees?: { question: string; reponse: string }[] };
+export type TachePdf = { projet: string; tache: string; nom?: string; questions: string[]; reglees?: { question: string; reponse: string }[] };
 
 export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: string } = {}) {
   const { jsPDF } = await import("jspdf");
@@ -248,7 +248,7 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
   for (const t of taches) {
     if (y + 90 > H - bottom) { doc.addPage(); y = top; }
     doc.setFont("PlexSans", "bold"); doc.setFontSize(12); doc.setTextColor(...NOIR);
-    const titre = t.tache ? `Tâche ${t.tache}` : "Sans numéro de tâche";
+    const titre = (t.tache ? `Tâche ${t.tache}` : "Sans numéro de tâche") + (t.nom ? ` · ${t.nom}` : "");
     doc.text(titre, mx, y);
     doc.setFont("PlexSans", "normal"); doc.setFontSize(9); doc.setTextColor(...GRIS);
     doc.text(t.projet, W - mx, y, { align: "right" });
