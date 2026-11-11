@@ -279,6 +279,7 @@ try {
   ok(/Tâche 1234/.test(feuille) && /Quel jeu sous la lisse/.test(feuille) && /Cale de 3 ou de 5/.test(feuille) && await p.evaluate(() => window.__classe), "atelier : la feuille à imprimer contient la tâche et les questions");
   ok(!(await p.locator("#feuille-atelier").count()), "atelier : feuille retirée après l'impression");
   await shot(p, "08b-atelier");
+  await p2.reload({ waitUntil: "networkidle" }); // le direct est simule : on recharge pour voir ce qu'Alice vient d'ajouter
   await p2.getByRole("button", { name: /^Atelier \/ Montage/ }).click();
   await p2.locator("[data-question]").first().waitFor({ timeout: 4000 }).catch(() => {});
   ok((await p2.locator("[data-question]").count()) === 2, "atelier : Bob voit les questions de l'équipe");
@@ -336,7 +337,7 @@ try {
   const dl2 = p.waitForEvent("download");
   await p.getByRole("button", { name: "Télécharger" }).click();
   const sauvegarde = JSON.parse(fs.readFileSync(await (await dl2).path(), "utf8"));
-  ok(sauvegarde.app === "check" && sauvegarde.notes.length === 4, "sauvegarde téléchargée (4 notes)");
+  ok(sauvegarde.app === "check" && sauvegarde.notes.length === 6, "sauvegarde téléchargée (6 notes, questions atelier comprises)");
   await p.keyboard.press("Escape");
   await p.getByRole("button", { name: /Conçu par/ }).click();
   ok(await p.getByText("Conçu et développé par Hugo N.").isVisible(), "fenêtre À propos");
