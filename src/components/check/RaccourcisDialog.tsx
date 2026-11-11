@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 const RACCOURCIS: { touches: string[]; texte: string }[] = [
   { touches: ["n"], texte: "Nouvelle note (place le curseur dans la saisie)" },
-  { touches: ["/"], texte: "Rechercher une note" },
+  { touches: ["/"], texte: "Rechercher une note (ou une tâche dans Questions Tâches)" },
   { touches: ["Échap"], texte: "Vider la recherche" },
   { touches: ["Entrée"], texte: "Ajouter la note" },
   { touches: ["Maj", "Entrée"], texte: "Aller à la ligne dans la note" },
