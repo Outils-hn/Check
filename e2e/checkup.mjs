@@ -310,12 +310,12 @@ try {
   await za.getByLabel("Numéro de tâche").fill("300");
   ok(!(await za.getByLabel("Nom de la tâche").count()) && await za.getByText(/Tâche déjà existante/).isVisible(), "tâche existante : le nom n'est pas redemandé");
   // Question pour un fournisseur : repere, filtre par destinataire
-  await za.getByLabel("Destinataire").selectOption("fournisseur");
+  await za.getByLabel("Destinataire", { exact: true }).selectOption("fournisseur");
   await za.getByLabel("Nom du fournisseur").fill("Schüco");
   await za.getByLabel("Votre question").fill("Existe-t-il en 3 m ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
   ok(await p.locator('[data-tache="300"] [data-dest="fournisseur"]', { hasText: "Fournisseur · Schüco" }).isVisible(), "question fournisseur : repère « Fournisseur · Schüco »");
   ok(etat.check_notes.some((x) => x.atelier && x.destinataire === "fournisseur" && x.fournisseur === "Schüco"), "destinataire et fournisseur enregistrés");
-  await za.getByLabel("Destinataire").selectOption("atelier");
+  await za.getByLabel("Destinataire", { exact: true }).selectOption("atelier");
   await za.getByRole("button", { name: "Fournisseur", exact: true }).click();
   ok((await p.locator("[data-tache]").count()) === 1 && await p.locator('[data-tache="300"]').isVisible(), "filtre « Fournisseur » : seule la tâche 300");
   await za.getByRole("button", { name: "Tous", exact: true }).click();
