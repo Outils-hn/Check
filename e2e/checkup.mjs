@@ -262,6 +262,33 @@ try {
   await p2.getByLabel("Rechercher dans À retenir").fill("capot"); ok((await p2.locator("[data-retenir]").count()) === 1, "« À retenir » : recherche");
   await p2.getByRole("button", { name: "Retour à mes notes" }).click();
   await p.getByRole("button", { name: "Retour à mes notes" }).click();
+  // « Atelier / Montage » : questions par tache, feuille a imprimer, reponse a la main puis saisie
+  etape = "atelier";
+  await p.evaluate(() => { window.print = () => { window.__feuille = document.getElementById("feuille-atelier")?.innerText ?? ""; window.__classe = document.body.classList.contains("impression-atelier"); window.dispatchEvent(new Event("afterprint")); }; });
+  await p.getByRole("button", { name: /^Atelier \/ Montage/ }).click();
+  const za = p.locator('section[aria-label="Atelier / Montage"]');
+  await za.getByLabel("Projet", { exact: true }).selectOption({ label: "Chantier 1" });
+  await za.getByLabel("Numéro de tâche").fill("1234");
+  await za.getByLabel(/^Question pour l'atelier/).fill("Quel jeu sous la lisse ?"); await za.getByLabel(/^Question pour l'atelier/).press("Enter"); await p.waitForTimeout(500);
+  await za.getByLabel(/^Question pour l'atelier/).fill("Cale de 3 ou de 5 ?"); await za.getByLabel(/^Question pour l'atelier/).press("Enter"); await p.waitForTimeout(500);
+  ok((await p.locator("[data-question]").count()) === 2 && await p.locator('[data-tache="1234"]').isVisible(), "atelier : 2 questions rangées sous la tâche 1234");
+  ok(etat.check_notes.filter((x) => x.atelier && x.tache === "1234" && x.projet_id === projet.id).length === 2, "atelier : questions enregistrées comme notes de projet");
+  ok(await p.getByRole("button", { name: /^Atelier \/ Montage · 2|Retour à mes notes/ }).first().isVisible(), "atelier : bouton actif");
+  await p.locator('[data-tache="1234"]').getByRole("button", { name: "Imprimer" }).click(); await p.waitForTimeout(400);
+  const feuille = await p.evaluate(() => window.__feuille);
+  ok(/Tâche 1234/.test(feuille) && /Quel jeu sous la lisse/.test(feuille) && /Cale de 3 ou de 5/.test(feuille) && await p.evaluate(() => window.__classe), "atelier : la feuille à imprimer contient la tâche et les questions");
+  ok(!(await p.locator("#feuille-atelier").count()), "atelier : feuille retirée après l'impression");
+  await shot(p, "08b-atelier");
+  await p2.getByRole("button", { name: /^Atelier \/ Montage/ }).click();
+  await p2.locator("[data-question]").first().waitFor({ timeout: 4000 }).catch(() => {});
+  ok((await p2.locator("[data-question]").count()) === 2, "atelier : Bob voit les questions de l'équipe");
+  await p2.getByRole("button", { name: "Retour à mes notes" }).click();
+  await p.locator("[data-question]", { hasText: "Quel jeu" }).getByRole("button", { name: "Répondre" }).click();
+  await p.getByLabel(/^Réponse/).fill("5 mm, cale en nylon");
+  await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
+  ok((await p.locator("[data-question]").count()) === 1 && await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "5 mm" }).isVisible(), "atelier : réponse saisie, la question passe en réglée");
+  await p.getByRole("button", { name: "Retour à mes notes" }).click();
+  ok(await p.locator("[data-atelier]", { hasText: "tâche 1234" }).first().isVisible(), "atelier : repère « Atelier / Montage · tâche 1234 » sur la note");
   // Images : photo jointe à la création, compressée puis envoyée ; retirée avec la note supprimée
   await p.locator("textarea").first().fill("Note avec photo");
   await p.locator("[data-fichier-form]").setInputFiles({ name: "capture.png", mimeType: "image/png", buffer: PNG });

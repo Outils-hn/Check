@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
+import { groupesAtelier, nbQuestionsAtelier, joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
 import { choixParDefaut, exporter, lireAnciennes, planImport } from "./reprise";
 import { MAX_INVITE, ajouterInvite, changerStatutInvite, lireInvite, modifierTexteInvite, supprimerInvite } from "./notes-invite";
 
@@ -161,4 +161,31 @@ describe("PDF : retards", () => {
     expect(joursRetard("2026-11-10", "2026-11-10")).toBe(0);
     expect(joursRetard(null, "2026-11-10")).toBe(0);
   });
+});
+
+describe("atelier / montage", () => {
+  const q = (p: Partial<Note>) => base({ projet_id: "p1", atelier: true, ...p });
+  const liste: Note[] = [
+    q({ id: "q1", texte: "Quel jeu sous la lisse ?", tache: "1234", created_at: "2026-11-02T08:00:00Z" }),
+    q({ id: "q2", texte: "Cale de 3 ou de 5 ?", tache: "1234", created_at: "2026-11-01T08:00:00Z" }),
+    q({ id: "q3", texte: "Fixation arrière", tache: "1234", statut: "done", reponse: "M8" }),
+    q({ id: "q4", texte: "Tâche réglée", tache: "99", statut: "done" }),
+    q({ id: "q5", texte: "Autre tâche", tache: "200" }),
+    q({ id: "q6", texte: "Jetée", tache: "1234", supprime_le: "2026-11-05T08:00:00Z" }),
+    q({ id: "q7", texte: "Archivée", tache: "1234", archive: true }),
+    base({ id: "q8", texte: "Note normale", projet_id: "p1" }),
+    base({ id: "q9", texte: "Perso", atelier: true, tache: "1" }),
+  ];
+  it("regroupe par tache, questions les plus anciennes d'abord, taches a traiter en premier", () => {
+    const g = groupesAtelier(liste, nomDe);
+    expect(g.map((x) => x.tache)).toEqual(["200", "1234", "99"]);
+    expect(ids(g[1].enAttente)).toEqual(["q2", "q1"]);
+    expect(ids(g[1].reglees)).toEqual(["q3"]);
+  });
+  it("ignore corbeille, archives, notes normales et perso", () => expect(groupesAtelier(liste, nomDe).flatMap((x) => [...x.enAttente, ...x.reglees]).length).toBe(5));
+  it("tache en minuscules et sans accents = meme tache", () => {
+    const g = groupesAtelier([q({ id: "a", tache: "Façade A" }), q({ id: "b", tache: "facade a" })], nomDe);
+    expect(g.length).toBe(1);
+  });
+  it("compte les questions sans reponse", () => expect(nbQuestionsAtelier(liste)).toBe(3));
 });

@@ -4,7 +4,7 @@ export type Statut = "todo" | "in_progress" | "waiting" | "done";
 export type Note = {
   id: string; projet_id: string | null; auteur: string; pour: string | null;
   texte: string; statut: Statut; echeance: string | null; flash: boolean; archive: boolean;
-  ordre: number; images?: string[]; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
+  ordre: number; atelier?: boolean; tache?: string | null; images?: string[]; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
 };
 export type Projet = { id: string; nom: string; numero: string; cree_par: string | null; archive: boolean };
 export type Membre = { projet_id: string; user_id: string };
@@ -104,3 +104,26 @@ export function joursRetard(echeance: string | null, jour = jourIso()): number {
   const b = Date.UTC(+jour.slice(0, 4), +jour.slice(5, 7) - 1, +jour.slice(8, 10));
   return Math.round((b - a) / 86_400_000);
 }
+
+/** Question « a demander a l'atelier » : une note de projet marquee Atelier, rangee sous un numero de tache. */
+export type GroupeAtelier = { cle: string; projet_id: string; tache: string; enAttente: Note[]; reglees: Note[] };
+
+/** Questions de l'atelier regroupees par projet puis par tache ; les taches avec des questions en attente passent d'abord. */
+export function groupesAtelier(notes: Note[], nomDe: (id: string | null) => string): GroupeAtelier[] {
+  const m = new Map<string, GroupeAtelier>();
+  for (const n of notes) {
+    if (!n.atelier || !n.projet_id || n.supprime_le || n.archive) continue;
+    const tache = (n.tache ?? "").trim();
+    const cle = `${n.projet_id}|${sansAccents(tache)}`;
+    const g = m.get(cle) ?? { cle, projet_id: n.projet_id, tache, enAttente: [], reglees: [] };
+    (n.statut === "done" ? g.reglees : g.enAttente).push(n);
+    m.set(cle, g);
+  }
+  const parAncien = (a: Note, b: Note) => a.created_at.localeCompare(b.created_at);
+  const l = [...m.values()];
+  for (const g of l) { g.enAttente.sort(parAncien); g.reglees.sort((a, b) => b.created_at.localeCompare(a.created_at)); }
+  return l.sort((a, b) => (+!a.enAttente.length - +!b.enAttente.length) || nomDe(a.projet_id).localeCompare(nomDe(b.projet_id), "fr") || a.tache.localeCompare(b.tache, "fr", { numeric: true }));
+}
+
+/** Nombre de questions encore sans reponse (pour la pastille de l'onglet). */
+export const nbQuestionsAtelier = (notes: Note[]) => notes.filter((n) => n.atelier && n.projet_id && !n.supprime_le && !n.archive && n.statut !== "done").length;
