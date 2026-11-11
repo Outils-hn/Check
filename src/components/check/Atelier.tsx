@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronRight, FileDown, ListChecks, MessageSquareTe
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DESTS, LIBELLE_DEST, destDe, etiquetteDest, filtrerDest, groupesAtelier, nomProjet, sansAccents, type Dest, type GroupeAtelier, type Note, type Projet } from "@/lib/notes";
 
@@ -16,7 +17,7 @@ const lireEtat = (): Record<string, boolean> => { try { return JSON.parse(localS
 export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onSupprimer, onSupprimerTache, onRenommerTache }: {
   notes: Note[]; projets: Projet[]; projetInitial: string; nomDe: (id: string | null) => string; auteur?: string;
   onAjouter: (q: { texte: string; projet_id: string; tache: string; tache_nom: string; destinataire: Dest; fournisseur: string }) => Promise<boolean>;
-  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, nom: string) => Promise<void>;
+  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, c: { tache: string; nom: string }) => Promise<void>;
 }) {
   const [projet, setProjet] = useState(projets.some((p) => p.id === projetInitial) ? projetInitial : projets[0]?.id ?? "");
   const [tache, setTache] = useState("");
@@ -27,6 +28,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
   const [filtreDest, setFiltreDest] = useState<Dest | "tous">("tous");
   const [aRenommer, setARenommer] = useState<GroupeAtelier | null>(null);
   const [nomSaisi, setNomSaisi] = useState("");
+  const [numeroSaisi, setNumeroSaisi] = useState("");
   const [ouverts, setOuverts] = useState<Record<string, boolean>>(lireEtat);
   const [aSupprimer, setASupprimer] = useState<GroupeAtelier | null>(null);
   const [q, setQ] = useState("");
@@ -169,7 +171,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                 </span>
               </button>
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => void pdf([g], true)} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
-              <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => { setARenommer(g); setNomSaisi(g.nom); }} aria-label={`Nommer ${libelleTache(g.tache)}`} title={g.nom ? "Renommer la tâche" : "Donner un nom à la tâche"}><PencilLine className="size-3.5" /></button>
+              <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => { setARenommer(g); setNomSaisi(g.nom); setNumeroSaisi(g.tache); }} aria-label={`Modifier ${libelleTache(g.tache)}`} title="Modifier le numéro ou le nom de la tâche"><PencilLine className="size-3.5" /></button>
               <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => setASupprimer(g)} aria-label={`Supprimer ${libelleTache(g.tache)} et ses questions`} title="Supprimer la tâche et ses questions"><Trash2 className="size-3.5" /></button>
             </header>
             {o && (
@@ -210,11 +212,17 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
       <Dialog open={!!aRenommer} onOpenChange={(o) => !o && setARenommer(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Nom de {aRenommer ? libelleTache(aRenommer.tache).toLowerCase() : ""}</DialogTitle>
-            <DialogDescription>Facultatif : il s'affiche à côté du numéro, et sur le PDF. Laissez vide pour l'enlever.</DialogDescription>
+            <DialogTitle>Modifier {aRenommer ? libelleTache(aRenommer.tache).toLowerCase() : ""}</DialogTitle>
+            <DialogDescription>Le numéro et le nom (facultatif) changent sur toutes les questions de la tâche, et sur le PDF.</DialogDescription>
           </DialogHeader>
-          <form id="form-nom-tache" onSubmit={async (e) => { e.preventDefault(); const g = aRenommer; setARenommer(null); if (g) await onRenommerTache(g, nomSaisi.trim()); }}>
-            <Input autoFocus value={nomSaisi} maxLength={80} onChange={(e) => setNomSaisi(e.target.value)} placeholder="Ex. Façade nord" aria-label="Nom de la tâche" />
+          <form id="form-nom-tache" className="space-y-3" onSubmit={async (e) => { e.preventDefault(); const g = aRenommer; setARenommer(null); if (g) await onRenommerTache(g, { tache: numeroSaisi.trim(), nom: nomSaisi.trim() }); }}>
+            <div className="space-y-1.5"><Label htmlFor="m-numero">Numéro de tâche</Label>
+              <Input id="m-numero" autoFocus value={numeroSaisi} maxLength={60} onChange={(e) => setNumeroSaisi(e.target.value)} placeholder="Ex. 1234" /></div>
+            <div className="space-y-1.5"><Label htmlFor="m-nom">Nom de la tâche <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
+              <Input id="m-nom" value={nomSaisi} maxLength={80} onChange={(e) => setNomSaisi(e.target.value)} placeholder="Ex. Façade nord" /></div>
+            {aRenommer && numeroSaisi.trim() && sansAccents(numeroSaisi.trim()) !== sansAccents(aRenommer.tache) && toutes.some((x) => x.projet_id === aRenommer.projet_id && sansAccents(x.tache) === sansAccents(numeroSaisi.trim())) && (
+              <p className="note-check">Ce numéro existe déjà dans ce projet : les questions seront regroupées avec cette tâche.</p>
+            )}
           </form>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setARenommer(null)}>Annuler</Button>
