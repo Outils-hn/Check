@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.48 — 12 novembre 2026
+
+- Nouveauté : dans les PDF de questions, un espace régulier sépare chaque question de la suivante (la ligne de réponse ne touche plus l'étiquette de la question suivante).
+
 ## 3.47 — 12 novembre 2026
 
 - Nouveauté : dans les PDF de questions, une seule ligne est laissée sous chaque question pour la réponse, ce qui fait tenir plus de questions par page.

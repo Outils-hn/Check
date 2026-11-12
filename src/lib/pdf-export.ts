@@ -262,14 +262,14 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
       const dest = typeof qu === "string" ? "" : qu.dest;
       doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
       const lignes: string[] = doc.splitTextToSize(q, cw - 24);
-      const h = lignes.length * 14 + 24 + 12 + (dest ? 11 : 0);
+      const h = lignes.length * 14 + 22 + 22 + 12 + (dest ? 11 : 0);
       if (y + h > H - bottom) { doc.addPage(); y = top; }
       if (dest) { doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS); doc.text(dest.toUpperCase(), mx + 24, y - 1, { charSpace: 0.8 }); y += 11; doc.setFont("PlexSans", "bold"); doc.setFontSize(11); }
       doc.setDrawColor(...NOIR); doc.setLineWidth(1); doc.rect(mx, y - 9, 10, 10);
       doc.setTextColor(...NOIR); doc.text(lignes, mx + 24, y);
       let ly = y + (lignes.length - 1) * 14 + 22; // une seule ligne pour la reponse manuscrite
       doc.setDrawColor(...GRIS); doc.setLineWidth(0.4);
-      doc.line(mx + 24, ly, W - mx, ly); ly += 2;
+      doc.line(mx + 24, ly, W - mx, ly); ly += 22;
       y = ly + 4;
     }
     // Questions deja reglees : case cochee, la reponse prend la place des lignes
