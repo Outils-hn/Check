@@ -10,6 +10,11 @@ import { DESTS, LIBELLE_DEST, destDe, etiquetteDest, filtrerDest, groupesAtelier
 const CLE_REPLIS = "check:taches-ouvertes";
 const libelleTache = (t: string) => (t ? `Tâche ${t}` : "Sans numéro de tâche");
 const titreTache = (g: { tache: string; nom: string }) => libelleTache(g.tache) + (g.nom ? ` · ${g.nom}` : "");
+/** Titre du PDF d'une tâche : les destinataires réellement présents (« atelier et montage », « atelier, montage et fournisseur »…). */
+const titreSelonDest = (g: GroupeAtelier) => {
+  const presents = DESTS.filter((d) => [...g.enAttente, ...g.reglees].some((n) => destDe(n) === d)).map((d) => LIBELLE_DEST[d].toLowerCase());
+  return `Questions ${presents.length > 1 ? `${presents.slice(0, -1).join(", ")} et ${presents[presents.length - 1]}` : presents[0] ?? "Tâches"}`;
+};
 const plur = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 const lireEtat = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(CLE_REPLIS) ?? "{}") ?? {}; } catch { return {}; } };
 
@@ -78,7 +83,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
     try {
       const { exportQuestionsPdf } = await import("@/lib/pdf-export");
       await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, nom: g.nom, questions: g.enAttente.map((n) => ({ texte: n.texte, dest: etiquetteDest(n) })),
-        reglees: avecReglees ? g.reglees.map((n) => ({ question: `${n.texte}  (${etiquetteDest(n)})`, reponse: n.reponse ?? "" })) : [] })), { auteur, titre: avecReglees ? "Questions Tâches" : undefined });
+        reglees: avecReglees ? g.reglees.map((n) => ({ question: `${n.texte}  (${etiquetteDest(n)})`, reponse: n.reponse ?? "" })) : [] })), { auteur, titre: avecReglees ? titreSelonDest(liste[0]) : "Questions Tâches" });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 
