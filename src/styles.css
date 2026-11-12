@@ -369,7 +369,7 @@ select.field {
   --muted-foreground: #5D6068; /* un cran plus fonce : reste lisible sur le fond papier */
 }
 body { border-top: 3px solid var(--app); }
-[role="tab"][data-state="active"] { box-shadow: inset 0 -2px 0 var(--app), 0 1px 2px rgb(0 0 0 / 0.06); }
+[role="tab"][data-state="active"], [data-filtre][aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--app), 0 1px 2px rgb(0 0 0 / 0.06); }
 
 /* Statuts des notes : pastille neutre, seul le point est en couleur (lisible en clair et en sombre) */
 :root { --st-todo: #C2410C; --st-progress: #1D4ED8; --st-waiting: #6D28D9; --st-done: #15803D; }

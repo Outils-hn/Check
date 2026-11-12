@@ -147,7 +147,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div className="flex flex-wrap items-center gap-1.5 text-sm" role="group" aria-label="Filtrer par destinataire">
             {(["tous", ...DESTS] as const).map((d) => (
-              <button key={d} type="button" aria-pressed={d === "tous" ? !filtreDest.length : filtreDest.includes(d)} title={d === "tous" ? undefined : "Clic (ou Ctrl + clic) : ajoute ou retire ce destinataire"}
+              <button key={d} type="button" data-filtre aria-pressed={d === "tous" ? !filtreDest.length : filtreDest.includes(d)} title={d === "tous" ? undefined : "Clic (ou Ctrl + clic) : ajoute ou retire ce destinataire"}
                 onClick={() => setFiltreDest((f) => (d === "tous" ? [] : f.includes(d) ? f.filter((x) => x !== d) : [...f, d]))}
                 className={`min-h-9 rounded-full border border-border px-3 hover:bg-muted ${(d === "tous" ? !filtreDest.length : filtreDest.includes(d)) ? "bg-muted font-medium text-foreground" : "text-muted-foreground"}`}>{d === "tous" ? "Tous" : LIBELLE_DEST[d]}</button>
             ))}
@@ -243,7 +243,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
       <Dialog open={!!aRepondre} onOpenChange={(o) => !o && setARepondre(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Réponse</DialogTitle>
+            <DialogTitle>Répondre à la question</DialogTitle>
             <DialogDescription className="whitespace-pre-wrap break-words">{aRepondre?.texte}</DialogDescription>
           </DialogHeader>
           <form id="form-reponse" className="space-y-1.5" onSubmit={(e) => { e.preventDefault(); const n = aRepondre; if (!n) return; setARepondre(null); onRepondre(n, reponseSaisie.trim()); }}>
