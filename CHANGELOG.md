@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.40 — 12 novembre 2026
+
+- Nouveauté : sur téléphone, la barre de recherche des notes prend toute la largeur et son texte n'est plus coupé.
+
 ## 3.39 — 12 novembre 2026
 
 - Nouveauté : petites retouches de confort. « À demander à l'atelier » est plus court, la feuille « Questions Tâches » explique la case à cocher, les actions au survol restent visibles sur tablette, les filtres du téléphone tiennent mieux sur la ligne et le message d'une liste vide est plus clair.
