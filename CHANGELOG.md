@@ -8,6 +8,10 @@ Chaque version qui change quelque chose de visible pour l'équipe a une puce « 
 
 - Nouveauté : les PDF de « Questions Tâches » n'affichent plus « Check » en haut et en bas de page.
 
+## 3.53 — 12 novembre 2026
+
+- Nouveauté : les PDF de questions n'affichent plus « Check » en haut ni en bas de page.
+
 ## 3.52 — 12 novembre 2026
 
 - Nouveauté : dans « Questions Tâches », les boutons de droite sont alignés : « PDF » et « Répondre » ont la même largeur, et les icônes crayon et corbeille sont en colonne d'une ligne à l'autre.
