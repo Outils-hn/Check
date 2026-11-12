@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.49 — 12 novembre 2026
+
+- Nouveauté : dans « Questions Tâches », on peut modifier une question (texte, destinataire, fournisseur) avec le crayon, qu'elle soit en attente ou réglée.
+
 ## 3.48 — 12 novembre 2026
 
 - Nouveauté : dans les PDF de questions, un espace régulier sépare chaque question de la suivante (la ligne de réponse ne touche plus l'étiquette de la question suivante).

@@ -379,6 +379,7 @@ function Carnet() {
           onRepondre={(n) => { setVersReponse(true); setEdition({ ...n, statut: "done" }); }}
           onRouvrir={(n) => void act.modifier(n.id, { statut: "todo" })}
           onDeplacer={(n, ordre) => void act.modifier(n.id, { ordre })}
+          onModifierQuestion={(n, c) => { void act.modifier(n.id, c); toast.success("Question modifiée"); }}
           onPosee={(n) => void act.modifier(n.id, { statut: n.statut === "in_progress" ? "todo" : "in_progress" })}
           onSupprimer={async (n) => { if (await act.mettreCorbeille(n.id)) toast("Question supprimée", { action: { label: "Annuler", onClick: () => act.restaurer(n.id) }, duration: 6000 }); }}
           onRenommerTache={async (g, c) => { await act.modifierPlusieurs([...g.enAttente, ...g.reglees].map((n) => n.id), { tache: c.tache || null, tache_nom: c.nom || null }); toast.success("Tâche modifiée"); }}

@@ -299,6 +299,16 @@ try {
   await p.getByLabel(/^Réponse/).fill("5 mm, cale en nylon");
   await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 1 && await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "5 mm" }).isVisible(), "réponse saisie, la question passe en réglée");
+  // Modifier une question (texte et destinataire)
+  await p.locator("[data-question]", { hasText: "Cale de 3" }).getByRole("button", { name: "Modifier la question" }).click();
+  await p.getByLabel("Question", { exact: true }).fill("Cale de 3 ou de 4 ?");
+  await p.getByLabel("Destinataire de la question").selectOption("montage");
+  await p.getByRole("button", { name: "Enregistrer", exact: true }).click(); await p.waitForTimeout(600);
+  ok(await p.locator("[data-question]", { hasText: "Cale de 3 ou de 4" }).locator('[data-dest="montage"]').isVisible() && etat.check_notes.some((x) => x.texte === "Cale de 3 ou de 4 ?" && x.destinataire === "montage"), "question modifiée : texte et destinataire");
+  await p.locator("[data-question]", { hasText: "Cale de 3 ou de 4" }).getByRole("button", { name: "Modifier la question" }).click();
+  await p.getByLabel("Question", { exact: true }).fill("Cale de 3 ou de 5 ?");
+  await p.getByLabel("Destinataire de la question").selectOption("atelier");
+  await p.getByRole("button", { name: "Enregistrer", exact: true }).click(); await p.waitForTimeout(600);
   // Case « posée » : j'attends la réponse (reste en attente), puis on annule
   const qc = p.locator("[data-question]", { hasText: "Cale de 3" });
   await qc.getByRole("button", { name: "Marquer la question comme posée" }).click(); await p.waitForTimeout(600);
