@@ -239,9 +239,7 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
   const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), mx = 48, top = 56, bottom = 56, cw = W - mx * 2;
   const date = new Date().toLocaleDateString("fr-CH", { day: "numeric", month: "long", year: "numeric" });
   let y = top;
-  doc.setFont("PlexSans", "bold"); doc.setFontSize(8); doc.setTextColor(...GRIS);
-  doc.text("CHECK", mx, y, { charSpace: 1.5 });
-  doc.setFont("PlexSans", "normal");
+  doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS);
   doc.text([date, opt.auteur].filter(Boolean).join(" · "), W - mx, y, { align: "right" });
   y += 30;
   doc.setFont("PlexSans", "bold"); doc.setFontSize(20); doc.setTextColor(...NOIR);
@@ -293,7 +291,6 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS);
-    doc.text("Check", mx, H - 28);
     doc.text(`Page ${i} / ${pages}`, W - mx, H - 28, { align: "right" });
   }
   doc.save(`check-questions-taches-${new Date().toISOString().slice(0, 10)}.pdf`);
