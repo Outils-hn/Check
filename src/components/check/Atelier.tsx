@@ -22,7 +22,7 @@ const lireEtat = (): Record<string, boolean> => { try { return JSON.parse(localS
 export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onPosee, onDeplacer, onModifierQuestion, onSupprimer, onSupprimerTache, onRenommerTache }: {
   notes: Note[]; projets: Projet[]; projetInitial: string; nomDe: (id: string | null) => string; auteur?: string;
   onAjouter: (q: { texte: string; projet_id: string; tache: string; tache_nom: string; destinataire: Dest; fournisseur: string }) => Promise<boolean>;
-  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onPosee: (n: Note) => void; onDeplacer: (n: Note, ordre: number) => void; onModifierQuestion: (n: Note, champs: { texte: string; destinataire: Dest; fournisseur: string | null }) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, c: { tache: string; nom: string }) => Promise<void>;
+  onRepondre: (n: Note, reponse: string) => void; onRouvrir: (n: Note) => void; onPosee: (n: Note) => void; onDeplacer: (n: Note, ordre: number) => void; onModifierQuestion: (n: Note, champs: { texte: string; destinataire: Dest; fournisseur: string | null }) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, c: { tache: string; nom: string }) => Promise<void>;
 }) {
   const [projet, setProjet] = useState(projets.some((p) => p.id === projetInitial) ? projetInitial : projets[0]?.id ?? "");
   const [tache, setTache] = useState("");
@@ -31,10 +31,13 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
   const [dest, setDest] = useState<Dest>("atelier");
   const [fournisseur, setFournisseur] = useState("");
   const [filtreDest, setFiltreDest] = useState<Dest[]>([]); // vide = tous les destinataires
+  const [aRepondre, setARepondre] = useState<Note | null>(null);
+  const [reponseSaisie, setReponseSaisie] = useState("");
   const [aEditer, setAEditer] = useState<Note | null>(null);
   const [texteEdit, setTexteEdit] = useState("");
   const [destEdit, setDestEdit] = useState<Dest>("atelier");
   const [fournEdit, setFournEdit] = useState("");
+  const repondre = (n: Note) => { setARepondre(n); setReponseSaisie(n.reponse ?? ""); };
   const editer = (n: Note) => { setAEditer(n); setTexteEdit(n.texte); setDestEdit(destDe(n)); setFournEdit(n.fournisseur ?? ""); };
   const [aRenommer, setARenommer] = useState<GroupeAtelier | null>(null);
   const [nomSaisi, setNomSaisi] = useState("");
@@ -144,7 +147,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div className="flex flex-wrap items-center gap-1.5 text-sm" role="group" aria-label="Filtrer par destinataire">
             {(["tous", ...DESTS] as const).map((d) => (
-              <button key={d} type="button" aria-pressed={d === "tous" ? !filtreDest.length : filtreDest.includes(d)} title={d === "tous" ? undefined : "Clic (ou Ctrl + clic) : ajoute ou retire ce destinataire"}
+              <button key={d} type="button" data-filtre aria-pressed={d === "tous" ? !filtreDest.length : filtreDest.includes(d)} title={d === "tous" ? undefined : "Clic (ou Ctrl + clic) : ajoute ou retire ce destinataire"}
                 onClick={() => setFiltreDest((f) => (d === "tous" ? [] : f.includes(d) ? f.filter((x) => x !== d) : [...f, d]))}
                 className={`min-h-9 rounded-full border border-border px-3 hover:bg-muted ${(d === "tous" ? !filtreDest.length : filtreDest.includes(d)) ? "bg-muted font-medium text-foreground" : "text-muted-foreground"}`}>{d === "tous" ? "Tous" : LIBELLE_DEST[d]}</button>
             ))}
@@ -209,7 +212,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                       <button type="button" disabled={i === 0} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Monter la question" title="Monter" onClick={() => onDeplacer(n, ordreAvant(g.enAttente, g.enAttente[i - 1].id, n.id))}><ArrowUp className="size-3.5" /></button>
                       <button type="button" disabled={i === g.enAttente.length - 1} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Descendre la question" title="Descendre" onClick={() => onDeplacer(n, ordreApres(g.enAttente, g.enAttente[i + 1].id, n.id))}><ArrowDown className="size-3.5" /></button>
                     </span>
-                    <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={() => onRepondre(n)}><Check className="size-3.5" aria-hidden="true" />Répondre</Button>
+                    <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={() => repondre(n)}><Check className="size-3.5" aria-hidden="true" />Répondre</Button>
                     <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => editer(n)} aria-label="Modifier la question" title="Modifier la question"><Pencil className="size-3.5" /></button>
                     <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
                   </li>
@@ -219,7 +222,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1"><span className="mb-0.5 inline-block rounded-full border border-border px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{etiquetteDest(n)}</span><p className="whitespace-pre-wrap break-words text-muted-foreground line-through">{n.texte}</p></div>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => editer(n)} aria-label="Modifier la question" title="Modifier la question"><Pencil className="size-3.5" /></button>
-                      <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => onRepondre(n)} aria-label="Modifier la réponse" title="Modifier la réponse"><Pencil className="size-3.5" /></button>
+                      <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => repondre(n)} aria-label="Modifier la réponse" title="Modifier la réponse"><Pencil className="size-3.5" /></button>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => onRouvrir(n)} aria-label="Rouvrir la question" title="Rouvrir : la question repasse en attente"><RotateCcw className="size-3.5" /></button>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
                     </div>
@@ -236,6 +239,24 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
           </section>
         );
       })}
+
+      <Dialog open={!!aRepondre} onOpenChange={(o) => !o && setARepondre(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Répondre à la question</DialogTitle>
+            <DialogDescription className="whitespace-pre-wrap break-words">{aRepondre?.texte}</DialogDescription>
+          </DialogHeader>
+          <form id="form-reponse" className="space-y-1.5" onSubmit={(e) => { e.preventDefault(); const n = aRepondre; if (!n) return; setARepondre(null); onRepondre(n, reponseSaisie.trim()); }}>
+            <Label htmlFor="q-reponse">Réponse <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
+            <textarea id="q-reponse" className="field min-h-24 w-full" maxLength={500} autoFocus value={reponseSaisie} onChange={(e) => setReponseSaisie(e.target.value)} />
+            <p className="text-xs text-muted-foreground">{reponseSaisie.length} / 500 · la question passe en « réglée ».</p>
+          </form>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setARepondre(null)}>Annuler</Button>
+            <Button type="submit" form="form-reponse">Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!aEditer} onOpenChange={(o) => !o && setAEditer(null)}>
         <DialogContent className="max-w-md">
