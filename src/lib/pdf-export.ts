@@ -22,6 +22,8 @@ const STATUT_COULEURS: Record<string, { bg: Rgb; fg: Rgb }> = {
 
 const fmtJour = (iso: string) => { const [y, m, d] = iso.slice(0, 10).split("-"); return `${d}.${m}.${y}`; };
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("fr-CH");
+/** Accorde un mot au singulier ou au pluriel selon le nombre (0 et 1 : singulier). */
+const pl = (n: number, mot: string) => (n > 1 ? `${mot}s` : mot);
 const plur = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 
 /** Chiffres du bandeau et regroupement par projet (ordre alphabetique, « Perso » a la fin). */
@@ -79,7 +81,7 @@ function rendreSobre({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: st
   y += 16;
   if (opt.filtres) { doc.setFont("PlexSans", "normal"); doc.setFontSize(9); doc.setTextColor(...GRIS); doc.text(doc.splitTextToSize(opt.filtres, cw), mx, y); y += 12; }
   y += 14;
-  const chiffres: [number, string][] = [[res.total, "notes"], [res.aTraiter, "à traiter"], [res.retard, "en retard"], [res.urgentes, "urgentes"], [res.reglees, "réglées"]];
+  const chiffres: [number, string][] = [[res.total, pl(res.total, "note")], [res.aTraiter, "à traiter"], [res.retard, "en retard"], [res.urgentes, pl(res.urgentes, "urgente")], [res.reglees, pl(res.reglees, "réglée")]];
   const colW = cw / chiffres.length;
   chiffres.forEach(([v, l], i) => {
     doc.setFont("PlexSans", "bold"); doc.setFontSize(18); doc.setTextColor(...(l === "en retard" && v > 0 ? ROUGE : NOIR));
@@ -163,8 +165,8 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
   if (opt.filtres) { doc.setFont("PlexSans", "normal"); doc.setFontSize(9); doc.setTextColor(...GRIS); doc.text(doc.splitTextToSize(opt.filtres, cw), mx, y); y += 12; }
   y += 10;
   const tuiles: [number, string, Rgb, Rgb][] = [
-    [res.total, "notes", [244, 244, 245], NOIR], [res.aTraiter, "à traiter", [238, 242, 255], INDIGO],
-    [res.retard, "en retard", [254, 226, 226], [153, 27, 27]], [res.urgentes, "urgentes", [255, 237, 213], [154, 52, 18]], [res.reglees, "réglées", [220, 252, 231], VERT],
+    [res.total, pl(res.total, "note"), [244, 244, 245], NOIR], [res.aTraiter, "à traiter", [238, 242, 255], INDIGO],
+    [res.retard, "en retard", [254, 226, 226], [153, 27, 27]], [res.urgentes, pl(res.urgentes, "urgente"), [255, 237, 213], [154, 52, 18]], [res.reglees, pl(res.reglees, "réglée"), [220, 252, 231], VERT],
   ];
   const tw = (cw - 8 * 4) / 5;
   tuiles.forEach(([v, l, bg, fg], i) => {
@@ -230,7 +232,7 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
 /** Feuille a emporter a l'atelier ou au montage : une case a cocher et deux lignes pour la reponse sous chaque question. */
 export type TachePdf = { projet: string; tache: string; nom?: string; questions: (string | { texte: string; dest: string })[]; reglees?: { question: string; reponse: string }[] };
 
-export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: string } = {}) {
+export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: string; titre?: string } = {}) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   await installerPolicesPDF(doc);
@@ -243,7 +245,7 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
   doc.text([date, opt.auteur].filter(Boolean).join(" · "), W - mx, y, { align: "right" });
   y += 30;
   doc.setFont("PlexSans", "bold"); doc.setFontSize(20); doc.setTextColor(...NOIR);
-  doc.text("Questions atelier et montage", mx, y);
+  doc.text(opt.titre ?? "Questions atelier et montage", mx, y);
   y += 30;
   for (const t of taches) {
     if (y + 90 > H - bottom) { doc.addPage(); y = top; }
