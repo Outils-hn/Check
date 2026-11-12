@@ -92,6 +92,17 @@ export function ordreAvant(liste: Note[], cibleId: string, deplaceeId: string): 
 }
 
 /** Ordre d'une nouvelle note : tout en haut. */
+/** Ordre d'une nouvelle question : apres toutes les autres, pour qu'elle arrive en fin de liste. */
+export const ordreEnQueue = (notes: Note[]) => { const o = notes.filter((n) => n.atelier).map((n) => n.ordre); return o.length ? Math.max(...o) + 1 : 0; };
+
+/** Ordre pour placer une note juste apres la cible dans la liste affichee. */
+export function ordreApres(liste: Note[], cibleId: string, deplaceeId: string): number {
+  const l = liste.filter((n) => n.id !== deplaceeId);
+  const i = l.findIndex((n) => n.id === cibleId);
+  if (i < 0) return 0;
+  return i < l.length - 1 ? (l[i].ordre + l[i + 1].ordre) / 2 : l[i].ordre + 1;
+}
+
 export const ordreEnTete = (notes: Note[]) => (notes.length ? Math.min(...notes.map((n) => n.ordre)) - 1 : 0);
 
 /** Notes « Réglé » depuis plus de 7 jours, a archiver par « Nettoyer ». */
@@ -129,8 +140,8 @@ export function groupesAtelier(notes: Note[], nomDe: (id: string | null) => stri
     if (!g.nom && n.tache_nom?.trim()) g.nom = n.tache_nom.trim(); // le nom est repete sur chaque question de la tache
     m.set(cle, g);
   }
-  // En attente : par destinataire (atelier, montage, fournisseur) puis du plus ancien au plus recent
-  const parAncien = (a: Note, b: Note) => DESTS.indexOf(destDe(a)) - DESTS.indexOf(destDe(b)) || a.created_at.localeCompare(b.created_at);
+  // En attente : ordre choisi a la main ; a ordre egal, par destinataire (atelier, montage, fournisseur) puis du plus ancien au plus recent
+  const parAncien = (a: Note, b: Note) => a.ordre - b.ordre || DESTS.indexOf(destDe(a)) - DESTS.indexOf(destDe(b)) || a.created_at.localeCompare(b.created_at);
   const l = [...m.values()];
   for (const g of l) { g.enAttente.sort(parAncien); g.reglees.sort((a, b) => b.created_at.localeCompare(a.created_at)); }
   return l.sort((a, b) => (+!a.enAttente.length - +!b.enAttente.length) || nomDe(a.projet_id).localeCompare(nomDe(b.projet_id), "fr") || a.tache.localeCompare(b.tache, "fr", { numeric: true }));

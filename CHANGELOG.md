@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.43 — 12 novembre 2026
+
+- Nouveauté : dans « Questions Tâches », on peut réorganiser les questions d'une tâche : glisser-déposer sur ordinateur, flèches monter / descendre partout. Les nouvelles questions arrivent en fin de liste et le PDF suit l'ordre choisi.
+
 ## 3.42 — 12 novembre 2026
 
 - Nouveauté : le carnet d'essai sans compte est retiré ; sans compte, Check invite simplement à se connecter.

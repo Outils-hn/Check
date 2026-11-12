@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useCompte } from "@/lib/compte";
 import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
-  LIBELLE, PERSO, STATUTS, aNettoyer, nbQuestionsAtelier, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
+  LIBELLE, PERSO, STATUTS, aNettoyer, nbQuestionsAtelier, ordreEnQueue, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
@@ -375,9 +375,10 @@ function Carnet() {
       {retenir && <Retenir moi={moi} comptes={comptes} />}
       {atelier && (
         <Atelier notes={notes} projets={actifs} projetInitial={formProjet} nomDe={nomDe} auteur={comptes.find((c) => c.id === moi)?.nom}
-          onAjouter={async (q) => !!(await act.ajouterNote({ texte: q.texte, projet_id: q.projet_id, tache: q.tache || null, tache_nom: q.tache_nom || null, destinataire: q.destinataire, fournisseur: q.fournisseur || null, atelier: true, statut: "todo", ordre: ordreEnTete(notes) }))}
+          onAjouter={async (q) => !!(await act.ajouterNote({ texte: q.texte, projet_id: q.projet_id, tache: q.tache || null, tache_nom: q.tache_nom || null, destinataire: q.destinataire, fournisseur: q.fournisseur || null, atelier: true, statut: "todo", ordre: ordreEnQueue(notes) }))}
           onRepondre={(n) => { setVersReponse(true); setEdition({ ...n, statut: "done" }); }}
           onRouvrir={(n) => void act.modifier(n.id, { statut: "todo" })}
+          onDeplacer={(n, ordre) => void act.modifier(n.id, { ordre })}
           onPosee={(n) => void act.modifier(n.id, { statut: n.statut === "in_progress" ? "todo" : "in_progress" })}
           onSupprimer={async (n) => { if (await act.mettreCorbeille(n.id)) toast("Question supprimée", { action: { label: "Annuler", onClick: () => act.restaurer(n.id) }, duration: 6000 }); }}
           onRenommerTache={async (g, c) => { await act.modifierPlusieurs([...g.enAttente, ...g.reglees].map((n) => n.id), { tache: c.tache || null, tache_nom: c.nom || null }); toast.success("Tâche modifiée"); }}
