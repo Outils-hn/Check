@@ -34,8 +34,8 @@ const voit = (t, u, r) => valide(u) && (
   : t === "check_retenir" ? true
   : t === "check_notes_histo" ? voit("check_notes", u, etat.check_notes.find((n) => n.id === r.note_id) || { projet_id: null, auteur: null })
   : r.projet_id === null ? r.auteur === u : membre(u, r.projet_id));
-const filtres = (url) => [...url.searchParams.entries()].filter(([k, v]) => !["select", "order", "limit"].includes(k) && v.startsWith("eq.")).map(([k, v]) => [k, v.slice(3)]);
-const correspond = (r, f) => f.every(([k, v]) => String(r[k]) === v);
+const filtres = (url) => [...url.searchParams.entries()].filter(([k, v]) => !["select", "order", "limit"].includes(k) && (v.startsWith("eq.") || v.startsWith("in."))).map(([k, v]) => [k, v.startsWith("in.") ? v.slice(4, -1).split(",").map((x) => x.replace(/^"|"$/g, "")) : v.slice(3)]);
+const correspond = (r, f) => f.every(([k, v]) => (Array.isArray(v) ? v.includes(String(r[k])) : String(r[k]) === v));
 function controleNote(note, avant) {
   if (note.pour && note.projet_id && !membre(note.pour, note.projet_id)) return "La personne choisie ne fait pas partie de l'équipe du projet";
   if (note.statut === "done" && (!avant || avant.statut !== "done")) note.regle_le = new Date().toISOString();
@@ -314,7 +314,7 @@ try {
   await za.getByLabel("Votre question").fill("Peinture RAL 7016 ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
   ok(await p.locator('[data-tache="300"]').getByText(/Tâche 300 · Façade nord/).isVisible(), "tâche créée avec son nom");
   await za.getByLabel("Numéro de tâche").fill("300");
-  ok(!(await za.getByLabel("Nom de la tâche").count()) && await za.getByText(/Tâche déjà existante/).isVisible(), "tâche existante : le nom n'est pas redemandé");
+  ok(!(await za.getByLabel("Nom de la tâche").count()) && await za.getByText(/Tâche existante/).isVisible(), "tâche existante : le nom n'est pas redemandé");
   // Question pour un fournisseur : repere, filtre par destinataire
   await za.getByLabel("Destinataire", { exact: true }).selectOption("fournisseur");
   await za.getByLabel("Nom du fournisseur").fill("Schüco");
