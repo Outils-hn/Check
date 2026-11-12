@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { destDe, etiquetteDest, filtrerDest, groupesAtelier, nbQuestionsAtelier, joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
 import { choixParDefaut, exporter, lireAnciennes, planImport } from "./reprise";
-import { MAX_INVITE, ajouterInvite, changerStatutInvite, lireInvite, modifierTexteInvite, supprimerInvite } from "./notes-invite";
 
 const moi = "u-moi", autre = "u-marc";
 const base = (p: Partial<Note>): Note => ({
@@ -99,35 +98,6 @@ describe("reprise et sauvegarde", () => {
     expect(ids(filtrer(l, { ...F, q: "sikaflex" }, moi, nomDe))).toEqual(["r1"]);
     expect(ids(filtrer(l, { ...F, q: "ancienne" }, moi, nomDe))).toEqual([]);
     expect(ids(filtrer(l, { ...F, avecReponse: true }, moi, nomDe))).toEqual(["r1"]);
-  });
-});
-
-describe("carnet d'essai sans compte", () => {
-  it("garde 5 notes au plus et ignore les textes vides", () => {
-    let l = lireInvite(null);
-    for (let i = 0; i < 8; i++) l = ajouterInvite(l, `note ${i}`, 1000 + i);
-    expect(l).toHaveLength(MAX_INVITE);
-    expect(ajouterInvite(l, "de trop")).toHaveLength(MAX_INVITE);
-    expect(ajouterInvite([], "   ")).toHaveLength(0);
-  });
-  it("change le statut, modifie, supprime", () => {
-    const l = ajouterInvite([], "à faire", 5000);
-    const r = changerStatutInvite(l, l[0].id, "done", 9000);
-    expect(r[0].status).toBe("done");
-    expect(r[0].completedAt).toBe(9000);
-    expect(modifierTexteInvite(r, l[0].id, "  nouveau  ")[0].text).toBe("nouveau");
-    expect(modifierTexteInvite(r, l[0].id, "  ")[0].text).toBe("à faire");
-    expect(supprimerInvite(r, l[0].id)).toHaveLength(0);
-  });
-  it("est repris tel quel par la fenêtre de reprise (anciennes notes)", () => {
-    const l = ajouterInvite([], "Relancer Schüco", 5000);
-    const a = lireAnciennes(JSON.stringify(l));
-    expect(a.notes).toHaveLength(1);
-    expect(a.notes[0]).toMatchObject({ texte: "Relancer Schüco", projet: null, statut: "todo" });
-  });
-  it("ignore un stockage abîmé", () => {
-    expect(lireInvite("pas du json")).toEqual([]);
-    expect(lireInvite('{"a":1}')).toEqual([]);
   });
 });
 

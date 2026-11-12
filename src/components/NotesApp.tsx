@@ -10,8 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useCompte } from "@/lib/compte";
-import { CarnetInvite } from "@/components/check/CarnetInvite";
-import { CLE_INVITE, lireInvite } from "@/lib/notes-invite";
 import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
   LIBELLE, PERSO, STATUTS, aNettoyer, nbQuestionsAtelier, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
@@ -55,8 +53,17 @@ export default function NotesApp() {
     } catch { /* stockage bloque */ }
   }, []);
   if (!pret) return null;
-  // Sans compte : carnet d'essai (5 notes sur ce poste) ; compte non valide : message d'attente
-  if (!uid) return (<><CarnetInvite onConnexion={() => setConnexion(true)} /><ConnexionDialog open={connexion} onOpenChange={setConnexion} /></>);
+  // Sans compte : invitation a se connecter ; compte non valide : message d'attente
+  if (!uid) {
+    return (
+      <div className="panel mx-auto mt-16 max-w-md p-6 text-center text-sm">
+        <h2 className="text-base font-semibold">Connectez-vous pour utiliser Check</h2>
+        <p className="mt-2 text-muted-foreground">Check utilise votre compte Index : notes perso, et notes partagées avec l'équipe de chaque projet.</p>
+        <Button className="mt-4 gap-1.5" onClick={() => setConnexion(true)}><LogIn className="size-4" /> Se connecter</Button>
+        <ConnexionDialog open={connexion} onOpenChange={setConnexion} />
+      </div>
+    );
+  }
   if (!valide) {
     return (
       <div className="panel mx-auto mt-16 max-w-md p-6 text-center text-sm">
@@ -66,7 +73,6 @@ export default function NotesApp() {
             ? "Un administrateur doit valider votre compte dans Index → Configuration → Comptes. Vous aurez ensuite accès à vos notes et à celles de vos projets."
             : "Check utilise votre compte Index : notes perso, et notes partagées avec l'équipe de chaque projet."}
         </p>
-        {!uid && <Button className="mt-4 gap-1.5" onClick={() => setConnexion(true)}><LogIn className="size-4" /> Se connecter</Button>}
         <ConnexionDialog open={connexion} onOpenChange={setConnexion} />
       </div>
     );
@@ -136,12 +142,6 @@ function Carnet() {
   // Premiere connexion : reprise des notes restees dans ce navigateur ; corbeille de plus de 30 jours videe
   useEffect(() => {
     try {
-      // Notes du carnet d'essai (ecrites sans compte) : proposees en priorite a l'import
-      const essai = lireAnciennes(JSON.stringify(lireInvite(localStorage.getItem(CLE_INVITE))));
-      if (essai.notes.length) {
-        setReprise({ titre: "Reprendre vos notes d'essai", ...essai, apres: () => { try { localStorage.removeItem(CLE_INVITE); } catch { /* bloque */ } } });
-        return;
-      }
       if (localStorage.getItem(REPRISE_FAITE)) return;
       const a = lireAnciennes(localStorage.getItem(ANCIENNES_NOTES));
       if (a.notes.length) setReprise({ titre: "Reprendre les notes de ce navigateur", ...a, apres: () => { try { localStorage.setItem(REPRISE_FAITE, new Date().toISOString()); } catch { /* bloque */ } } });
