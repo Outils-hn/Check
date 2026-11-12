@@ -175,6 +175,8 @@ describe("atelier / montage", () => {
     expect(ids(g[0].enAttente)).toEqual(["a", "m", "f"]);
     expect(ids(filtrerDest(g, "fournisseur")[0].enAttente)).toEqual(["f"]);
     expect(filtrerDest(g, "tous")).toBe(g);
+    expect(filtrerDest(g, [])).toBe(g);
+    expect(ids(filtrerDest(g, ["atelier", "montage"])[0].enAttente)).toEqual(["a", "m"]);
   });
   it("ordre choisi a la main d'abord, nouvelles questions en fin de liste", () => {
     const l = [q({ id: "a", tache: "5", ordre: 3 }), q({ id: "b", tache: "5", ordre: 1 }), q({ id: "c", tache: "5", ordre: 2 })];

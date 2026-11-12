@@ -30,7 +30,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
   const [nom, setNom] = useState("");
   const [dest, setDest] = useState<Dest>("atelier");
   const [fournisseur, setFournisseur] = useState("");
-  const [filtreDest, setFiltreDest] = useState<Dest | "tous">("tous");
+  const [filtreDest, setFiltreDest] = useState<Dest[]>([]); // vide = tous les destinataires
   const [aRenommer, setARenommer] = useState<GroupeAtelier | null>(null);
   const [nomSaisi, setNomSaisi] = useState("");
   const [numeroSaisi, setNumeroSaisi] = useState("");
@@ -139,8 +139,9 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div className="flex flex-wrap items-center gap-1.5 text-sm" role="group" aria-label="Filtrer par destinataire">
             {(["tous", ...DESTS] as const).map((d) => (
-              <button key={d} type="button" aria-pressed={filtreDest === d} onClick={() => setFiltreDest(d)}
-                className={`min-h-9 rounded-full border border-border px-3 hover:bg-muted ${filtreDest === d ? "bg-muted font-medium text-foreground" : "text-muted-foreground"}`}>{d === "tous" ? "Tous" : LIBELLE_DEST[d]}</button>
+              <button key={d} type="button" aria-pressed={d === "tous" ? !filtreDest.length : filtreDest.includes(d)} title={d === "tous" ? undefined : "Clic (ou Ctrl + clic) : ajoute ou retire ce destinataire"}
+                onClick={() => setFiltreDest((f) => (d === "tous" ? [] : f.includes(d) ? f.filter((x) => x !== d) : [...f, d]))}
+                className={`min-h-9 rounded-full border border-border px-3 hover:bg-muted ${(d === "tous" ? !filtreDest.length : filtreDest.includes(d)) ? "bg-muted font-medium text-foreground" : "text-muted-foreground"}`}>{d === "tous" ? "Tous" : LIBELLE_DEST[d]}</button>
             ))}
           </div>
           <div className="relative min-w-[180px] flex-1">
