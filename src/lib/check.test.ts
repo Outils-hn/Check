@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { destDe, etiquetteDest, filtrerDest, groupesAtelier, nbQuestionsAtelier, joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
+import { destDe, etiquetteDest, filtrerDest, groupesAtelier, nbQuestionsAtelier, joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreApres, ordreAvant, ordreEnQueue, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
 import { choixParDefaut, exporter, lireAnciennes, planImport } from "./reprise";
 
 const moi = "u-moi", autre = "u-marc";
@@ -175,6 +175,15 @@ describe("atelier / montage", () => {
     expect(ids(g[0].enAttente)).toEqual(["a", "m", "f"]);
     expect(ids(filtrerDest(g, "fournisseur")[0].enAttente)).toEqual(["f"]);
     expect(filtrerDest(g, "tous")).toBe(g);
+  });
+  it("ordre choisi a la main d'abord, nouvelles questions en fin de liste", () => {
+    const l = [q({ id: "a", tache: "5", ordre: 3 }), q({ id: "b", tache: "5", ordre: 1 }), q({ id: "c", tache: "5", ordre: 2 })];
+    expect(ids(groupesAtelier(l, nomDe)[0].enAttente)).toEqual(["b", "c", "a"]);
+    expect(ordreEnQueue(l)).toBe(4);
+    expect(ordreEnQueue([])).toBe(0);
+    const g = groupesAtelier(l, nomDe)[0].enAttente;
+    expect(ordreApres(g, "c", "b")).toBe(3 + 1 > 3 ? (2 + 3) / 2 : 0);
+    expect(ordreApres(g, "a", "b")).toBe(4);
   });
   it("compte les questions sans reponse", () => expect(nbQuestionsAtelier(liste)).toBe(3));
 });

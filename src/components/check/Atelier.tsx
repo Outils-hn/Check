@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, ChevronRight, FileDown, ListChecks, MessageSquareText, Pencil, PencilLine, RotateCcw, Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, FileDown, GripVertical, ListChecks, MessageSquareText, Pencil, PencilLine, RotateCcw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DESTS, LIBELLE_DEST, destDe, etiquetteDest, filtrerDest, groupesAtelier, nomProjet, sansAccents, type Dest, type GroupeAtelier, type Note, type Projet } from "@/lib/notes";
+import { DESTS, LIBELLE_DEST, destDe, etiquetteDest, filtrerDest, groupesAtelier, nomProjet, ordreApres, ordreAvant, sansAccents, type Dest, type GroupeAtelier, type Note, type Projet } from "@/lib/notes";
 
 const CLE_REPLIS = "check:taches-ouvertes";
 const libelleTache = (t: string) => (t ? `Tâche ${t}` : "Sans numéro de tâche");
@@ -14,10 +14,10 @@ const plur = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 const lireEtat = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(CLE_REPLIS) ?? "{}") ?? {}; } catch { return {}; } };
 
 /** Page « Questions Tâches » : les questions a poser a l'atelier ou aux monteurs, par projet et par tache, avec export PDF. */
-export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onPosee, onSupprimer, onSupprimerTache, onRenommerTache }: {
+export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onPosee, onDeplacer, onSupprimer, onSupprimerTache, onRenommerTache }: {
   notes: Note[]; projets: Projet[]; projetInitial: string; nomDe: (id: string | null) => string; auteur?: string;
   onAjouter: (q: { texte: string; projet_id: string; tache: string; tache_nom: string; destinataire: Dest; fournisseur: string }) => Promise<boolean>;
-  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onPosee: (n: Note) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, c: { tache: string; nom: string }) => Promise<void>;
+  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onPosee: (n: Note) => void; onDeplacer: (n: Note, ordre: number) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, c: { tache: string; nom: string }) => Promise<void>;
 }) {
   const [projet, setProjet] = useState(projets.some((p) => p.id === projetInitial) ? projetInitial : projets[0]?.id ?? "");
   const [tache, setTache] = useState("");
@@ -32,6 +32,8 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
   const [ouverts, setOuverts] = useState<Record<string, boolean>>(lireEtat);
   const [aSupprimer, setASupprimer] = useState<GroupeAtelier | null>(null);
   const [q, setQ] = useState("");
+  const [glisse, setGlisse] = useState<string | null>(null);
+  const [survol, setSurvol] = useState<string | null>(null);
   const recherche = useRef<HTMLInputElement>(null);
   const toutes = useMemo(() => groupesAtelier(notes, nomDe), [notes, nomDe]); // toutes les questions
   const tous = useMemo(() => filtrerDest(toutes, filtreDest), [toutes, filtreDest]); // apres le filtre de destinataire
@@ -175,8 +177,13 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
             </header>
             {o && (
               <ul id={corps} className="divide-y divide-border border-t border-border">
-                {g.enAttente.map((n) => (
-                  <li key={n.id} className="flex items-start gap-3 px-4 py-2.5 text-sm" data-question={n.id}>
+                {g.enAttente.map((n, i) => (
+                  <li key={n.id} className={`flex items-start gap-2 px-3 py-2.5 text-sm ${glisse === n.id ? "opacity-40" : ""} ${survol === n.id && glisse !== n.id ? "shadow-[inset_0_2px_0_var(--app)]" : ""}`} data-question={n.id} draggable
+                    onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", n.id); setGlisse(n.id); }}
+                    onDragOver={(e) => { if (glisse && g.enAttente.some((x) => x.id === glisse)) { e.preventDefault(); setSurvol(n.id); } }}
+                    onDragEnd={() => { setGlisse(null); setSurvol(null); }}
+                    onDrop={(e) => { e.preventDefault(); if (glisse && glisse !== n.id && g.enAttente.some((x) => x.id === glisse)) { const d = g.enAttente.find((x) => x.id === glisse); if (d) onDeplacer(d, ordreAvant(g.enAttente, n.id, d.id)); } setGlisse(null); setSurvol(null); }}>
+                    <span className="mt-1 flex shrink-0 cursor-grab text-muted-foreground/60 hover:text-foreground" title="Glisser pour réordonner" aria-hidden="true"><GripVertical className="size-4" /></span>
                     <button type="button" aria-pressed={n.statut === "in_progress"} onClick={() => onPosee(n)} aria-label={n.statut === "in_progress" ? "Question posée, j'attends la réponse (cliquer pour annuler)" : "Marquer la question comme posée"}
                       title={n.statut === "in_progress" ? "Posée : j'attends la réponse" : "Marquer comme posée (j'attends la réponse)"}
                       className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded border ${n.statut === "in_progress" ? "border-[var(--st-progress)] bg-[var(--st-progress)] text-white" : "border-border hover:bg-muted"}`}>
@@ -187,6 +194,10 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                       <p className="whitespace-pre-wrap break-words">{n.texte}</p>
                       {n.statut === "in_progress" && <p className="text-xs text-muted-foreground">Posée · j'attends la réponse</p>}
                     </div>
+                    <span className="flex shrink-0 flex-col">
+                      <button type="button" disabled={i === 0} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Monter la question" title="Monter" onClick={() => onDeplacer(n, ordreAvant(g.enAttente, g.enAttente[i - 1].id, n.id))}><ArrowUp className="size-3.5" /></button>
+                      <button type="button" disabled={i === g.enAttente.length - 1} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Descendre la question" title="Descendre" onClick={() => onDeplacer(n, ordreApres(g.enAttente, g.enAttente[i + 1].id, n.id))}><ArrowDown className="size-3.5" /></button>
+                    </span>
                     <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={() => onRepondre(n)}><Check className="size-3.5" aria-hidden="true" />Répondre</Button>
                     <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
                   </li>

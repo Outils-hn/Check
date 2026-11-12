@@ -274,6 +274,15 @@ try {
   await za.getByLabel("Votre question").fill("Autre tâche : longueur du fer plat ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 2 && (await p.locator('[data-tache="200"] [data-question]').count()) === 1, "questions rangées sous leur tâche (1234 : 2, 200 : 1)");
   ok(etat.check_notes.filter((x) => x.atelier && x.projet_id === projet.id).length === 3, "questions enregistrées comme notes de projet");
+  // Réordonner les questions d'une tâche (flèches) : la nouvelle question arrive en fin de liste
+  const ordreQ = () => p.locator('[data-tache="1234"] [data-question]').allInnerTexts().then((l) => l.map((t) => (t.includes("Quel jeu") ? "jeu" : "cale")).join(","));
+  ok((await ordreQ()) === "jeu,cale", "questions : les nouvelles arrivent en fin de liste");
+  await p.locator("[data-question]", { hasText: "Quel jeu" }).getByRole("button", { name: "Descendre la question" }).click(); await p.waitForTimeout(600);
+  ok((await ordreQ()) === "cale,jeu", "questions : « Descendre » change l'ordre");
+  await p.reload({ waitUntil: "networkidle" }); await p.getByRole("button", { name: /^Questions Tâches/ }).click();
+  ok((await ordreQ()) === "cale,jeu", "questions : l'ordre choisi est gardé après rechargement");
+  await p.locator("[data-question]", { hasText: "Quel jeu" }).getByRole("button", { name: "Monter la question" }).click(); await p.waitForTimeout(600);
+  ok((await ordreQ()) === "jeu,cale", "questions : « Monter » remet l'ordre");
   await shot(p, "08b-questions-taches");
   const dlq = p.waitForEvent("download");
   await p.locator('[data-tache="1234"]').getByRole("button", { name: /^PDF de/ }).click();
