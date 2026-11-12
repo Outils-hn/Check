@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.38 — 12 novembre 2026
+
+- Nouveauté : Check est plus confortable. Sur téléphone, « Questions Tâches » et « À retenir » tiennent sur une ligne, la date est plus courte et les actions rares d'une note sont dans un menu « ⋯ ». Sur ordinateur, archiver, photo et corbeille apparaissent au survol. Dans « Questions Tâches », la case sert à marquer une question comme « posée, j'attends la réponse », le formulaire est plus compact, et renommer ou supprimer une tâche est instantané.
+
 ## 3.37 — 11 novembre 2026
 
 - Nouveauté : dans « Questions Tâches », le crayon d'une tâche permet de changer son numéro en plus de son nom ; toutes ses questions suivent.

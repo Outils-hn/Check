@@ -289,6 +289,12 @@ try {
   await p.getByLabel(/^Réponse/).fill("5 mm, cale en nylon");
   await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 1 && await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "5 mm" }).isVisible(), "réponse saisie, la question passe en réglée");
+  // Case « posée » : j'attends la réponse (reste en attente), puis on annule
+  const qc = p.locator("[data-question]", { hasText: "Cale de 3" });
+  await qc.getByRole("button", { name: "Marquer la question comme posée" }).click(); await p.waitForTimeout(600);
+  ok(etat.check_notes.find((x) => x.texte.includes("Cale de 3"))?.statut === "in_progress" && await qc.getByText("j'attends la réponse").isVisible(), "case « posée » : la question passe en « j'attends la réponse »");
+  await qc.getByRole("button", { name: /Question posée/ }).click(); await p.waitForTimeout(600);
+  ok(etat.check_notes.find((x) => x.texte.includes("Cale de 3"))?.statut === "todo", "case « posée » : annulation");
   // Recherche de tache et choix d'une tache existante en un clic
   await za.getByLabel("Numéro de tâche").fill("");
   ok(await za.getByRole("button", { name: "1234", exact: true }).isVisible() && await za.getByRole("button", { name: "200", exact: true }).isVisible(), "tâches du projet proposées en un clic");
