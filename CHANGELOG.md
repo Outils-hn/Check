@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.46 — 12 novembre 2026
+
+- Nouveauté : dans « Questions Tâches », on peut afficher plusieurs destinataires à la fois (atelier + montage, par exemple) : un clic, ou Ctrl + clic, ajoute ou retire un destinataire ; « Tous » remet tout.
+
 ## 3.45 — 12 novembre 2026
 
 - Nouveauté : le PDF global s'intitule « Questions Tâches » ; le PDF d'une seule tâche annonce ses destinataires (« Questions atelier et montage », ou « atelier, montage et fournisseur » s'il contient des questions pour un fournisseur).

@@ -150,8 +150,10 @@ export function groupesAtelier(notes: Note[], nomDe: (id: string | null) => stri
 /** Nombre de questions encore sans reponse (pour la pastille de l'onglet). */
 export const nbQuestionsAtelier = (notes: Note[]) => notes.filter((n) => n.atelier && n.projet_id && !n.supprime_le && !n.archive && n.statut !== "done").length;
 
-/** Garde seulement les questions d'un destinataire (les taches sans question restante disparaissent). */
-export function filtrerDest(groupes: GroupeAtelier[], dest: Dest | "tous"): GroupeAtelier[] {
-  if (dest === "tous") return groupes;
-  return groupes.map((g) => ({ ...g, enAttente: g.enAttente.filter((n) => destDe(n) === dest), reglees: g.reglees.filter((n) => destDe(n) === dest) })).filter((g) => g.enAttente.length + g.reglees.length > 0);
+/** Garde seulement les questions d'un ou de plusieurs destinataires (les taches sans question restante disparaissent). « tous » ou une liste vide : rien n'est filtre. */
+export function filtrerDest(groupes: GroupeAtelier[], dest: Dest | Dest[] | "tous"): GroupeAtelier[] {
+  const voulus = dest === "tous" ? [] : Array.isArray(dest) ? dest : [dest];
+  if (!voulus.length) return groupes;
+  const garde = (n: Note) => voulus.includes(destDe(n));
+  return groupes.map((g) => ({ ...g, enAttente: g.enAttente.filter(garde), reglees: g.reglees.filter(garde) })).filter((g) => g.enAttente.length + g.reglees.length > 0);
 }

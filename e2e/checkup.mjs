@@ -334,6 +334,8 @@ try {
   await za.getByLabel("Destinataire", { exact: true }).selectOption("atelier");
   await za.getByRole("button", { name: "Fournisseur", exact: true }).click();
   ok((await p.locator("[data-tache]").count()) === 1 && await p.locator('[data-tache="300"]').isVisible(), "filtre « Fournisseur » : seule la tâche 300");
+  await za.getByRole("button", { name: "Atelier", exact: true }).click({ modifiers: ["Control"] });
+  ok((await p.locator("[data-tache]").count()) === 3 && await za.getByRole("button", { name: "Fournisseur", exact: true }).getAttribute("aria-pressed") === "true", "filtre : Ctrl + clic ajoute « Atelier » à « Fournisseur »");
   await za.getByRole("button", { name: "Tous", exact: true }).click();
   ok((await p.locator("[data-tache]").count()) === 3, "filtre « Tous » : les 3 tâches");
   await p.getByRole("button", { name: "Modifier Tâche 200" }).click();
