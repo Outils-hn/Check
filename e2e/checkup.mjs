@@ -34,8 +34,8 @@ const voit = (t, u, r) => valide(u) && (
   : t === "check_retenir" ? true
   : t === "check_notes_histo" ? voit("check_notes", u, etat.check_notes.find((n) => n.id === r.note_id) || { projet_id: null, auteur: null })
   : r.projet_id === null ? r.auteur === u : membre(u, r.projet_id));
-const filtres = (url) => [...url.searchParams.entries()].filter(([k, v]) => !["select", "order", "limit"].includes(k) && v.startsWith("eq.")).map(([k, v]) => [k, v.slice(3)]);
-const correspond = (r, f) => f.every(([k, v]) => String(r[k]) === v);
+const filtres = (url) => [...url.searchParams.entries()].filter(([k, v]) => !["select", "order", "limit"].includes(k) && (v.startsWith("eq.") || v.startsWith("in."))).map(([k, v]) => [k, v.startsWith("in.") ? v.slice(4, -1).split(",").map((x) => x.replace(/^"|"$/g, "")) : v.slice(3)]);
+const correspond = (r, f) => f.every(([k, v]) => (Array.isArray(v) ? v.includes(String(r[k])) : String(r[k]) === v));
 function controleNote(note, avant) {
   if (note.pour && note.projet_id && !membre(note.pour, note.projet_id)) return "La personne choisie ne fait pas partie de l'équipe du projet";
   if (note.statut === "done" && (!avant || avant.statut !== "done")) note.regle_le = new Date().toISOString();
@@ -289,6 +289,12 @@ try {
   await p.getByLabel(/^Réponse/).fill("5 mm, cale en nylon");
   await p.getByRole("button", { name: "Enregistrer" }).click(); await p.waitForTimeout(800);
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 1 && await p.locator("[data-reglee]", { hasText: "Quel jeu" }).locator("[data-reponse]", { hasText: "5 mm" }).isVisible(), "réponse saisie, la question passe en réglée");
+  // Case « posée » : j'attends la réponse (reste en attente), puis on annule
+  const qc = p.locator("[data-question]", { hasText: "Cale de 3" });
+  await qc.getByRole("button", { name: "Marquer la question comme posée" }).click(); await p.waitForTimeout(600);
+  ok(etat.check_notes.find((x) => x.texte.includes("Cale de 3"))?.statut === "in_progress" && await qc.getByText("j'attends la réponse").isVisible(), "case « posée » : la question passe en « j'attends la réponse »");
+  await qc.getByRole("button", { name: /Question posée/ }).click(); await p.waitForTimeout(600);
+  ok(etat.check_notes.find((x) => x.texte.includes("Cale de 3"))?.statut === "todo", "case « posée » : annulation");
   // Recherche de tache et choix d'une tache existante en un clic
   await za.getByLabel("Numéro de tâche").fill("");
   ok(await za.getByRole("button", { name: "1234", exact: true }).isVisible() && await za.getByRole("button", { name: "200", exact: true }).isVisible(), "tâches du projet proposées en un clic");
@@ -308,7 +314,7 @@ try {
   await za.getByLabel("Votre question").fill("Peinture RAL 7016 ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
   ok(await p.locator('[data-tache="300"]').getByText(/Tâche 300 · Façade nord/).isVisible(), "tâche créée avec son nom");
   await za.getByLabel("Numéro de tâche").fill("300");
-  ok(!(await za.getByLabel("Nom de la tâche").count()) && await za.getByText(/Tâche déjà existante/).isVisible(), "tâche existante : le nom n'est pas redemandé");
+  ok(!(await za.getByLabel("Nom de la tâche").count()) && await za.getByText(/Tâche existante/).isVisible(), "tâche existante : le nom n'est pas redemandé");
   // Question pour un fournisseur : repere, filtre par destinataire
   await za.getByLabel("Destinataire", { exact: true }).selectOption("fournisseur");
   await za.getByLabel("Nom du fournisseur").fill("Schüco");

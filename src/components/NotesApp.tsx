@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, ListChecks, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, MoreHorizontal, ListChecks, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import { RepriseDialog, type PlanReprise } from "@/components/check/RepriseDialo
 import { ConnexionDialog } from "@/components/check/ConnexionDialog";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" });
+const fmtCourt = (iso: string) => new Date(iso).toLocaleDateString("fr-CH", { day: "2-digit", month: "short" });
 const fmtJour = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" });
 const PAGE = 50;
 const MAX_NOTE = 4000;
@@ -328,19 +329,21 @@ function Carnet() {
           </form>
         </section>
 
-        <Button type="button" variant={atelier ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:order-1" aria-pressed={atelier} onClick={() => { setAtelier((a) => !a); setRetenir(false); }}>
+        <div className="grid grid-cols-2 gap-2 max-lg:order-1 lg:grid-cols-1">
+        <Button type="button" variant={atelier ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:min-h-11" aria-pressed={atelier} onClick={() => { setAtelier((a) => !a); setRetenir(false); }}>
           <ListChecks className="size-4" aria-hidden="true" />{atelier ? "Retour à mes notes" : `Questions Tâches${nbAtelier ? ` · ${nbAtelier}` : ""}`}
         </Button>
-        <Button type="button" variant={retenir ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:order-1" aria-pressed={retenir} onClick={() => { setRetenir((r) => !r); setAtelier(false); }}>
+        <Button type="button" variant={retenir ? "default" : "outline"} className="w-full justify-start gap-1.5 max-lg:min-h-11" aria-pressed={retenir} onClick={() => { setRetenir((r) => !r); setAtelier(false); }}>
           <Pin className="size-4" aria-hidden="true" />{retenir ? "Retour à mes notes" : `À retenir${nbRetenir ? ` · ${nbRetenir}` : ""}`}
         </Button>
+        </div>
 
         <section className="panel p-4 max-lg:order-3">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="card-title">Projets</h2>
             <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setProjetOuvert({ p: null, open: true })}>+ Nouveau projet</button>
           </div>
-          <p className="mb-2 text-[11px] text-muted-foreground">Clic pour filtrer · Ctrl + clic pour en cumuler</p>
+          <p className="mb-2 text-xs text-muted-foreground">Clic pour filtrer · Ctrl + clic pour en cumuler</p>
           <ul className="space-y-0.5 text-sm">
             <LigneProjet nom="Perso" detail="Visible par vous seul" n={nbProjet(PERSO)} actif={f.projets.includes(PERSO)} onClick={(e) => cliqueProjet(PERSO, e)} />
             {actifs.map((p) => (
@@ -358,13 +361,14 @@ function Carnet() {
           )}
         </section>
 
-        <section className="panel grid grid-cols-3 gap-2 p-3 text-center max-lg:order-4">
+        <section className="panel grid grid-cols-3 gap-2 p-3 text-center max-lg:order-4" title="Cliquer sur un statut pour filtrer la liste">
           {(["todo", "in_progress", "done"] as Statut[]).map((s) => (
             <button key={s} className={cn("rounded-md border border-border p-2 hover:bg-muted", f.statut === s && "bg-muted")} onClick={() => maj({ statut: f.statut === s ? "tous" : s })} aria-pressed={f.statut === s}>
-              <span className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground"><span className="size-2 rounded-full" style={{ background: DOT[s] }} />{LIBELLE[s]}</span>
+              <span className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><span className="size-2 rounded-full" style={{ background: DOT[s] }} />{LIBELLE[s]}</span>
               <span className="text-lg font-semibold tabular-nums">{compte(s)}</span>
             </button>
           ))}
+          <p className="col-span-3 text-xs text-muted-foreground">Touchez un statut pour filtrer la liste</p>
         </section>
       </aside>
 
@@ -374,9 +378,10 @@ function Carnet() {
           onAjouter={async (q) => !!(await act.ajouterNote({ texte: q.texte, projet_id: q.projet_id, tache: q.tache || null, tache_nom: q.tache_nom || null, destinataire: q.destinataire, fournisseur: q.fournisseur || null, atelier: true, statut: "todo", ordre: ordreEnTete(notes) }))}
           onRepondre={(n) => { setVersReponse(true); setEdition({ ...n, statut: "done" }); }}
           onRouvrir={(n) => void act.modifier(n.id, { statut: "todo" })}
+          onPosee={(n) => void act.modifier(n.id, { statut: n.statut === "in_progress" ? "todo" : "in_progress" })}
           onSupprimer={async (n) => { if (await act.mettreCorbeille(n.id)) toast("Question supprimée", { action: { label: "Annuler", onClick: () => act.restaurer(n.id) }, duration: 6000 }); }}
-          onRenommerTache={async (g, c) => { for (const n of [...g.enAttente, ...g.reglees]) await act.modifier(n.id, { tache: c.tache || null, tache_nom: c.nom || null }); toast.success("Tâche modifiée"); }}
-          onSupprimerTache={async (g) => { for (const n of [...g.enAttente, ...g.reglees]) await act.supprimerDefinitivement(n); toast.success("Tâche supprimée"); }} />
+          onRenommerTache={async (g, c) => { await act.modifierPlusieurs([...g.enAttente, ...g.reglees].map((n) => n.id), { tache: c.tache || null, tache_nom: c.nom || null }); toast.success("Tâche modifiée"); }}
+          onSupprimerTache={async (g) => { await act.supprimerPlusieurs([...g.enAttente, ...g.reglees]); toast.success("Tâche supprimée"); }} />
       )}
       <section className={cn("min-w-0 space-y-4 max-lg:order-2", (retenir || atelier) && "hidden")}>
         <div className="panel flex flex-wrap items-center gap-2 p-3">
@@ -397,7 +402,7 @@ function Carnet() {
           </select>
           <button type="button" aria-pressed={!!f.avecReponse} title="Seulement les notes avec une réponse" onClick={() => maj({ avecReponse: !f.avecReponse })}
             className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
-            <MessageSquareText className="size-3.5" aria-hidden="true" /><span className="lg:max-2xl:sr-only">Avec réponse</span>
+            <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
           </button>
           <select className="field w-32" aria-label="Trier" value={f.vue === "pour-moi" || f.vue === "aujourdhui" ? "echeance" : f.tri} disabled={f.vue === "pour-moi" || f.vue === "aujourdhui"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
             <option value="manuel">Tri : manuel</option>
@@ -405,7 +410,7 @@ function Carnet() {
             <option value="echeance">Tri : échéance</option>
           </select>
           <div className="ml-auto flex gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setNettoyer(true)} title="Archiver les notes réglées depuis plus de 7 jours"><Sparkles className="size-4" /><span className="lg:max-2xl:sr-only">Nettoyer</span></Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setNettoyer(true)} title="Archiver les notes réglées depuis plus de 7 jours"><Sparkles className="size-4" aria-hidden="true" />Nettoyer</Button>
             <Button size="sm" className="gap-1.5" onClick={() => pdf(false)}><FileDown className="size-4" /> PDF</Button>
             <Button size="sm" variant="outline" aria-label="PDF en couleurs" title="PDF en couleurs" onClick={() => pdf(true)}><Palette className="size-4" /></Button>
           </div>
@@ -459,7 +464,7 @@ function Carnet() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setNettoyer(false)}>Annuler</Button>
-            <Button onClick={async () => { const l = aNettoyer(notes); for (const n of l) await act.modifier(n.id, { archive: true }); setNettoyer(false); toast.success(l.length ? `${l.length} note(s) archivée(s)` : "Rien à nettoyer"); }}>Nettoyer</Button>
+            <Button onClick={async () => { const l = aNettoyer(notes); await act.modifierPlusieurs(l.map((n) => n.id), { archive: true }); setNettoyer(false); toast.success(l.length ? `${l.length} note(s) archivée(s)` : "Rien à nettoyer"); }}>Nettoyer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -473,7 +478,7 @@ function LigneProjet({ nom, detail, n, actif, onClick, onReglages }: { nom: stri
       <button className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left md:py-1.5" onClick={onClick} aria-pressed={actif}>
         <span className="min-w-0">
           <span className={cn("block truncate", actif && "font-medium")}>{nom}</span>
-          {detail && <span className="block text-[11px] text-muted-foreground">{detail}</span>}
+          {detail && <span className="block text-xs text-muted-foreground">{detail}</span>}
         </span>
         <span className="text-xs tabular-nums text-muted-foreground">{n}</span>
       </button>
@@ -493,6 +498,7 @@ function LigneNote(props: {
   onAjouterImage: (f: File[]) => void; onRetirerImage: (chemin: string) => void;
 }) {
   const fichier = useRef<HTMLInputElement>(null);
+  const [menu, setMenu] = useState(false);
   const { n } = props;
   const ech = etatEcheance(n.echeance);
   const retard = ech === "retard" && n.statut !== "done";
@@ -520,28 +526,28 @@ function LigneNote(props: {
         <p className={cn("whitespace-pre-wrap break-words", n.statut === "done" && "text-muted-foreground line-through")}>{n.texte}</p>
         {reponseDe(n) && (
           <p className="mt-1 flex items-start gap-1.5 rounded-md border border-[var(--st-done)]/30 bg-[color-mix(in_oklab,var(--st-done)_8%,transparent)] px-2 py-1 text-[13px] text-foreground" data-reponse>
-            <span className="mt-px shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-ink)]">Réponse</span>
+            <span className="mt-px shrink-0 text-xs font-semibold uppercase tracking-wide text-[var(--app-ink)]">Réponse</span>
             <span className="whitespace-pre-wrap break-words">{reponseDe(n)}</span>
           </p>
         )}
         <Miniatures chemins={n.images ?? []} modifiable={!corbeille} onRetirer={props.onRetirerImage} />
         {(props.pour || props.auteur) && (
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {props.pour && <span className="font-medium text-[var(--app-ink)]">Pour {props.pour}</span>}
             {props.pour && props.auteur && " · "}
             {props.auteur && <>par {props.auteur}</>}
           </p>
         )}
       </div>
-      <div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs leading-tight tabular-nums text-muted-foreground md:col-span-1 md:flex-col md:items-end md:text-[11px]">
-        <span className="inline-flex items-center gap-1"><CalendarDays className="size-3" /> {fmtDate(n.created_at)}</span>
+      <div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs leading-tight tabular-nums text-muted-foreground md:col-span-1 md:flex-col md:items-end md:text-xs">
+        <span className="inline-flex items-center gap-1"><CalendarDays className="size-3" /> <span className="md:hidden">{fmtCourt(n.created_at)}</span><span className="max-md:hidden">{fmtDate(n.created_at)}</span></span>
         {n.statut === "done" && n.regle_le ? (
           <span className="inline-flex items-center gap-1" style={{ color: "var(--st-done)" }}><Check className="size-3" /> Réglée le {fmtDate(n.regle_le)}</span>
         ) : n.echeance ? (
           <span className={cn(retard && "font-semibold text-destructive", proche && "text-[var(--st-todo)]")}>Échéance {fmtJour(n.echeance)}</span>
         ) : null}
       </div>
-      <div className="flex items-center justify-end opacity-100 transition-opacity md:opacity-60 focus-within:opacity-100 group-hover:opacity-100">
+      <div className="flex items-center justify-end">
         {corbeille ? (
           <>
             <button className={btn} onClick={props.onRestaurer} aria-label="Restaurer la note" title="Restaurer"><RotateCcw className="size-3.5" /></button>
@@ -549,20 +555,33 @@ function LigneNote(props: {
           </>
         ) : (
           <>
-            <button className={cn(btn, n.flash && "text-[#EA580C] opacity-100")} onClick={props.onFlash} aria-pressed={n.flash} aria-label={n.flash ? "Retirer l'urgence" : "Marquer comme urgent"} title={n.flash ? "Retirer l'urgence" : "Urgent"}>
+            <button className={cn(btn, n.flash && "text-[#EA580C]")} onClick={props.onFlash} aria-pressed={n.flash} aria-label={n.flash ? "Retirer l'urgence" : "Marquer comme urgent"} title={n.flash ? "Retirer l'urgence" : "Urgent"}>
               <Zap className={cn("size-3.5", n.flash && "fill-current")} />
             </button>
-            {(n.images?.length ?? 0) < MAX_IMAGES && (
-              <>
-                <input ref={fichier} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label="Ajouter une image à la note" onChange={(e) => { props.onAjouterImage([...(e.target.files ?? [])]); e.target.value = ""; }} />
-                <button className={btn} onClick={() => fichier.current?.click()} aria-label="Ajouter une image" title="Ajouter une photo ou une capture"><ImagePlus className="size-3.5" /></button>
-              </>
-            )}
             <button className={btn} onClick={props.onModifier} aria-label="Modifier la note" title="Modifier"><Pencil className="size-3.5" /></button>
-            <button className={btn} onClick={props.onArchiver} aria-label={n.archive ? "Désarchiver" : "Archiver"} title={n.archive ? "Désarchiver" : "Archiver"}>
-              {n.archive ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
-            </button>
-            <button className={cn(btn, "text-destructive hover:text-destructive")} onClick={props.onSupprimer} aria-label="Mettre à la corbeille" title="Corbeille"><Trash2 className="size-3.5" /></button>
+            <input ref={fichier} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label="Ajouter une image à la note" onChange={(e) => { props.onAjouterImage([...(e.target.files ?? [])]); e.target.value = ""; }} />
+            {/* Ordinateur : les actions rares apparaissent au survol, la corbeille loin de l'archivage */}
+            <span className="flex items-center transition-opacity max-md:hidden md:opacity-0 focus-within:opacity-100 group-hover:opacity-100">
+              {(n.images?.length ?? 0) < MAX_IMAGES && <button className={btn} onClick={() => fichier.current?.click()} aria-label="Ajouter une image" title="Ajouter une photo ou une capture"><ImagePlus className="size-3.5" /></button>}
+              <button className={btn} onClick={props.onArchiver} aria-label={n.archive ? "Désarchiver" : "Archiver"} title={n.archive ? "Désarchiver" : "Archiver"}>
+                {n.archive ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
+              </button>
+              <button className={cn(btn, "ml-2 text-destructive hover:text-destructive")} onClick={props.onSupprimer} aria-label="Mettre à la corbeille" title="Corbeille"><Trash2 className="size-3.5" /></button>
+            </span>
+            {/* Telephone : menu « ⋯ » pour les actions rares */}
+            <span className="relative md:hidden">
+              <button className={btn} onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-haspopup="menu" aria-label="Plus d'actions" title="Plus d'actions"><MoreHorizontal className="size-4" /></button>
+              {menu && (
+                <>
+                  <button type="button" className="fixed inset-0 z-40 cursor-default" aria-label="Fermer le menu" tabIndex={-1} onClick={() => setMenu(false)} />
+                  <div role="menu" className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-popover p-1 text-sm shadow-md">
+                    {(n.images?.length ?? 0) < MAX_IMAGES && <button role="menuitem" className="flex min-h-11 w-full items-center gap-2 rounded px-2 hover:bg-muted" onClick={() => { setMenu(false); fichier.current?.click(); }}><ImagePlus className="size-4" aria-hidden="true" />Ajouter une photo</button>}
+                    <button role="menuitem" className="flex min-h-11 w-full items-center gap-2 rounded px-2 hover:bg-muted" onClick={() => { setMenu(false); props.onArchiver(); }}>{n.archive ? <ArchiveRestore className="size-4" aria-hidden="true" /> : <Archive className="size-4" aria-hidden="true" />}{n.archive ? "Désarchiver" : "Archiver"}</button>
+                    <button role="menuitem" className="flex min-h-11 w-full items-center gap-2 rounded px-2 text-destructive hover:bg-muted" onClick={() => { setMenu(false); props.onSupprimer(); }}><Trash2 className="size-4" aria-hidden="true" />Corbeille</button>
+                  </div>
+                </>
+              )}
+            </span>
           </>
         )}
       </div>
@@ -620,7 +639,7 @@ function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave, ver
               <Label htmlFor="e-reponse">Réponse <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
               <Textarea id="e-reponse" rows={2} maxLength={500} autoFocus={versReponse} placeholder="Ce qu'il faut retenir, pour l'équipe"
                 value={reponse} onChange={(e) => setReponse(e.target.value)} />
-              <p className="text-[11px] text-muted-foreground">{reponse.length} / 500 · visible par ceux qui voient la note.</p>
+              <p className="text-xs text-muted-foreground">{reponse.length} / 500 · visible par ceux qui voient la note.</p>
             </div>
           )}
           {projet !== (note.projet_id ?? PERSO) && <p className="note-check">{projet === PERSO ? "La note deviendra perso : l'équipe ne la verra plus." : "La note sera visible par l'équipe de ce projet."}</p>}

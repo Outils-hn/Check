@@ -106,6 +106,18 @@ export function useActions() {
     modifier,
     mettreCorbeille: (id: string) => modifier(id, { supprime_le: new Date().toISOString() }),
     restaurer: (id: string) => modifier(id, { supprime_le: null }),
+    /** Meme modification sur plusieurs notes : une seule requete et un seul rechargement. */
+    modifierPlusieurs: async (ids: string[], champs: Champs) => {
+      if (!ids.length) return true;
+      qc.setQueryData<Donnees>(cle, (d) => (d ? { ...d, notes: d.notes.map((n) => (ids.includes(n.id) ? { ...n, ...champs } : n)) } : d));
+      return run(db.from("check_notes").update(champs).in("id", ids));
+    },
+    /** Suppression definitive de plusieurs notes (images comprises) en une seule requete. */
+    supprimerPlusieurs: async (liste: Note[]) => {
+      if (!liste.length) return true;
+      await effacerFichiers(liste.flatMap((n) => n.images ?? []));
+      return run(db.from("check_notes").delete().in("id", liste.map((n) => n.id)));
+    },
     supprimerDefinitivement: async (n: Note) => { await effacerFichiers(n.images ?? []); return run(db.from("check_notes").delete().eq("id", n.id)); },
     /** Envoie les images (deja compressees) puis les ajoute a la note. */
     ajouterImages: async (n: Note, blobs: Blob[]) => {
