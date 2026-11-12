@@ -19,10 +19,10 @@ const plur = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 const lireEtat = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(CLE_REPLIS) ?? "{}") ?? {}; } catch { return {}; } };
 
 /** Page « Questions Tâches » : les questions a poser a l'atelier ou aux monteurs, par projet et par tache, avec export PDF. */
-export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onPosee, onDeplacer, onSupprimer, onSupprimerTache, onRenommerTache }: {
+export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjouter, onRepondre, onRouvrir, onPosee, onDeplacer, onModifierQuestion, onSupprimer, onSupprimerTache, onRenommerTache }: {
   notes: Note[]; projets: Projet[]; projetInitial: string; nomDe: (id: string | null) => string; auteur?: string;
   onAjouter: (q: { texte: string; projet_id: string; tache: string; tache_nom: string; destinataire: Dest; fournisseur: string }) => Promise<boolean>;
-  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onPosee: (n: Note) => void; onDeplacer: (n: Note, ordre: number) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, c: { tache: string; nom: string }) => Promise<void>;
+  onRepondre: (n: Note) => void; onRouvrir: (n: Note) => void; onPosee: (n: Note) => void; onDeplacer: (n: Note, ordre: number) => void; onModifierQuestion: (n: Note, champs: { texte: string; destinataire: Dest; fournisseur: string | null }) => void; onSupprimer: (n: Note) => void; onSupprimerTache: (g: GroupeAtelier) => Promise<void>; onRenommerTache: (g: GroupeAtelier, c: { tache: string; nom: string }) => Promise<void>;
 }) {
   const [projet, setProjet] = useState(projets.some((p) => p.id === projetInitial) ? projetInitial : projets[0]?.id ?? "");
   const [tache, setTache] = useState("");
@@ -31,6 +31,11 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
   const [dest, setDest] = useState<Dest>("atelier");
   const [fournisseur, setFournisseur] = useState("");
   const [filtreDest, setFiltreDest] = useState<Dest[]>([]); // vide = tous les destinataires
+  const [aEditer, setAEditer] = useState<Note | null>(null);
+  const [texteEdit, setTexteEdit] = useState("");
+  const [destEdit, setDestEdit] = useState<Dest>("atelier");
+  const [fournEdit, setFournEdit] = useState("");
+  const editer = (n: Note) => { setAEditer(n); setTexteEdit(n.texte); setDestEdit(destDe(n)); setFournEdit(n.fournisseur ?? ""); };
   const [aRenommer, setARenommer] = useState<GroupeAtelier | null>(null);
   const [nomSaisi, setNomSaisi] = useState("");
   const [numeroSaisi, setNumeroSaisi] = useState("");
@@ -205,6 +210,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                       <button type="button" disabled={i === g.enAttente.length - 1} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Descendre la question" title="Descendre" onClick={() => onDeplacer(n, ordreApres(g.enAttente, g.enAttente[i + 1].id, n.id))}><ArrowDown className="size-3.5" /></button>
                     </span>
                     <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={() => onRepondre(n)}><Check className="size-3.5" aria-hidden="true" />Répondre</Button>
+                    <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => editer(n)} aria-label="Modifier la question" title="Modifier la question"><Pencil className="size-3.5" /></button>
                     <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
                   </li>
                 ))}
@@ -212,6 +218,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                   <li key={n.id} className="px-4 py-2.5 text-sm" data-reglee={n.id}>
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1"><span className="mb-0.5 inline-block rounded-full border border-border px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{etiquetteDest(n)}</span><p className="whitespace-pre-wrap break-words text-muted-foreground line-through">{n.texte}</p></div>
+                      <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => editer(n)} aria-label="Modifier la question" title="Modifier la question"><Pencil className="size-3.5" /></button>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => onRepondre(n)} aria-label="Modifier la réponse" title="Modifier la réponse"><Pencil className="size-3.5" /></button>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => onRouvrir(n)} aria-label="Rouvrir la question" title="Rouvrir : la question repasse en attente"><RotateCcw className="size-3.5" /></button>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
@@ -229,6 +236,28 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
           </section>
         );
       })}
+
+      <Dialog open={!!aEditer} onOpenChange={(o) => !o && setAEditer(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier la question</DialogTitle>
+            <DialogDescription>Le texte et le destinataire changent aussi sur le PDF.</DialogDescription>
+          </DialogHeader>
+          <form id="form-question" className="space-y-3" onSubmit={(e) => { e.preventDefault(); const n = aEditer; if (!n || !texteEdit.trim()) return; setAEditer(null); onModifierQuestion(n, { texte: texteEdit.trim(), destinataire: destEdit, fournisseur: destEdit === "fournisseur" ? fournEdit.trim() || null : null }); }}>
+            <div className="space-y-1.5"><Label htmlFor="q-texte">Question</Label><textarea id="q-texte" className="field min-h-24 w-full" maxLength={500} value={texteEdit} onChange={(e) => setTexteEdit(e.target.value)} autoFocus /></div>
+            <div className="grid gap-2 sm:grid-cols-[9rem_minmax(0,1fr)]">
+              <select className="field" aria-label="Destinataire de la question" value={destEdit} onChange={(e) => setDestEdit(e.target.value as Dest)}>
+                {DESTS.map((d) => <option key={d} value={d}>{LIBELLE_DEST[d]}</option>)}
+              </select>
+              {destEdit === "fournisseur" && <Input value={fournEdit} maxLength={60} onChange={(e) => setFournEdit(e.target.value)} placeholder="Chez qui ?" aria-label="Fournisseur de la question" />}
+            </div>
+          </form>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAEditer(null)}>Annuler</Button>
+            <Button type="submit" form="form-question" disabled={!texteEdit.trim()}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!aRenommer} onOpenChange={(o) => !o && setARenommer(null)}>
         <DialogContent className="max-w-sm">
