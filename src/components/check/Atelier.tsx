@@ -78,7 +78,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
     try {
       const { exportQuestionsPdf } = await import("@/lib/pdf-export");
       await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, nom: g.nom, questions: g.enAttente.map((n) => ({ texte: n.texte, dest: etiquetteDest(n) })),
-        reglees: avecReglees ? g.reglees.map((n) => ({ question: `${n.texte}  (${etiquetteDest(n)})`, reponse: n.reponse ?? "" })) : [] })), { auteur });
+        reglees: avecReglees ? g.reglees.map((n) => ({ question: `${n.texte}  (${etiquetteDest(n)})`, reponse: n.reponse ?? "" })) : [] })), { auteur, titre: avecReglees ? "Questions Tâches" : undefined });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 

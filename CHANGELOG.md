@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.44 — 12 novembre 2026
+
+- Nouveauté : retouches des PDF : « 1 réglée » et « 1 note » s'accordent au singulier, et le PDF d'une tâche s'intitule « Questions Tâches » (il peut contenir des questions pour un fournisseur).
+
 ## 3.43 — 12 novembre 2026
 
 - Nouveauté : dans « Questions Tâches », on peut réorganiser les questions d'une tâche : glisser-déposer sur ordinateur, flèches monter / descendre partout. Les nouvelles questions arrivent en fin de liste et le PDF suit l'ordre choisi.
