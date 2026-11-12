@@ -143,7 +143,7 @@ try {
     ok(!!j && j.display === "standalone" && j.icons?.length >= 2, "Installation : manifeste présent (icônes, mode application)");
     const sw = await p.request.get(new URL("sw.js", p.url()).href);
     ok(sw.ok() && (await sw.text()).includes("check-"), "Hors ligne : service worker servi"); }
-  ok(await p.getByText("Essayez Check sans compte").isVisible(), "sans compte : carnet d'essai et invitation à se connecter");
+  ok(await p.getByText("Connectez-vous pour utiliser Check").isVisible(), "sans compte : invitation à se connecter");
   ok((await p.getAttribute("html", "lang")) === "fr", "langue de la page = fr");
   await shot(p, "01-accueil");
 
@@ -461,41 +461,6 @@ try {
   const menu = await p3.getByRole("menuitem").allTextContents();
   ok(menu.length === 11 && /^Accueil/.test(menu[0] ?? ""), `sélecteur : Accueil puis 10 applis (${menu.length})`);
 
-  // 9. Carnet d'essai sans compte : 5 notes sur le poste, puis reprise a la connexion
-  etape = "carnet d'essai";
-  const pe = await page();
-  await pe.goto(URL0); await pe.waitForLoadState("networkidle");
-  const zone = pe.getByLabel("Texte de la note");
-  for (let i = 1; i <= 5; i++) { await zone.fill(`Note d'essai ${i}`); await pe.keyboard.press("Enter"); await pe.waitForTimeout(150); }
-  ok((await lignesNotes(pe).count()) === 5, "carnet d'essai : 5 notes ajoutées");
-  ok(await pe.getByText("5 / 5 notes").isVisible() && await zone.isDisabled(), "carnet d'essai : limite de 5 atteinte, saisie bloquée");
-  await shot(pe, "09-carnet-essai");
-  // Exemple cliquable : filtre, recherche, changement de statut, rien d'enregistre
-  const ex = pe.getByRole("region", { name: "Exemple de carnet" });
-  ok(await ex.getByRole("listitem", { name: "" }).count() >= 0 && (await ex.getByLabel("Notes d'exemple").getByRole("listitem").count()) === 5, "aperçu : 5 notes d'exemple");
-  await ex.getByRole("button", { name: /^En attente/ }).click();
-  ok((await ex.getByLabel("Notes d'exemple").getByRole("listitem").count()) === 2, "aperçu : filtre « En attente » = 2 notes");
-  await ex.getByRole("button", { name: /^Toutes/ }).click();
-  await ex.getByLabel("Rechercher dans l'exemple").fill("ral");
-  ok((await ex.getByLabel("Notes d'exemple").getByRole("listitem").count()) === 1, "aperçu : recherche « ral » = 1 note");
-  await ex.getByLabel("Rechercher dans l'exemple").fill("");
-  await ex.getByRole("button", { name: /Statut : À faire/ }).first().click();
-  ok(await ex.getByRole("button", { name: /^En cours 2/ }).isVisible(), "aperçu : un clic fait avancer le statut");
-  ok(await pe.evaluate(() => Object.keys(localStorage).every((k) => !/exemple|apercu/i.test(k))), "aperçu : rien n'est enregistré");
-  await shot(pe, "09b-apercu");
-  await lignesNotes(pe).first().getByRole("button", { name: /Statut/ }).click();
-  await pe.reload({ waitUntil: "networkidle" });
-  ok((await lignesNotes(pe).count()) === 5 && await pe.getByText("En cours").first().isVisible(), "carnet d'essai : notes et statut gardés après rechargement");
-  await lignesNotes(pe).last().getByRole("button", { name: "Supprimer la note" }).click();
-  ok((await lignesNotes(pe).count()) === 4 && await zone.isEnabled(), "carnet d'essai : suppression, la saisie se rouvre");
-  const axe3 = await new AxeBuilder({ page: pe }).withTags(["wcag2a", "wcag2aa"]).analyze();
-  ok(axe3.violations.length === 0, `accessibilité (carnet d'essai) : ${axe3.violations.length} problème(s)${axe3.violations.map((v) => ` [${v.id}: ${v.nodes.length}]`).join("")}`);
-  await seConnecter(pe, "bob@exemple.ch");
-  ok(await pe.getByRole("heading", { name: "Reprendre vos notes d'essai" }).isVisible(), "connexion : reprise des notes d'essai proposée");
-  await pe.getByRole("button", { name: "Importer", exact: true }).click();
-  await pe.waitForTimeout(1500);
-  ok(etat.check_notes.filter((x) => x.auteur === BOB && /^Note d'essai/.test(x.texte)).length === 4, "notes d'essai importées dans la base");
-  ok(await pe.evaluate(() => localStorage.getItem("check-notes-invite")) === null, "notes d'essai retirées du poste après l'import");
 } catch (e) {
   ok(false, `arret du check-up : ${e.message.split("\n")[0]}`);
   for (const [i, x] of pages.entries()) await x.screenshot({ path: `${out}/echec-${i}.png`, fullPage: true }).catch(() => {});
