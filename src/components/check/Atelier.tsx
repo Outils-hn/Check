@@ -86,7 +86,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h2 className="card-title flex items-center gap-1.5"><ListChecks className="size-4" aria-hidden="true" />Questions Tâches</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Questions pour l'atelier, les monteurs ou un fournisseur, par tâche. PDF → poser → saisir les réponses.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Questions pour l'atelier, les monteurs ou un fournisseur, par tâche. Exportez en PDF, cochez la case une fois la question posée, puis saisissez la réponse.</p>
           </div>
           <Button size="sm" className="gap-1.5" disabled={!enAttente.length} title="Questions en attente pour l'atelier et le montage" onClick={() => void pdf(enAttente)}><FileDown className="size-4" aria-hidden="true" />PDF</Button>
         </div>
@@ -118,7 +118,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
               </select>
               {dest === "fournisseur"
                 ? <Input value={fournisseur} maxLength={60} onChange={(e) => setFournisseur(e.target.value)} placeholder="Chez qui ? (ex. Schüco)" aria-label="Nom du fournisseur" />
-                : <p className="self-center text-xs text-muted-foreground">{dest === "atelier" ? "À demander aux gars de l'atelier" : "À demander aux monteurs"}</p>}
+                : <p className="self-center text-xs text-muted-foreground">{dest === "atelier" ? "À demander à l'atelier" : "À demander aux monteurs"}</p>}
             </div>
             <div className="flex gap-2 sm:col-span-3">
               <Input className="min-w-0 flex-1" value={texte} maxLength={500} onChange={(e) => setTexte(e.target.value)} placeholder="Votre question, Entrée pour ajouter" aria-label="Votre question" />

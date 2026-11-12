@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.39 — 12 novembre 2026
+
+- Nouveauté : petites retouches de confort. « À demander à l'atelier » est plus court, la feuille « Questions Tâches » explique la case à cocher, les actions au survol restent visibles sur tablette, les filtres du téléphone tiennent mieux sur la ligne et le message d'une liste vide est plus clair.
+
 ## 3.38 — 12 novembre 2026
 
 - Nouveauté : Check est plus confortable. Sur téléphone, « Questions Tâches » et « À retenir » tiennent sur une ligne, la date est plus courte et les actions rares d'une note sont dans un menu « ⋯ ». Sur ordinateur, archiver, photo et corbeille apparaissent au survol. Dans « Questions Tâches », la case sert à marquer une question comme « posée, j'attends la réponse », le formulaire est plus compact, et renommer ou supprimer une tâche est instantané.
