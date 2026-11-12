@@ -361,14 +361,14 @@ function Carnet() {
           )}
         </section>
 
-        <section className="panel grid grid-cols-3 gap-2 p-3 text-center max-lg:order-4" title="Cliquer sur un statut pour filtrer la liste">
+        <section className="panel grid grid-cols-3 gap-2 p-3 text-center max-lg:order-4" >
           {(["todo", "in_progress", "done"] as Statut[]).map((s) => (
             <button key={s} className={cn("rounded-md border border-border p-2 hover:bg-muted", f.statut === s && "bg-muted")} onClick={() => maj({ statut: f.statut === s ? "tous" : s })} aria-pressed={f.statut === s}>
               <span className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><span className="size-2 rounded-full" style={{ background: DOT[s] }} />{LIBELLE[s]}</span>
               <span className="text-lg font-semibold tabular-nums">{compte(s)}</span>
             </button>
           ))}
-          <p className="col-span-3 text-xs text-muted-foreground">Touchez un statut pour filtrer la liste</p>
+          <p className="col-span-3 text-xs text-muted-foreground">Un clic sur un statut filtre la liste</p>
         </section>
       </aside>
 
@@ -396,7 +396,7 @@ function Carnet() {
             <Input ref={recherche} className="pl-9 pr-8" placeholder="Rechercher une note…" aria-label="Rechercher une note" value={f.q} onChange={(e) => maj({ q: e.target.value })} onKeyDown={(e) => e.key === "Escape" && maj({ q: "" })} />
             <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-[10px] text-muted-foreground">/</kbd>
           </div>
-          <select className="field w-32" aria-label="Filtrer par statut" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
+          <select className="field w-32 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1" aria-label="Filtrer par statut" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
             <option value="tous">Tous statuts</option>
             {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
           </select>
@@ -404,7 +404,7 @@ function Carnet() {
             className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
             <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
           </button>
-          <select className="field w-32" aria-label="Trier" value={f.vue === "pour-moi" || f.vue === "aujourdhui" ? "echeance" : f.tri} disabled={f.vue === "pour-moi" || f.vue === "aujourdhui"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
+          <select className="field w-32 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1" aria-label="Trier" value={f.vue === "pour-moi" || f.vue === "aujourdhui" ? "echeance" : f.tri} disabled={f.vue === "pour-moi" || f.vue === "aujourdhui"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
             <option value="manuel">Tri : manuel</option>
             <option value="recent">Tri : récent</option>
             <option value="echeance">Tri : échéance</option>
@@ -423,7 +423,7 @@ function Carnet() {
         {visibles.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
             <Inbox className="mx-auto mb-2 size-7 opacity-50" />
-            {f.vue === "corbeille" ? "La corbeille est vide. Les notes y restent 30 jours." : f.vue === "pour-moi" ? "Aucune note ne vous est confiée." : f.vue === "aujourdhui" ? "Rien d'urgent aujourd'hui : aucune note en retard, du jour ou confiée à vous." : f.vue === "archivees" ? "Aucune note archivée." : f.q ? `Aucune note ne correspond à « ${f.q} ».` : "Aucune note. Écrivez-en une à gauche (raccourci N)."}
+            {f.vue === "corbeille" ? "La corbeille est vide. Les notes y restent 30 jours." : f.vue === "pour-moi" ? "Aucune note ne vous est confiée." : f.vue === "aujourdhui" ? "Rien d'urgent aujourd'hui : aucune note en retard, du jour ou confiée à vous." : f.vue === "archivees" ? "Aucune note archivée." : f.q ? `Aucune note ne correspond à « ${f.q} ».` : "Aucune note pour le moment. Utilisez « Nouvelle note » (raccourci N)."}
           </div>
         ) : (
           <ul className="panel divide-y divide-border overflow-hidden">
@@ -561,7 +561,7 @@ function LigneNote(props: {
             <button className={btn} onClick={props.onModifier} aria-label="Modifier la note" title="Modifier"><Pencil className="size-3.5" /></button>
             <input ref={fichier} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label="Ajouter une image à la note" onChange={(e) => { props.onAjouterImage([...(e.target.files ?? [])]); e.target.value = ""; }} />
             {/* Ordinateur : les actions rares apparaissent au survol, la corbeille loin de l'archivage */}
-            <span className="flex items-center transition-opacity max-md:hidden md:opacity-0 focus-within:opacity-100 group-hover:opacity-100">
+            <span className="flex items-center transition-opacity max-md:hidden md:[@media(hover:hover)]:opacity-0 focus-within:opacity-100 group-hover:opacity-100">
               {(n.images?.length ?? 0) < MAX_IMAGES && <button className={btn} onClick={() => fichier.current?.click()} aria-label="Ajouter une image" title="Ajouter une photo ou une capture"><ImagePlus className="size-3.5" /></button>}
               <button className={btn} onClick={props.onArchiver} aria-label={n.archive ? "Désarchiver" : "Archiver"} title={n.archive ? "Désarchiver" : "Archiver"}>
                 {n.archive ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
@@ -569,7 +569,7 @@ function LigneNote(props: {
               <button className={cn(btn, "ml-2 text-destructive hover:text-destructive")} onClick={props.onSupprimer} aria-label="Mettre à la corbeille" title="Corbeille"><Trash2 className="size-3.5" /></button>
             </span>
             {/* Telephone : menu « ⋯ » pour les actions rares */}
-            <span className="relative md:hidden">
+            <span className="relative md:hidden" onKeyDown={(e) => e.key === "Escape" && setMenu(false)}>
               <button className={btn} onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-haspopup="menu" aria-label="Plus d'actions" title="Plus d'actions"><MoreHorizontal className="size-4" /></button>
               {menu && (
                 <>
