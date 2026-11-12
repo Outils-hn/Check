@@ -1,12 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { LogIn, LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { deconnexion, useCompte } from "@/lib/compte";
 import { useDonnees } from "@/lib/donnees";
 import { SelecteurApplis } from "./SelecteurApplis";
 import { CheckMark } from "./CheckMark";
 import { AppFooter } from "./AppFooter";
 import { Bandeau } from "./Bandeau";
-import { ConnexionDialog } from "./ConnexionDialog";
 
 const THEME_KEY = "check-theme";
 // Reglage commun a toutes les applis (meme site) : le choix clair / sombre suit d'une appli a l\'autre.
@@ -35,7 +34,6 @@ const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleString("fr-CH", {
 export function Shell({ children }: { children: ReactNode }) {
   const { pret, uid, email, nom, valide, enAttente } = useCompte();
   const { horsLigne } = useDonnees();
-  const [connexion, setConnexion] = useState(false);
   const [dark, setDark] = useTheme();
   return (
     <div className="flex min-h-screen flex-col">
@@ -47,10 +45,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </>}
         statut={<>
           {pret && !uid && (
-            <>
-              <span className="bandeau-statut">Lecture seule</span>
-              <button className="bandeau-btn" onClick={() => setConnexion(true)}><LogIn /> Se connecter</button>
-            </>
+            <span className="bandeau-statut">Lecture seule</span>
           )}
           {uid && (
             <>
@@ -73,7 +68,6 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
       <main className="page flex-1 py-6">{children}</main>
       <AppFooter />
-      <ConnexionDialog open={connexion} onOpenChange={setConnexion} />
     </div>
   );
 }
