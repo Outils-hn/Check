@@ -177,7 +177,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
         const corps = `corps-${g.cle.replace(/[^a-z0-9]/gi, "")}`;
         return (
           <section key={g.cle} className="panel overflow-hidden" data-tache={g.tache} aria-label={`${nomDe(g.projet_id)} · ${titreTache(g)}`}>
-            <header className="flex items-center gap-1 px-2 py-1.5">
+            <header className="flex items-center gap-2 px-3 py-1.5">
               <button type="button" className="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-muted" aria-expanded={o} aria-controls={corps} onClick={() => basculer(g)}>
                 {o ? <ChevronDown className="size-4 shrink-0" aria-hidden="true" /> : <ChevronRight className="size-4 shrink-0" aria-hidden="true" />}
                 <span className="min-w-0">
@@ -185,7 +185,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                   <span className="block text-xs text-muted-foreground">{g.enAttente.length ? `${plur(g.enAttente.length, "question")} en attente${g.enAttente.some((n) => n.statut === "in_progress") ? ` (dont ${g.enAttente.filter((n) => n.statut === "in_progress").length} posée${g.enAttente.filter((n) => n.statut === "in_progress").length > 1 ? "s" : ""})` : ""}` : "Tout est réglé"}{g.reglees.length ? ` · ${plur(g.reglees.length, "réglée")}` : ""}</span>
                 </span>
               </button>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => void pdf([g], true)} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
+              <Button size="sm" variant="outline" className="w-[7.5rem] shrink-0 gap-1.5" onClick={() => void pdf([g], true)} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
               <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => { setARenommer(g); setNomSaisi(g.nom); setNumeroSaisi(g.tache); }} aria-label={`Modifier ${libelleTache(g.tache)}`} title="Modifier le numéro ou le nom de la tâche"><PencilLine className="size-3.5" /></button>
               <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => setASupprimer(g)} aria-label={`Supprimer ${libelleTache(g.tache)} et ses questions`} title="Supprimer la tâche et ses questions"><Trash2 className="size-3.5" /></button>
             </header>
@@ -212,14 +212,14 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                       <button type="button" disabled={i === 0} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Monter la question" title="Monter" onClick={() => onDeplacer(n, ordreAvant(g.enAttente, g.enAttente[i - 1].id, n.id))}><ArrowUp className="size-3.5" /></button>
                       <button type="button" disabled={i === g.enAttente.length - 1} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Descendre la question" title="Descendre" onClick={() => onDeplacer(n, ordreApres(g.enAttente, g.enAttente[i + 1].id, n.id))}><ArrowDown className="size-3.5" /></button>
                     </span>
-                    <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={() => repondre(n)}><Check className="size-3.5" aria-hidden="true" />Répondre</Button>
+                    <Button size="sm" variant="outline" className="w-[7.5rem] shrink-0 gap-1.5" onClick={() => repondre(n)}><Check className="size-3.5" aria-hidden="true" />Répondre</Button>
                     <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => editer(n)} aria-label="Modifier la question" title="Modifier la question"><Pencil className="size-3.5" /></button>
                     <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
                   </li>
                 ))}
                 {g.reglees.map((n) => (
-                  <li key={n.id} className="px-4 py-2.5 text-sm" data-reglee={n.id}>
-                    <div className="flex items-start gap-3">
+                  <li key={n.id} className="px-3 py-2.5 text-sm" data-reglee={n.id}>
+                    <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1"><span className="mb-0.5 inline-block rounded-full border border-border px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{etiquetteDest(n)}</span><p className="whitespace-pre-wrap break-words text-muted-foreground line-through">{n.texte}</p></div>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => editer(n)} aria-label="Modifier la question" title="Modifier la question"><Pencil className="size-3.5" /></button>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => repondre(n)} aria-label="Modifier la réponse" title="Modifier la réponse"><Pencil className="size-3.5" /></button>

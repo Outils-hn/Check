@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.52 — 12 novembre 2026
+
+- Nouveauté : dans « Questions Tâches », les boutons de droite sont alignés : « PDF » et « Répondre » ont la même largeur, et les icônes crayon et corbeille sont en colonne d'une ligne à l'autre.
+
 ## 3.51 — 12 novembre 2026
 
 - Nouveauté : les filtres Tous / Atelier / Montage / Fournisseur de « Questions Tâches » ont le même liseré violet que les onglets quand ils sont actifs.
