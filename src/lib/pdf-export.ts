@@ -245,7 +245,7 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
   doc.text([date, opt.auteur].filter(Boolean).join(" · "), W - mx, y, { align: "right" });
   y += 30;
   doc.setFont("PlexSans", "bold"); doc.setFontSize(20); doc.setTextColor(...NOIR);
-  doc.text(opt.titre ?? "Questions atelier et montage", mx, y);
+  doc.text(opt.titre ?? "Questions Tâches", mx, y);
   y += 30;
   for (const t of taches) {
     if (y + 90 > H - bottom) { doc.addPage(); y = top; }
