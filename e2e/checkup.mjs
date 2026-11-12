@@ -287,6 +287,7 @@ try {
   const dlq = p.waitForEvent("download");
   await p.locator('[data-tache="1234"]').getByRole("button", { name: /^PDF de/ }).click();
   const pdfq = await dlq;
+  await pdfq.saveAs(`${out}/questions-tache.pdf`);
   ok(/^check-questions-taches-\d{4}-\d{2}-\d{2}\.pdf$/.test(pdfq.suggestedFilename()) && fs.statSync(await pdfq.path()).size > 1500, `export PDF des questions (${pdfq.suggestedFilename()})`);
   await p2.reload({ waitUntil: "networkidle" }); // le direct est simule : on recharge pour voir ce qu'Alice vient d'ajouter
   ok(!(await p2.getByText("Quel jeu sous la lisse").count()) && !(await p2.getByText("Cale de 3 ou de 5").count()), "les questions n'apparaissent pas dans la liste des notes");
@@ -364,6 +365,10 @@ try {
   await p.locator('[data-tache="1234"]').getByRole("button", { name: /^PDF de/ }).click();
   const pdfr = await dlr;
   ok(fs.statSync(await pdfr.path()).size > 1500, "PDF d'une tâche avec une question réglée");
+  await pdfr.saveAs(`${out}/questions-tache-reglee.pdf`);
+  { const dlg = p.waitForEvent("download");
+    await za.getByRole("button", { name: "PDF", exact: true }).click();
+    await (await dlg).saveAs(`${out}/questions-global.pdf`); }
   // Replier / deplier une tache
   const entete = p.locator('[data-tache="1234"]').getByRole("button", { expanded: true }).first();
   await entete.click();
