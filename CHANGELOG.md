@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.54 — 13 novembre 2026
+
+- Nouveauté : les barres de recherche n'ont plus de « … » à la fin du texte d'exemple.
+
 ## 3.53 — 12 novembre 2026
 
 - Nouveauté : les PDF de « Questions Tâches » n'affichent plus « Check » en haut et en bas de page.
