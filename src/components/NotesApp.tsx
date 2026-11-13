@@ -395,7 +395,7 @@ function Carnet() {
           </div>
           <div className="relative min-w-[200px] flex-1 max-sm:basis-full">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input ref={recherche} className="pl-9 pr-8" placeholder="Rechercher une note…" aria-label="Rechercher une note" value={f.q} onChange={(e) => maj({ q: e.target.value })} onKeyDown={(e) => e.key === "Escape" && maj({ q: "" })} />
+            <Input ref={recherche} className="pl-9 pr-8" placeholder="Rechercher une note" aria-label="Rechercher une note" value={f.q} onChange={(e) => maj({ q: e.target.value })} onKeyDown={(e) => e.key === "Escape" && maj({ q: "" })} />
             <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-[10px] text-muted-foreground">/</kbd>
           </div>
           <select className="field w-32 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1" aria-label="Filtrer par statut" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
