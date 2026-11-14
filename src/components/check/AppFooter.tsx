@@ -16,7 +16,7 @@ export function AppFooter() {
     <footer className="py-4 text-center">
       <p className="inline-block rounded-md bg-background px-2 py-0.5 text-xs text-muted-foreground">
         {APP_NAME} v{APP_VERSION} ·{" "}
-        <button type="button" onClick={() => setOpen(true)} className={lien}>Conçu par {APP_AUTHOR}</button>{" "}
+        <button type="button" onClick={() => setOpen(true)} className={lien}>À propos</button>{" "}
         · {APP_YEAR} ·{" "}
         <button type="button" onClick={() => setSauvegarde(true)} className={lien}>Sauvegarde</button>{" "}
         · <button type="button" onClick={() => setRaccourcis(true)} className={lien}>Raccourcis</button>{" "}

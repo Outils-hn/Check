@@ -456,7 +456,7 @@ try {
   const sauvegarde = JSON.parse(fs.readFileSync(await (await dl2).path(), "utf8"));
   ok(sauvegarde.app === "check" && sauvegarde.notes.length === 4, "sauvegarde téléchargée (4 notes)");
   await p.keyboard.press("Escape");
-  await p.getByRole("button", { name: /Conçu par/ }).click();
+  await p.getByRole("button", { name: /À propos/ }).click();
   ok(await p.getByText("Conçu et développé par Hugo N.").isVisible(), "fenêtre À propos");
   await p.keyboard.press("Escape");
   await p.waitForTimeout(800);
