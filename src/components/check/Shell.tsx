@@ -32,7 +32,7 @@ function useTheme() {
 const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleString("fr-CH", { dateStyle: "short", timeStyle: "short" }) : "");
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { pret, uid, email, nom, valide, enAttente } = useCompte();
+  const { uid, email, nom, valide, enAttente } = useCompte();
   const { horsLigne } = useDonnees();
   const [dark, setDark] = useTheme();
   return (
@@ -44,9 +44,6 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className="sr-only">Notes et tâches</span>
         </>}
         statut={<>
-          {pret && !uid && (
-            <span className="bandeau-statut">Lecture seule</span>
-          )}
           {uid && (
             <>
               {valide && <span className="bandeau-statut ouvert" title={email}>{nom || email}</span>}
