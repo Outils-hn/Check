@@ -229,9 +229,9 @@ try {
   await p2.getByRole("tab", { name: "Actives" }).click(); await p2.waitForTimeout(500);
   ok(await p2.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "la réponse s'affiche sous la note réglée");
   await shot(p2, "05b-reponse");
-  await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.waitForTimeout(400);
+  await p2.getByRole("button", { name: /^Filtres/ }).click(); await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.keyboard.press("Escape"); await p2.waitForTimeout(400);
   ok((await lignesNotes(p2).count()) === 1, "filtre « Avec réponse » : 1 note");
-  await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.waitForTimeout(300);
+  await p2.getByRole("button", { name: /^Filtres/ }).click(); await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
   await p2.getByLabel("Rechercher une note").fill("sikaflex"); await p2.waitForTimeout(400);
   ok((await lignesNotes(p2).count()) === 1, "la recherche trouve aussi le texte de la réponse");
   await p2.getByLabel("Rechercher une note").press("Escape");
@@ -443,7 +443,7 @@ try {
   ok(/^check-rapport-de-suivi-.*\.pdf$/.test(pdf.suggestedFilename()), `PDF téléchargé (${pdf.suggestedFilename()})`);
   await pdf.saveAs(`${out}/rapport.pdf`);
   const dlc = p.waitForEvent("download", { timeout: 15000 });
-  await p.getByRole("button", { name: "PDF en couleurs" }).click();
+  await p.getByRole("button", { name: "Autres actions de la liste" }).click(); await p.getByRole("menuitem", { name: "PDF en couleurs" }).click();
   const pdfc = await dlc;
   ok(/-couleur\.pdf$/.test(pdfc.suggestedFilename()), `PDF en couleurs téléchargé (${pdfc.suggestedFilename()})`);
   await pdfc.saveAs(`${out}/rapport-couleur.pdf`);
