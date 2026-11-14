@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, MoreHorizontal, ListChecks, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, MoreHorizontal, ListChecks, SlidersHorizontal, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useCompte } from "@/lib/compte";
@@ -100,6 +102,8 @@ function Carnet() {
   // Filtres
   const [f, setF] = useState<Filtres>({ vue: "actives", projets: [], statut: "tous", q: "", tri: "manuel" });
   const maj = (p: Partial<Filtres>) => setF((x) => ({ ...x, ...p }));
+  const triFixe = f.vue === "pour-moi" || f.vue === "aujourdhui";
+  const nbFiltres = (f.statut !== "tous" ? 1 : 0) + (f.avecReponse ? 1 : 0) + (!triFixe && f.tri !== "manuel" ? 1 : 0);
 
   // Fenetres
   const [edition, setEdition] = useState<Note | null>(null);
@@ -398,23 +402,45 @@ function Carnet() {
             <Input ref={recherche} className="pl-9 pr-8" placeholder="Rechercher une note" aria-label="Rechercher une note" value={f.q} onChange={(e) => maj({ q: e.target.value })} onKeyDown={(e) => e.key === "Escape" && maj({ q: "" })} />
             <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-[10px] text-muted-foreground">/</kbd>
           </div>
-          <select className="field w-32 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1" aria-label="Filtrer par statut" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
-            <option value="tous">Tous statuts</option>
-            {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
-          </select>
-          <button type="button" aria-pressed={!!f.avecReponse} title="Seulement les notes avec une réponse" onClick={() => maj({ avecReponse: !f.avecReponse })}
-            className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
-            <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
-          </button>
-          <select className="field w-32 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1" aria-label="Trier" value={f.vue === "pour-moi" || f.vue === "aujourdhui" ? "echeance" : f.tri} disabled={f.vue === "pour-moi" || f.vue === "aujourdhui"} onChange={(e) => maj({ tri: e.target.value as Tri })}>
-            <option value="manuel">Tri : manuel</option>
-            <option value="recent">Tri : récent</option>
-            <option value="echeance">Tri : échéance</option>
-          </select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline" className="min-h-9 gap-1.5" aria-label={nbFiltres ? `Filtres, ${nbFiltres} actif${nbFiltres > 1 ? "s" : ""}` : "Filtres"}>
+                <SlidersHorizontal className="size-4" aria-hidden="true" />Filtres{nbFiltres > 0 && <span className="rounded-full bg-primary px-1.5 text-xs text-primary-foreground">{nbFiltres}</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="filtre-statut" className="text-xs text-muted-foreground">Statut</Label>
+                <select id="filtre-statut" className="field w-full" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
+                  <option value="tous">Tous statuts</option>
+                  {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
+                </select>
+              </div>
+              <button type="button" aria-pressed={!!f.avecReponse} title="Seulement les notes avec une réponse" onClick={() => maj({ avecReponse: !f.avecReponse })}
+                className={cn("flex min-h-9 w-full items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
+                <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
+              </button>
+              <div className="space-y-1">
+                <Label htmlFor="filtre-tri" className="text-xs text-muted-foreground">Tri</Label>
+                <select id="filtre-tri" className="field w-full" value={triFixe ? "echeance" : f.tri} disabled={triFixe} onChange={(e) => maj({ tri: e.target.value as Tri })}>
+                  <option value="manuel">Manuel</option>
+                  <option value="recent">Récent</option>
+                  <option value="echeance">Échéance</option>
+                </select>
+              </div>
+            </PopoverContent>
+          </Popover>
           <div className="ml-auto flex gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setNettoyer(true)} title="Archiver les notes réglées depuis plus de 7 jours"><Sparkles className="size-4" aria-hidden="true" />Nettoyer</Button>
             <Button size="sm" className="gap-1.5" onClick={() => pdf(false)}><FileDown className="size-4" /> PDF</Button>
-            <Button size="sm" variant="outline" aria-label="PDF en couleurs" title="PDF en couleurs" onClick={() => pdf(true)}><Palette className="size-4" /></Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" aria-label="Autres actions de la liste" title="PDF en couleurs, nettoyer"><MoreHorizontal className="size-4" /></Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => pdf(true)}><Palette className="mr-2 size-4" aria-hidden="true" />PDF en couleurs</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setNettoyer(true)}><Sparkles className="mr-2 size-4" aria-hidden="true" />Nettoyer (archiver les notes réglées depuis 7 jours)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
