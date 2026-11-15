@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.59 — 15 novembre 2026
+
+- Nouveauté : dans le menu des applis, Maquette passe en dernier.
+
 ## 3.58 — 15 novembre 2026
 
 - Nouveauté : la recherche cherche maintenant dans toutes les notes (archivées comprises) depuis « Actives », « Pour moi » et « Aujourd'hui », trouve aussi le nom de la personne à qui la note est confiée, et surligne les mots trouvés. Le PDF sobre indique la date de création de chaque note.
