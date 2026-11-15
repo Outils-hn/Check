@@ -82,6 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Check — notes et tâches" },
+      { name: "robots", content: "noindex, nofollow" },
+      { name: "googlebot", content: "noindex, nofollow" },
       { name: "description", content: "Notes et tâches du bureau d'études, perso ou en équipe" },
       { name: "theme-color", content: "#4338CA" },
       { property: "og:title", content: "Check — notes et tâches" },
