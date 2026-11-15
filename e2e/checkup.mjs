@@ -485,7 +485,7 @@ try {
   ok(axe2.violations.length === 0, `accessibilité (sombre) : ${axe2.violations.length} problème(s)${axe2.violations.map((v) => ` [${v.id}: ${v.nodes.length} ${v.nodes[0]?.target}]`).join("")}`);
   await p3.getByRole("button", { name: "Changer d'application" }).click();
   const menu = await p3.getByRole("menuitem").allTextContents();
-  ok(menu.length === 11 && /^Accueil/.test(menu[0] ?? ""), `sélecteur : Accueil puis 10 applis (${menu.length})`);
+  ok(menu.length === 12 && /^Accueil/.test(menu[0] ?? ""), `sélecteur : Accueil puis 11 applis (${menu.length})`);
 
 } catch (e) {
   ok(false, `arret du check-up : ${e.message.split("\n")[0]}`);
