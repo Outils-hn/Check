@@ -1,0 +1,100 @@
+OK Installation : manifeste présent (icônes, mode application)
+OK Hors ligne : service worker servi
+OK sans compte : invitation à se connecter
+OK langue de la page = fr
+OK compte non validé : en attente, aucune note
+OK première connexion : reprise des anciennes notes proposée
+NOTE projet cree « Chantier 1 » a l'etape reprise
+OK « Chantier 1 » devenu un projet avec ses 2 notes
+OK « Perso » resté en notes perso
+OK 3 notes affichées après reprise
+OK Bob invité dans l'équipe du projet
+OK fenetre Projet et equipe : rien ne depasse 
+OK note vide : message affiché
+OK note ajoutée avec Entrée, confiée à Bob
+OK « Pour Bob Keller » affiché sous la note
+OK recherche « schuco » trouve Schüco (sans tréma)
+OK Bob voit les 3 notes du projet
+OK Bob ne voit PAS les notes perso d'Alice
+OK onglet « Pour moi · 1 » chez Bob
+OK onglet « Aujourd'hui » avec son compteur chez Bob
+OK titre de l'onglet avec le nombre à traiter ((2) Check)
+OK « Pour moi » : la note confiée
+OK auteur affiché (« par Alice Martin »)
+OK Bob règle la note (statut en un clic)
+OK « Ajouter une réponse » ouvre la note avec le champ Réponse
+OK le curseur est dans le champ Réponse
+OK réponse enregistrée dans la base
+OK Historique : la liste des changements s'affiche
+OK la réponse s'affiche sous la note réglée
+OK filtre « Avec réponse » : 1 note
+OK la recherche trouve aussi le texte de la réponse
+OK « Noter dans Check » : texte repris dans la saisie
+OK « Noter dans Check » : adresse nettoyée
+OK Lien ?note= : la fenêtre de la note s'ouvre (id 00000000-0000-4000-8000-000000000002) Check Notes et tâches Rechercher Ctrl K alice@exemple.ch Déconnexion NOUVELLE NOTE Entrée pour ajouter, Maj + Entrée pour un retour à la ligne. Photo ou capture Perso Chantier 1 À faire En cours En attente Réglé Pour : personne Pour : moi Pour : Bob Keller Ajouter Questions Tâches À retenir PROJETS 
+OK Lien ?note= : adresse nettoyée
+OK « À retenir » : la fiche d'Alice apparaît
+OK « À retenir » : Bob voit la fiche d'Alice
+OK « À retenir » : Bob ne peut pas supprimer la fiche d'Alice
+OK « À retenir » : recherche
+OK questions rangées sous leur tâche (1234 : 2, 200 : 1)
+OK questions enregistrées comme notes de projet
+OK questions : les nouvelles arrivent en fin de liste
+OK questions : « Descendre » change l'ordre
+OK questions : l'ordre choisi est gardé après rechargement
+OK questions : « Monter » remet l'ordre
+OK export PDF des questions (check-questions-taches-2026-11-15.pdf)
+OK les questions n'apparaissent pas dans la liste des notes
+OK Bob voit les questions de l'équipe
+OK réponse saisie, la question passe en réglée
+OK question modifiée : texte et destinataire
+OK case « posée » : la question passe en « j'attends la réponse »
+OK case « posée » : annulation
+OK tâches du projet proposées en un clic
+OK un clic sur une tâche remplit le numéro
+OK recherche « lisse » : seule la tâche 1234
+OK recherche « fer plat » : seule la tâche 200
+OK recherche sans résultat : message
+OK Échap vide la recherche
+OK tâche créée avec son nom
+OK tâche existante : le nom n'est pas redemandé
+OK question fournisseur : repère « Fournisseur · Schüco »
+OK destinataire et fournisseur enregistrés
+OK filtre « Fournisseur » : seule la tâche 300
+OK filtre : Ctrl + clic ajoute « Atelier » à « Fournisseur »
+OK filtre « Tous » : les 3 tâches
+OK tâche 200 renommée avec le crayon
+OK numéro de tâche modifié (300 → 350), le nom reste
+OK toutes les questions de la tâche suivent le nouveau numéro
+OK la recherche trouve une tâche par son nom
+OK question rouverte : elle repasse en attente
+OK la réponse précédente est gardée à la réouverture
+OK réponse corrigée après coup
+OK PDF d'une tâche avec une question réglée
+OK tâche repliée : questions masquées
+OK l'autre tâche reste dépliée
+OK le repli est retenu après rechargement
+OK tâche dépliée à nouveau
+OK confirmation : prévient qu'une question n'a pas de réponse
+OK annuler ne supprime rien
+OK tâche 1234 et ses questions supprimées
+OK l'autre tâche est intacte
+OK toutes les questions supprimées
+OK image : envoyée et rattachée à la note
+OK image : miniature affichée sur la note
+OK Alice voit la note réglée par Bob
+OK Alice voit la réponse de Bob
+OK note mise à la corbeille
+OK « Annuler » la ramène
+OK visible dans la corbeille
+OK restaurée depuis la corbeille
+OK PDF téléchargé (check-rapport-de-suivi-2026-11-15.pdf)
+OK PDF en couleurs téléchargé (check-rapport-de-suivi-2026-11-15-couleur.pdf)
+OK liste des raccourcis affichée
+OK sauvegarde téléchargée (4 notes)
+OK fenêtre À propos
+OK mobile : aucun débordement horizontal (0 px)
+OK mobile : boutons des notes assez grands (0 trop petits)
+OK accessibilité : 0 problème(s)
+OK accessibilité (sombre) : 0 problème(s)
+OK sélecteur : Accueil puis 11 applis (12)
