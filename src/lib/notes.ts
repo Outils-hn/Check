@@ -54,22 +54,30 @@ export function projetDepuisTexte(texte: string, projets: Projet[]): { texte: st
   return { texte, projetId: null };
 }
 
-export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: string | null) => string): Note[] {
-  const mots = sansAccents(f.q).split(/\s+/).filter(Boolean);
+/** Mots tapes dans la recherche, sans accents ni majuscules. */
+export const motsRecherche = (q: string) => sansAccents(q).split(/\s+/).filter(Boolean);
+/** Des qu'on tape un mot depuis « Actives », « Pour moi » ou « Aujourd'hui », la recherche porte sur toutes les notes (archivees comprises, corbeille exclue). */
+export const rechercheElargie = (f: Pick<Filtres, "vue" | "q">) => motsRecherche(f.q).length > 0 && (f.vue === "actives" || f.vue === "pour-moi" || f.vue === "aujourdhui");
+
+export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: string | null) => string, nomPersonne?: (id: string) => string | null): Note[] {
+  const mots = motsRecherche(f.q);
+  const partout = rechercheElargie(f);
   const res = notes.filter((n) => {
     if (n.atelier) return false; // les questions de tache vivent dans « Questions Tâches »
     if (f.vue === "corbeille") { if (!n.supprime_le) return false; }
     else {
       if (n.supprime_le) return false;
-      if (f.vue === "archivees" ? !n.archive : n.archive) return false;
-      if (f.vue === "pour-moi" && (n.pour !== moi || n.statut === "done")) return false;
-      if (f.vue === "aujourdhui" && !pourAujourdhui(n, moi)) return false;
+      if (!partout) {
+        if (f.vue === "archivees" ? !n.archive : n.archive) return false;
+        if (f.vue === "pour-moi" && (n.pour !== moi || n.statut === "done")) return false;
+        if (f.vue === "aujourdhui" && !pourAujourdhui(n, moi)) return false;
+      }
     }
     if (f.projets.length && !f.projets.includes(n.projet_id ?? PERSO)) return false;
     if (f.statut !== "tous" && n.statut !== f.statut) return false;
     if (f.avecReponse && !reponseDe(n)) return false;
     if (mots.length) {
-      const t = sansAccents(`${n.texte} ${reponseDe(n)} ${nomDe(n.projet_id)}`);
+      const t = sansAccents(`${n.texte} ${reponseDe(n)} ${nomDe(n.projet_id)} ${n.pour && nomPersonne ? nomPersonne(n.pour) ?? "" : ""}`);
       if (!mots.every((m) => t.includes(m))) return false;
     }
     return true;

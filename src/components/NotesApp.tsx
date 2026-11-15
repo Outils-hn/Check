@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { useCompte } from "@/lib/compte";
 import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
-  LIBELLE, PERSO, STATUTS, aNettoyer, nbQuestionsAtelier, ordreEnQueue, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, nomProjet, ordreAvant, ordreEnTete, suivant,
+  LIBELLE, PERSO, STATUTS, aNettoyer, nbQuestionsAtelier, ordreEnQueue, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, motsRecherche, rechercheElargie, nomProjet, ordreAvant, ordreEnTete, suivant,
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
@@ -23,6 +23,7 @@ import { Miniatures } from "@/components/check/Miniatures";
 import { MAX_IMAGES, chargerImagesPdf, compresser } from "@/lib/images";
 import { Retenir } from "@/components/check/Retenir";
 import { Atelier } from "@/components/check/Atelier";
+import { Surligne } from "@/components/check/Surligne";
 import { useRetenir } from "@/lib/retenir";
 import { ProjetDialog } from "@/components/check/ProjetDialog";
 import { RepriseDialog, type PlanReprise } from "@/components/check/RepriseDialog";
@@ -174,7 +175,7 @@ function Carnet() {
       toast("Note réglée", { duration: 6000, action: { label: "Ajouter une réponse", onClick: () => { setVersReponse(true); setEdition({ ...n, statut: "done" }); } } });
     }
   }
-  const visibles = useMemo(() => filtrer(notes, f, moi, nomDe), [notes, f, moi, projetDe]); // eslint-disable-line react-hooks/exhaustive-deps
+  const visibles = useMemo(() => filtrer(notes, f, moi, nomDe, (id) => personne(id)), [notes, f, moi, projetDe, comptes]); // eslint-disable-line react-hooks/exhaustive-deps
   const affichees = useMemo(() => visibles.slice(0, limite), [visibles, limite]);
   const vivantes = notes.filter((n) => !n.supprime_le && !n.archive && !n.atelier);
   const aujourdhui = vivantes.filter((n) => pourAujourdhui(n, moi)).length;
@@ -448,6 +449,8 @@ function Carnet() {
           <p className="note-check" role="status">{enRetard} note{enRetard > 1 ? "s" : ""} en retard · <button className="underline underline-offset-2" onClick={() => maj({ tri: "echeance" })}>trier par échéance</button></p>
         )}
 
+        {rechercheElargie(f) && <p className="text-xs text-muted-foreground" role="status">Recherche dans toutes les notes, archivées comprises.</p>}
+
         {visibles.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
             <Inbox className="mx-auto mb-2 size-7 opacity-50" />
@@ -456,7 +459,7 @@ function Carnet() {
         ) : (
           <ul className="panel divide-y divide-border overflow-hidden">
             {affichees.map((n) => (
-              <LigneNote key={n.id} n={n} projet={nomDe(n.projet_id)} pour={personne(n.pour)} auteur={n.projet_id && n.auteur !== moi ? personne(n.auteur) : null}
+              <LigneNote key={n.id} n={n} mots={motsRecherche(f.q)} projet={nomDe(n.projet_id)} pour={personne(n.pour)} auteur={n.projet_id && n.auteur !== moi ? personne(n.auteur) : null}
                 glisser={glisserActif} enGlisse={glisse === n.id} survol={survol === n.id && glisse !== n.id}
                 onDragStart={() => setGlisse(n.id)} onDragOver={() => glisse && setSurvol(n.id)} onDragEnd={() => { setGlisse(null); setSurvol(null); }}
                 onDrop={() => { if (glisse && glisse !== n.id) act.modifier(glisse, { ordre: ordreAvant(visibles, n.id, glisse) }); setGlisse(null); setSurvol(null); }}
@@ -520,7 +523,7 @@ function LigneProjet({ nom, detail, n, actif, onClick, onReglages }: { nom: stri
 }
 
 function LigneNote(props: {
-  n: Note; projet: string; pour: string | null; auteur: string | null; glisser: boolean; enGlisse: boolean; survol: boolean;
+  n: Note; mots: string[]; projet: string; pour: string | null; auteur: string | null; glisser: boolean; enGlisse: boolean; survol: boolean;
   onDragStart: () => void; onDragOver: () => void; onDragEnd: () => void; onDrop: () => void;
   onStatut: () => void; onFlash: () => void; onModifier: () => void; onArchiver: () => void; onSupprimer: () => void; onRestaurer: () => void; onDetruire: () => void;
   onAjouterImage: (f: File[]) => void; onRetirerImage: (chemin: string) => void;
@@ -551,11 +554,11 @@ function LigneNote(props: {
         <span className="size-2 rounded-full" style={{ background: DOT[n.statut] }} />{LIBELLE[n.statut]}
       </button>
       <div className="col-span-3 min-w-0 md:col-span-1">
-        <p className={cn("whitespace-pre-wrap break-words", n.statut === "done" && "text-muted-foreground line-through")}>{n.texte}</p>
+        <p className={cn("whitespace-pre-wrap break-words", n.statut === "done" && "text-muted-foreground line-through")}><Surligne texte={n.texte} mots={props.mots} /></p>
         {reponseDe(n) && (
           <p className="mt-1 flex items-start gap-1.5 rounded-md border border-[var(--st-done)]/30 bg-[color-mix(in_oklab,var(--st-done)_8%,transparent)] px-2 py-1 text-[13px] text-foreground" data-reponse>
             <span className="mt-px shrink-0 text-xs font-semibold uppercase tracking-wide text-[var(--app-ink)]">Réponse</span>
-            <span className="whitespace-pre-wrap break-words">{reponseDe(n)}</span>
+            <span className="whitespace-pre-wrap break-words"><Surligne texte={reponseDe(n)} mots={props.mots} /></span>
           </p>
         )}
         <Miniatures chemins={n.images ?? []} modifiable={!corbeille} onRetirer={props.onRetirerImage} />

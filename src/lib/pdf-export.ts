@@ -107,7 +107,7 @@ function rendreSobre({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: st
       doc.setFont("PlexSans", "normal"); doc.setFontSize(10);
       const lignes: string[] = doc.splitTextToSize(n.texte, texteW);
       const nbImg = n.images?.length ?? 0;
-      const sous = [n.pour ? `Pour ${n.pour}` : "", nbImg ? `${plur(nbImg, "image")} jointe${nbImg > 1 ? "s" : ""}` : ""].filter(Boolean).join(" · ");
+      const sous = [n.pour ? `Pour ${n.pour}` : "", nbImg ? `${plur(nbImg, "image")} jointe${nbImg > 1 ? "s" : ""}` : "", `Créée le ${fmtDate(n.created_at)}`].filter(Boolean).join(" · ");
       const rep: string[] = n.statut === "done" && n.reponse?.trim() ? doc.splitTextToSize(`Réponse : ${n.reponse.trim()}`, texteW) : [];
       const h = 10 + lignes.length * 13 + (sous ? 12 : 0) + rep.length * 12 + 8;
       if (y + h > H - bottom) { doc.addPage(); y = top; }
