@@ -25,6 +25,19 @@ describe("filtres", () => {
     expect(ids(filtrer(notes, { ...F, q: "schuco" }, moi, nomDe))).toEqual(["a"]);
     expect(ids(filtrer(notes, { ...F, q: "pins indice" }, moi, nomDe))).toEqual(["b"]);
   });
+  it("recherche depuis « Actives » : porte aussi sur les archivees, jamais sur la corbeille", () => {
+    expect(ids(filtrer(notes, { ...F, q: "archivee" }, moi, nomDe))).toEqual(["e"]);
+    expect(ids(filtrer(notes, { ...F, q: "jetee" }, moi, nomDe))).toEqual([]);
+    expect(ids(filtrer(notes, { ...F, vue: "pour-moi", q: "fabrication" }, moi, nomDe))).toEqual(["b"]);
+  });
+  it("recherche dans « Archivées » ou « Corbeille » : reste dans cette vue", () => {
+    expect(ids(filtrer(notes, { ...F, vue: "archivees", q: "garage" }, moi, nomDe))).toEqual([]);
+    expect(ids(filtrer(notes, { ...F, vue: "corbeille", q: "jetee" }, moi, nomDe))).toEqual(["f"]);
+  });
+  it("recherche par le nom de la personne a qui la note est confiee", () => {
+    const nomPers = (id: string) => (id === autre ? "Marc" : null);
+    expect(ids(filtrer(notes, { ...F, q: "marc" }, moi, nomDe, nomPers))).toEqual(["b"]);
+  });
   it("« Pour moi » : confiees a moi, non reglees", () => expect(ids(filtrer(notes, { ...F, vue: "pour-moi" }, moi, nomDe))).toEqual(["a"]));
   it("filtre Perso et projet", () => {
     expect(ids(filtrer(notes, { ...F, projets: [PERSO] }, moi, nomDe))).toEqual(["c"]);

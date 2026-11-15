@@ -195,6 +195,9 @@ try {
   ok(await p.getByText("Pour Bob Keller").isVisible(), "« Pour Bob Keller » affiché sous la note");
   await p.getByLabel("Rechercher une note").fill("schuco");
   ok((await lignesNotes(p).count()) === 1, "recherche « schuco » trouve Schüco (sans tréma)");
+  ok((await p.locator("mark").count()) >= 1, "recherche : le mot trouvé est surligné");
+  await p.getByLabel("Rechercher une note").fill("bob");
+  ok((await lignesNotes(p).count()) >= 1, "recherche « bob » : trouve la note confiée à Bob");
   await p.getByLabel("Rechercher une note").press("Escape");
   await shot(p, "04-alice");
 
