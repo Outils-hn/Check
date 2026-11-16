@@ -552,7 +552,9 @@ function LigneNote(props: {
       onDragEnd={props.onDragEnd}
       className={cn("group grid grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3 py-2.5 text-sm md:grid-cols-[1.25rem_9rem_6.5rem_minmax(0,1fr)_9.5rem_auto] md:py-2",
         retard && "bg-[color-mix(in_oklab,var(--destructive)_5%,transparent)]", props.enGlisse && "opacity-40", props.survol && "shadow-[inset_0_2px_0_var(--app)]",
-        n.flash && n.statut !== "done" && !corbeille && "flash-row")}>
+        n.flash && n.statut !== "done" && !corbeille && "flash-row")}
+      // pulsation calee sur l'horloge : toutes les notes urgentes clignotent en meme temps, meme celle qu'on vient de marquer
+      style={n.flash && n.statut !== "done" && !corbeille ? { animationDelay: `${-(Date.now() % 1600)}ms` } : undefined}>
       <span className={cn("text-muted-foreground/60", props.glisser ? "cursor-grab hover:text-foreground" : "opacity-30")} title={props.glisser ? "Glisser pour réordonner" : "Vue Actives en tri manuel pour réordonner"} aria-hidden="true">
         <GripVertical className="size-3.5" />
       </span>

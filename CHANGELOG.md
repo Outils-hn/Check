@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.65 — 16 novembre 2026
+
+- Correction : une note qu'on vient de marquer « urgent » clignote tout de suite en même temps que les autres notes urgentes, sans qu'il faille actualiser la page.
+
 ## 3.64 — 16 novembre 2026
 
 - Nouveauté : la date de création d'une note (l'horloge) n'apparaît plus qu'au survol de la ligne sur ordinateur, pour alléger la liste. L'échéance et la date de règlement restent toujours visibles.
