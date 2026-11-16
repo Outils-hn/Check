@@ -242,6 +242,9 @@ try {
   await p.getByLabel("Rechercher une note").fill("dupont");
   ok((await lignesNotes(p).count()) === 1, "recherche « dupont » : trouve la note du collègue sans compte");
   await p.getByLabel("Rechercher une note").press("Escape");
+  // on retire cette note de test pour que la suite du check-up retrouve ses 3 notes
+  etat.check_notes.splice(etat.check_notes.indexOf(libre), 1);
+  await p.reload({ waitUntil: "networkidle" });
   await shot(p, "04-alice");
 
   // 6. Bob : voit le projet, pas les notes perso d'Alice
