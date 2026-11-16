@@ -231,7 +231,7 @@ try {
   await p.getByLabel("Rechercher une note").press("Escape");
   // collegue sans compte : nom libre dans « Pour »
   await p.getByLabel("Texte de la note").fill("Prévenir le montage pour les consoles");
-  await p.getByLabel("Pour qui").selectOption({ label: "Pour : Autre personne (sans compte)…" });
+  await p.getByLabel("Pour qui").selectOption({ label: "Pour : Autre personne (sans compte)" });
   await p.getByLabel("Nom de la personne sans compte").fill("Marc Dupont");
   await shot(p, "04b-pour-sans-compte");
   await p.getByLabel("Texte de la note").press("Enter");

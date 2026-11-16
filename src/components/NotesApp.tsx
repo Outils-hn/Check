@@ -517,7 +517,7 @@ function ChoixPour(p: { id?: string; ariaLabel?: string; valeur: string; nom: st
       <select id={p.id} className={p.classe} aria-label={p.ariaLabel} value={p.valeur} disabled={p.disabled} title={p.title} onChange={(e) => p.onValeur(e.target.value)}>
         <option value="">{p.libelleVide}</option>
         {p.equipe.map((id) => <option key={id} value={id}>{p.prefixe}{p.personne(id)}</option>)}
-        <option value={AUTRE}>{p.prefixe}Autre personne (sans compte)…</option>
+        <option value={AUTRE}>{p.prefixe}Autre personne (sans compte)</option>
       </select>
       {p.valeur === AUTRE && !p.disabled && (
         <>
