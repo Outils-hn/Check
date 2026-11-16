@@ -104,6 +104,7 @@ function Carnet() {
   // Filtres
   const [f, setF] = useState<Filtres>({ vue: "actives", projets: [], statut: "tous", q: "", tri: "manuel" });
   const maj = (p: Partial<Filtres>) => setF((x) => ({ ...x, ...p }));
+  const nomsLibres = useMemo(() => [...new Set(notes.map((n) => n.pour_nom?.trim()).filter((x): x is string => !!x))].sort((a, b) => a.localeCompare(b, "fr")), [notes]);
   const triFixe = f.vue === "pour-moi" || f.vue === "aujourdhui";
   const nbFiltres = (f.statut !== "tous" ? 1 : 0) + (f.avecReponse ? 1 : 0) + (!triFixe && f.tri !== "manuel" ? 1 : 0);
 
@@ -285,7 +286,6 @@ function Carnet() {
   }
 
   const equipeForm = equipeDe(formProjet);
-  const nomsLibres = useMemo(() => [...new Set(notes.map((n) => n.pour_nom?.trim()).filter((x): x is string => !!x))].sort((a, b) => a.localeCompare(b, "fr")), [notes]);
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
       <aside className="lg:space-y-4 max-lg:contents">
