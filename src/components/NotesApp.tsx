@@ -579,7 +579,7 @@ function LigneNote(props: {
         )}
       </div>
       <div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs leading-tight tabular-nums text-muted-foreground md:col-span-1 md:flex-col md:items-end md:text-xs">
-        <span className="inline-flex items-center gap-1" title={`Créée le ${fmtDate(n.created_at)}`}><Clock className="size-3" aria-hidden="true" /> <span className="sr-only">Créée le </span><span className="md:hidden">{fmtCourt(n.created_at)}</span><span className="max-md:hidden">{fmtDate(n.created_at)}</span></span>
+        <span className="inline-flex items-center gap-1 transition-opacity md:[@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100" title={`Créée le ${fmtDate(n.created_at)}`}><Clock className="size-3" aria-hidden="true" /> <span className="sr-only">Créée le </span><span className="md:hidden">{fmtCourt(n.created_at)}</span><span className="max-md:hidden">{fmtDate(n.created_at)}</span></span>
         {n.statut === "done" && n.regle_le ? (
           <span className="inline-flex items-center gap-1" style={{ color: "var(--st-done)" }}><Check className="size-3" /> Réglée le {fmtDate(n.regle_le)}</span>
         ) : n.echeance ? (
