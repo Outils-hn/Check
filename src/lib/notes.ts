@@ -2,7 +2,7 @@
 
 export type Statut = "todo" | "in_progress" | "waiting" | "done";
 export type Note = {
-  id: string; projet_id: string | null; auteur: string; pour: string | null;
+  id: string; projet_id: string | null; auteur: string; pour: string | null; pour_nom?: string | null;
   texte: string; statut: Statut; echeance: string | null; flash: boolean; archive: boolean;
   ordre: number; atelier?: boolean; tache?: string | null; tache_nom?: string | null; destinataire?: string | null; fournisseur?: string | null; images?: string[]; reponse: string | null; regle_le: string | null; supprime_le: string | null; created_at: string; updated_at?: string;
 };
@@ -77,7 +77,7 @@ export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: stri
     if (f.statut !== "tous" && n.statut !== f.statut) return false;
     if (f.avecReponse && !reponseDe(n)) return false;
     if (mots.length) {
-      const t = sansAccents(`${n.texte} ${reponseDe(n)} ${nomDe(n.projet_id)} ${n.pour && nomPersonne ? nomPersonne(n.pour) ?? "" : ""}`);
+      const t = sansAccents(`${n.texte} ${reponseDe(n)} ${nomDe(n.projet_id)} ${n.pour && nomPersonne ? nomPersonne(n.pour) ?? "" : ""} ${n.pour_nom ?? ""}`);
       if (!mots.every((m) => t.includes(m))) return false;
     }
     return true;
