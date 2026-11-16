@@ -424,11 +424,17 @@ function Carnet() {
               <div className="space-y-1">
                 <Label htmlFor="filtre-tri" className="text-xs text-muted-foreground">Tri</Label>
                 <select id="filtre-tri" className="field w-full" value={triFixe ? "echeance" : f.tri} disabled={triFixe} onChange={(e) => maj({ tri: e.target.value as Tri })}>
-                  <option value="manuel">Manuel</option>
+                  <option value="manuel">Manuel (par défaut)</option>
                   <option value="recent">Récent</option>
                   <option value="echeance">Échéance</option>
                 </select>
               </div>
+              {nbFiltres > 0 && (
+                <Button type="button" variant="ghost" size="sm" className="-mb-1 h-8 w-full gap-1.5 text-muted-foreground"
+                  onClick={() => maj({ statut: "tous", avecReponse: false, ...(triFixe ? {} : { tri: "manuel" as Tri }) })}>
+                  <RotateCcw className="size-3.5" aria-hidden="true" />Réinitialiser les filtres et le tri
+                </Button>
+              )}
             </PopoverContent>
           </Popover>
           <div className="ml-auto flex gap-2">
