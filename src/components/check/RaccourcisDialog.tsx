@@ -28,13 +28,13 @@ export function RaccourcisDialog({ open, onOpenChange }: { open: boolean; onOpen
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md text-left">
         <DialogHeader className="text-left">
-          <DialogTitle className="text-sm font-semibold text-foreground">Raccourcis clavier</DialogTitle>
+          <DialogTitle>Raccourcis clavier</DialogTitle>
           <DialogDescription className="sr-only">Liste des raccourcis clavier de Check</DialogDescription>
         </DialogHeader>
         <ul className="divide-y divide-border text-sm">
           {RACCOURCIS.map((r) => (
             <li key={r.texte} className="flex items-center justify-between gap-4 py-2">
-              <span className="text-foreground">{r.texte}</span>
+              <span className="text-pretty text-foreground">{r.texte}</span>
               <span className="flex shrink-0 gap-1">
                 {r.touches.map((t) => <kbd key={t} className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">{t}</kbd>)}
               </span>

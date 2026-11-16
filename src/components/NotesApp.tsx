@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Archive, ArchiveRestore, CalendarDays, Check, FileDown, GripVertical, MoreHorizontal, ListChecks, SlidersHorizontal, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
+  Archive, ArchiveRestore, Check, Clock, FileDown, GripVertical, MoreHorizontal, ListChecks, SlidersHorizontal, Palette, ImagePlus, Inbox, LogIn, MessageSquareText, Pencil, Pin, Plus, RotateCcw, Search, Settings2, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -409,7 +409,7 @@ function Carnet() {
                 <SlidersHorizontal className="size-4" aria-hidden="true" />Filtres{nbFiltres > 0 && <span className="rounded-full bg-primary px-1.5 text-xs text-primary-foreground">{nbFiltres}</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-64 space-y-3">
+            <PopoverContent align="end" collisionPadding={16} className="w-64 space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="filtre-statut" className="text-xs text-muted-foreground">Statut</Label>
                 <select id="filtre-statut" className="field w-full" value={f.statut} onChange={(e) => maj({ statut: e.target.value as Statut | "tous" })}>
@@ -573,7 +573,7 @@ function LigneNote(props: {
         )}
       </div>
       <div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs leading-tight tabular-nums text-muted-foreground md:col-span-1 md:flex-col md:items-end md:text-xs">
-        <span className="inline-flex items-center gap-1"><CalendarDays className="size-3" /> <span className="md:hidden">{fmtCourt(n.created_at)}</span><span className="max-md:hidden">{fmtDate(n.created_at)}</span></span>
+        <span className="inline-flex items-center gap-1" title={`Créée le ${fmtDate(n.created_at)}`}><Clock className="size-3" aria-hidden="true" /> <span className="sr-only">Créée le </span><span className="md:hidden">{fmtCourt(n.created_at)}</span><span className="max-md:hidden">{fmtDate(n.created_at)}</span></span>
         {n.statut === "done" && n.regle_le ? (
           <span className="inline-flex items-center gap-1" style={{ color: "var(--st-done)" }}><Check className="size-3" /> Réglée le {fmtDate(n.regle_le)}</span>
         ) : n.echeance ? (
