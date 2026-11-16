@@ -225,7 +225,7 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
       }
       y += h + 9;
     }
-    y += 10;
+    y += 22; // de l'air avant le titre du projet suivant (il se rattache aux notes qui le suivent)
   }
 }
 

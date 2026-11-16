@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.62 — 16 novembre 2026
+
+- Nouveauté : dans le PDF en couleurs, plus d'espace au-dessus du titre de chaque projet, pour qu'il se rattache clairement aux notes qui le suivent.
+
 ## 3.61 — 16 novembre 2026
 
 - Nouveauté : sur chaque note, la date de création est précédée d'une petite horloge (au lieu du calendrier) et s'explique au survol (« Créée le … »). Les titres des fenêtres (Raccourcis, À propos…) ont la même taille, les champs de saisie ont le même fond blanc que les listes déroulantes, le menu « Filtres » ne déborde plus de la page et une phrase des raccourcis ne laisse plus un mot seul sur sa ligne.
