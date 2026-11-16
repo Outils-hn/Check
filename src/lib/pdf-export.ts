@@ -95,8 +95,15 @@ function rendreSobre({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: st
 
   const statW = 66, droiteW = 92, gap = 10;
   const texteW = cw - statW - droiteW - gap * 2;
+  // Hauteur d'une note (meme calcul que dans la boucle) : sert a garder le titre du projet avec sa premiere note
+  const hNoteSobre = (n: NotePdf) => {
+    doc.setFont("PlexSans", "normal"); doc.setFontSize(10);
+    const l: string[] = doc.splitTextToSize(n.texte, texteW);
+    const r: string[] = n.statut === "done" && n.reponse?.trim() ? doc.splitTextToSize(`Réponse : ${n.reponse.trim()}`, texteW) : [];
+    return 10 + (l.length * 11.5 + 1.5) + 12 + r.length * 12 + 8;
+  };
   for (const g of res.groupes) {
-    if (y + 60 > H - bottom) { doc.addPage(); y = top; }
+    if (y + 12 + hNoteSobre(g.notes[0]) > H - bottom) { doc.addPage(); y = top; }
     doc.setFont("PlexSans", "bold"); doc.setFontSize(11); doc.setTextColor(...NOIR);
     doc.text(g.nom, mx, y);
     doc.setFont("PlexSans", "normal"); doc.setFontSize(9); doc.setTextColor(...GRIS);
@@ -109,7 +116,8 @@ function rendreSobre({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: st
       const nbImg = n.images?.length ?? 0;
       const sous = [n.pour ? `Pour ${n.pour}` : "", nbImg ? `${plur(nbImg, "image")} jointe${nbImg > 1 ? "s" : ""}` : "", `Créée le ${fmtDate(n.created_at)}`].filter(Boolean).join(" · ");
       const rep: string[] = n.statut === "done" && n.reponse?.trim() ? doc.splitTextToSize(`Réponse : ${n.reponse.trim()}`, texteW) : [];
-      const h = 10 + lignes.length * 13 + (sous ? 12 : 0) + rep.length * 12 + 8;
+      const hTexte = lignes.length * 11.5 + 1.5; // 10 pt x 1,15 par ligne (interligne reel de jsPDF) : evite un grand vide sous les longues notes
+      const h = 10 + hTexte + (sous ? 12 : 0) + rep.length * 12 + 8;
       if (y + h > H - bottom) { doc.addPage(); y = top; }
       const ty = y + 16;
       const urgent = n.flash && n.statut !== "done";
@@ -118,7 +126,7 @@ function rendreSobre({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: st
       if (urgent) { doc.setFont("PlexSans", "normal"); doc.setTextColor(...GRIS); doc.text(LIBELLE[n.statut].toLowerCase(), mx, ty + 11); }
       doc.setFont("PlexSans", "normal"); doc.setFontSize(10); doc.setTextColor(...NOIR);
       doc.text(lignes, mx + statW + gap, ty);
-      let sy = ty + lignes.length * 13 - 1;
+      let sy = ty + hTexte - 1;
       doc.setFontSize(9); doc.setTextColor(...GRIS);
       if (sous) { doc.text(sous, mx + statW + gap, sy); sy += 12; }
       if (rep.length) { doc.setTextColor(...VERT); doc.text(rep, mx + statW + gap, sy); }
@@ -178,8 +186,16 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
   y += 70;
 
   const pad = 10;
+  // Hauteur d'une note (meme calcul que dans la boucle) : sert a garder le titre du projet avec sa premiere note
+  const hNoteCouleur = (n: NotePdf) => {
+    doc.setFont("PlexSans", "normal"); doc.setFontSize(10.5);
+    const l: string[] = doc.splitTextToSize(n.texte, cw - pad * 2);
+    const r: string[] = n.statut === "done" && n.reponse?.trim() ? doc.splitTextToSize(`Réponse : ${n.reponse.trim()}`, cw - pad * 4) : [];
+    const avecImage = (n.images ?? []).some((p) => opt.imagesPdf?.[p]);
+    return pad + 15 + 8 + (l.length * 12.075 + 1.925) + 4 + 12 + (r.length ? r.length * 12 + 14 : 0) + (avecImage ? 52 + 8 : 0) + pad;
+  };
   for (const g of res.groupes) {
-    if (y + 80 > H - bottom) { doc.addPage(); y = top; }
+    if (y + 16 + hNoteCouleur(g.notes[0]) > H - bottom) { doc.addPage(); y = top; }
     doc.setFont("PlexSans", "bold"); doc.setFontSize(12); doc.setTextColor(...NOIR); doc.text(g.nom, mx, y);
     doc.setFont("PlexSans", "normal"); doc.setFontSize(9); doc.setTextColor(...GRIS);
     doc.text(plur(g.notes.length, "note") + (g.retard ? ` · ${g.retard} en retard` : ""), W - mx, y, { align: "right" });
@@ -192,7 +208,8 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
       const rep: string[] = n.statut === "done" && n.reponse?.trim() ? doc.splitTextToSize(`Réponse : ${n.reponse.trim()}`, cw - pad * 4) : [];
       const imgs = (n.images ?? []).map((p) => opt.imagesPdf?.[p]).filter(Boolean) as { data: string; w: number; h: number }[];
       const imgH = imgs.length ? 52 : 0;
-      const h = pad + 15 + 8 + lignes.length * 14 + 4 + 12 + (rep.length ? rep.length * 12 + 14 : 0) + (imgH ? imgH + 8 : 0) + pad;
+      const hTexte = lignes.length * 12.075 + 1.925; // 10,5 pt x 1,15 par ligne (interligne reel de jsPDF) : pas de grand vide sous les longues notes
+      const h = pad + 15 + 8 + hTexte + 4 + 12 + (rep.length ? rep.length * 12 + 14 : 0) + (imgH ? imgH + 8 : 0) + pad;
       if (y + h > H - bottom) { doc.addPage(); y = top; }
       doc.setFillColor(255, 255, 255); doc.setDrawColor(...TRAIT); doc.setLineWidth(0.6); doc.roundedRect(mx, y, cw, h, 5, 5, "S");
       const urgent = n.flash && n.statut !== "done";
@@ -206,7 +223,7 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
       cy += 15 + 8;
       doc.setFont("PlexSans", "normal"); doc.setFontSize(10.5); doc.setTextColor(...NOIR);
       doc.text(lignes, mx + pad, cy + 9);
-      cy += lignes.length * 14 + 4;
+      cy += hTexte + 4;
       doc.setFontSize(8.5); doc.setTextColor(...GRIS); doc.text(infos, mx + pad, cy + 8);
       cy += 12;
       if (rep.length) {

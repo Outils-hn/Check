@@ -267,6 +267,15 @@ try {
   await p2.getByRole("button", { name: /^Filtres/ }).click(); await shot(p2, "11-filtres"); await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.keyboard.press("Escape"); await p2.waitForTimeout(400);
   ok((await lignesNotes(p2).count()) === 1, "filtre « Avec réponse » : 1 note");
   await p2.getByRole("button", { name: /^Filtres/ }).click(); await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
+  await p2.getByRole("button", { name: /^Filtres/ }).click();
+  ok(!(await p2.getByRole("button", { name: /^Réinitialiser/ }).isVisible()), "Filtres : pas de bouton Réinitialiser quand rien n'est filtré");
+  await p2.locator("#filtre-tri").selectOption("recent");
+  ok(await p2.getByRole("button", { name: /^Réinitialiser/ }).isVisible(), "Filtres : le bouton Réinitialiser apparaît quand un tri est choisi");
+  await shot(p2, "11b-filtres-reinitialiser");
+  await p2.getByRole("button", { name: /^Réinitialiser/ }).click();
+  ok((await p2.locator("#filtre-tri").inputValue()) === "manuel", "Filtres : Réinitialiser remet le tri sur Manuel");
+  ok(!(await p2.getByRole("button", { name: /^Filtres, / }).count()), "Filtres : plus de pastille après Réinitialiser");
+  await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
   await p2.getByLabel("Rechercher une note").fill("sikaflex"); await p2.waitForTimeout(400);
   ok((await lignesNotes(p2).count()) === 1, "la recherche trouve aussi le texte de la réponse");
   await p2.getByLabel("Rechercher une note").press("Escape");

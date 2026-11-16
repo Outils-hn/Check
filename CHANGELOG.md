@@ -4,6 +4,11 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.63 — 16 novembre 2026
+
+- Nouveauté : dans « Filtres », un bouton « Réinitialiser les filtres et le tri » apparaît dès qu'un filtre ou un tri est actif (la pastille indique leur nombre), et l'option « Manuel » devient « Manuel (par défaut) ».
+- Nouveauté : dans le PDF, les longues notes n'ont plus de grand vide en dessous, et le titre d'un projet ne reste plus seul en bas de page : il passe avec sa première note.
+
 ## 3.62 — 16 novembre 2026
 
 - Nouveauté : dans le PDF en couleurs, plus d'espace au-dessus du titre de chaque projet, pour qu'il se rattache clairement aux notes qui le suivent.
