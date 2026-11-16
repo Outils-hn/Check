@@ -23,9 +23,9 @@ export function AppFooter() {
         · <LienRetour app="Check" version={APP_VERSION} className={lien} />
       </p>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm text-left">
+        <DialogContent className="max-w-md text-left">
           <DialogHeader className="text-left">
-            <DialogTitle className="mb-1 text-sm font-semibold text-foreground">À propos</DialogTitle>
+            <DialogTitle>À propos</DialogTitle>
             <DialogDescription className="sr-only">À propos de {APP_NAME}</DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-3">
