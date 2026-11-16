@@ -304,7 +304,7 @@ function Carnet() {
             <div className="flex flex-wrap items-center gap-2">
               <input ref={fichierForm} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label="Choisir des images" data-fichier-form
                 onChange={(e) => { void joindre([...(e.target.files ?? [])]); e.target.value = ""; }} />
-              <Button type="button" variant="ghost" size="sm" className="gap-1.5" disabled={formImages.length >= MAX_IMAGES || compression} onClick={() => fichierForm.current?.click()}>
+              <Button type="button" variant="ghost" size="sm" className="-ml-3 gap-1.5" disabled={formImages.length >= MAX_IMAGES || compression} onClick={() => fichierForm.current?.click()}>
                 <ImagePlus className="size-4" aria-hidden="true" />{compression ? "Préparation…" : "Photo ou capture"}
               </Button>
               {formImages.map((i) => (
@@ -513,10 +513,12 @@ function LigneProjet({ nom, detail, n, actif, onClick, onReglages }: { nom: stri
         </span>
         <span className="text-xs tabular-nums text-muted-foreground">{n}</span>
       </button>
-      {onReglages && (
+      {onReglages ? (
         <button className="mr-1 rounded p-3 text-muted-foreground opacity-60 md:p-1 hover:bg-background hover:text-foreground group-hover:opacity-100" onClick={onReglages} aria-label={`Projet et équipe : ${nom}`}>
           <Settings2 className="size-3.5" />
         </button>
+      ) : (
+        <span aria-hidden="true" className="mr-1 w-[38px] shrink-0 md:w-[22px]" />
       )}
     </li>
   );

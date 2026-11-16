@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.60 — 16 novembre 2026
+
+- Nouveauté : petits alignements dans la colonne de gauche : « Photo ou capture » s'aligne sur les champs et les nombres de la liste des projets sont rangés dans la même colonne.
+
 ## 3.59 — 15 novembre 2026
 
 - Nouveauté : dans le menu des applis, Maquette passe en dernier.
