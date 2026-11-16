@@ -97,12 +97,14 @@ function Carnet() {
   const [formStatut, setFormStatut] = useState<Statut>("todo");
   const [formEcheance, setFormEcheance] = useState("");
   const [formPour, setFormPour] = useState("");
+  const [formPourNom, setFormPourNom] = useState("");
   const saisie = useRef<HTMLTextAreaElement>(null);
   const recherche = useRef<HTMLInputElement>(null);
 
   // Filtres
   const [f, setF] = useState<Filtres>({ vue: "actives", projets: [], statut: "tous", q: "", tri: "manuel" });
   const maj = (p: Partial<Filtres>) => setF((x) => ({ ...x, ...p }));
+  const nomsLibres = useMemo(() => [...new Set(notes.map((n) => n.pour_nom?.trim()).filter((x): x is string => !!x))].sort((a, b) => a.localeCompare(b, "fr")), [notes]);
   const triFixe = f.vue === "pour-moi" || f.vue === "aujourdhui";
   const nbFiltres = (f.statut !== "tous" ? 1 : 0) + (f.avecReponse ? 1 : 0) + (!triFixe && f.tri !== "manuel" ? 1 : 0);
 
@@ -241,8 +243,8 @@ function Carnet() {
     if (!t) { setVide(true); saisie.current?.focus(); return; }
     const projet_id = tag.projetId ?? (formProjet === PERSO ? null : formProjet);
     if (tag.projetId) setFormProjet(tag.projetId);
-    const r = await act.ajouterNote({ texte: t, projet_id, statut: formStatut, echeance: formEcheance || null, pour: projet_id ? formPour || null : null, ordre: ordreEnTete(notes) });
-    if (r) { if (formImages.length) { await act.ajouterImages(r, formImages.map((i) => i.blob)); viderFormImages(); } setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); requestAnimationFrame(() => saisie.current?.focus()); if (window.matchMedia("(max-width: 1023px)").matches) setFormOuvert(false); }
+    const r = await act.ajouterNote({ texte: t, projet_id, statut: formStatut, echeance: formEcheance || null, pour: projet_id && formPour !== AUTRE ? formPour || null : null, ...(projet_id && formPour === AUTRE && formPourNom.trim() ? { pour_nom: formPourNom.trim() } : {}), ordre: ordreEnTete(notes) });
+    if (r) { if (formImages.length) { await act.ajouterImages(r, formImages.map((i) => i.blob)); viderFormImages(); } setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); setFormPourNom(""); requestAnimationFrame(() => saisie.current?.focus()); if (window.matchMedia("(max-width: 1023px)").matches) setFormOuvert(false); }
   };
 
   const supprimer = async (n: Note) => {
@@ -267,7 +269,7 @@ function Carnet() {
     try {
       const { exportNotesPdf } = await import("@/lib/pdf-export");
       const imagesPdf = couleur ? await chargerImagesPdf(visibles.flatMap((n) => n.images ?? [])).catch(() => ({})) : undefined;
-      await exportNotesPdf(visibles.map((n) => ({ texte: n.texte, projet: nomDe(n.projet_id), pour: n.pour ? personne(n.pour) : null, statut: n.statut, flash: n.flash, created_at: n.created_at, echeance: n.echeance, regle_le: n.regle_le, reponse: n.reponse, images: n.images })), titre, { couleur, filtres, imagesPdf, auteur: comptes.find((c) => c.id === moi)?.nom });
+      await exportNotesPdf(visibles.map((n) => ({ texte: n.texte, projet: nomDe(n.projet_id), pour: n.pour ? personne(n.pour) : n.pour_nom ?? null, statut: n.statut, flash: n.flash, created_at: n.created_at, echeance: n.echeance, regle_le: n.regle_le, reponse: n.reponse, images: n.images })), titre, { couleur, filtres, imagesPdf, auteur: comptes.find((c) => c.id === moi)?.nom });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 
@@ -324,11 +326,8 @@ function Carnet() {
                 {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
               </select>
               <Input type="date" aria-label="Échéance" value={formEcheance} onChange={(e) => setFormEcheance(e.target.value)} />
-              <select className="field col-span-2" aria-label="Pour qui" value={formPour} disabled={formProjet === PERSO} onChange={(e) => setFormPour(e.target.value)}
-                title={formProjet === PERSO ? "Une note perso reste pour vous" : undefined}>
-                <option value="">Pour : personne</option>
-                {equipeForm.map((id) => <option key={id} value={id}>Pour : {personne(id)}</option>)}
-              </select>
+              <ChoixPour ariaLabel="Pour qui" valeur={formPour} nom={formPourNom} onValeur={setFormPour} onNom={setFormPourNom} equipe={equipeForm} personne={personne} noms={nomsLibres}
+                disabled={formProjet === PERSO} title={formProjet === PERSO ? "Une note perso reste pour vous" : undefined} libelleVide="Pour : personne" prefixe="Pour : " classe="field col-span-2" classeNom="col-span-2" />
             </div>
             <Button type="submit" className="w-full" disabled={!texte.trim()}>Ajouter</Button>
           </form>
@@ -465,7 +464,7 @@ function Carnet() {
         ) : (
           <ul className="panel divide-y divide-border overflow-hidden">
             {affichees.map((n) => (
-              <LigneNote key={n.id} n={n} mots={motsRecherche(f.q)} projet={nomDe(n.projet_id)} pour={personne(n.pour)} auteur={n.projet_id && n.auteur !== moi ? personne(n.auteur) : null}
+              <LigneNote key={n.id} n={n} mots={motsRecherche(f.q)} projet={nomDe(n.projet_id)} pour={personne(n.pour) ?? n.pour_nom ?? null} auteur={n.projet_id && n.auteur !== moi ? personne(n.auteur) : null}
                 glisser={glisserActif} enGlisse={glisse === n.id} survol={survol === n.id && glisse !== n.id}
                 onDragStart={() => setGlisse(n.id)} onDragOver={() => glisse && setSurvol(n.id)} onDragEnd={() => { setGlisse(null); setSurvol(null); }}
                 onDrop={() => { if (glisse && glisse !== n.id) act.modifier(glisse, { ordre: ordreAvant(visibles, n.id, glisse) }); setGlisse(null); setSurvol(null); }}
@@ -488,7 +487,7 @@ function Carnet() {
         )}
       </section>
 
-      {edition && <EditionDialog note={edition} versReponse={versReponse} projets={actifs} equipeDe={equipeDe} personne={personne} onClose={() => { setEdition(null); setVersReponse(false); }}
+      {edition && <EditionDialog note={edition} versReponse={versReponse} projets={actifs} equipeDe={equipeDe} personne={personne} noms={nomsLibres} onClose={() => { setEdition(null); setVersReponse(false); }}
         onSave={async (c) => { if (await act.modifier(edition.id, c)) { setEdition(null); setVersReponse(false); } }} />}
       <ProjetDialog open={projetOuvert.open} onOpenChange={(o) => setProjetOuvert((x) => ({ ...x, open: o }))} projet={projetOuvert.p ? projetDe.get(projetOuvert.p.id) ?? null : null}
         onCree={(id) => { setFormProjet(id); setF((x) => ({ ...x, projets: [id] })); }} />
@@ -506,6 +505,27 @@ function Carnet() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+const AUTRE = "__autre__";
+/** Choix de la personne : un membre du projet, ou un nom libre (collegue sans compte). */
+function ChoixPour(p: { id?: string; ariaLabel?: string; valeur: string; nom: string; onValeur: (v: string) => void; onNom: (v: string) => void; equipe: string[]; personne: (id: string | null) => string | null;
+  noms: string[]; disabled?: boolean; title?: string; libelleVide: string; prefixe: string; classe: string; classeNom: string }) {
+  return (
+    <>
+      <select id={p.id} className={p.classe} aria-label={p.ariaLabel} value={p.valeur} disabled={p.disabled} title={p.title} onChange={(e) => p.onValeur(e.target.value)}>
+        <option value="">{p.libelleVide}</option>
+        {p.equipe.map((id) => <option key={id} value={id}>{p.prefixe}{p.personne(id)}</option>)}
+        <option value={AUTRE}>{p.prefixe}Autre personne (sans compte)…</option>
+      </select>
+      {p.valeur === AUTRE && !p.disabled && (
+        <>
+          <Input className={p.classeNom} list="noms-libres" maxLength={60} autoFocus placeholder="Nom de la personne" aria-label="Nom de la personne sans compte" value={p.nom} onChange={(e) => p.onNom(e.target.value)} />
+          <datalist id="noms-libres">{p.noms.map((x) => <option key={x} value={x} />)}</datalist>
+        </>
+      )}
+    </>
   );
 }
 
@@ -630,18 +650,21 @@ function LigneNote(props: {
   );
 }
 
-function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave, versReponse = false }: {
+function EditionDialog({ note, projets, equipeDe, personne, noms, onClose, onSave, versReponse = false }: {
   versReponse?: boolean;
-  note: Note; projets: Projet[]; equipeDe: (pid: string | null) => string[]; personne: (id: string | null) => string | null;
+  note: Note; projets: Projet[]; equipeDe: (pid: string | null) => string[]; personne: (id: string | null) => string | null; noms: string[];
   onClose: () => void; onSave: (c: Partial<Note>) => void;
 }) {
   const [texte, setTexte] = useState(note.texte);
   const [projet, setProjet] = useState(note.projet_id ?? PERSO);
   const [statut, setStatut] = useState<Statut>(note.statut);
   const [echeance, setEcheance] = useState(note.echeance ?? "");
-  const [pour, setPour] = useState(note.pour ?? "");
+  const [pour, setPour] = useState(note.pour ?? (note.pour_nom ? AUTRE : ""));
+  const [pourNom, setPourNom] = useState(note.pour_nom ?? "");
   const [reponse, setReponse] = useState(note.reponse ?? "");
   const equipe = equipeDe(projet);
+  const nomSaisi = projet !== PERSO && pour === AUTRE ? pourNom.trim() : "";
+  const nomFinal = nomSaisi ? { pour_nom: nomSaisi } : note.pour_nom ? { pour_nom: null } : {}; // n'envoie la colonne que si besoin
   const [voirHisto, setVoirHisto] = useState(false);
   const histo = useHistorique(note.id, voirHisto);
   const nomPersonne = (id: string | null) => personne(id) ?? "Un collègue";
@@ -653,7 +676,7 @@ function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave, ver
           <DialogTitle>Modifier la note</DialogTitle>
           <DialogDescription className="sr-only">Texte, projet, statut, échéance et personne</DialogDescription>
         </DialogHeader>
-        <form id="form-note" className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (texte.trim()) onSave({ texte: texte.trim(), projet_id: projet === PERSO ? null : projet, statut, echeance: echeance || null, pour: projet === PERSO ? null : pour || null, reponse: reponse.trim() || null }); }}>
+        <form id="form-note" className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (texte.trim()) onSave({ texte: texte.trim(), projet_id: projet === PERSO ? null : projet, statut, echeance: echeance || null, pour: projet === PERSO || pour === AUTRE ? null : pour || null, ...nomFinal, reponse: reponse.trim() || null }); }}>
           <Textarea rows={4} aria-label="Texte de la note" value={texte} onChange={(e) => setTexte(e.target.value)} />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label htmlFor="e-projet">Projet</Label>
@@ -669,10 +692,7 @@ function EditionDialog({ note, projets, equipeDe, personne, onClose, onSave, ver
             </div>
             <div className="space-y-1.5"><Label htmlFor="e-ech">Échéance</Label><Input id="e-ech" type="date" value={echeance} onChange={(e) => setEcheance(e.target.value)} /></div>
             <div className="space-y-1.5"><Label htmlFor="e-pour">Pour</Label>
-              <select id="e-pour" className="field" value={pour} disabled={projet === PERSO} onChange={(e) => setPour(e.target.value)}>
-                <option value="">Personne</option>
-                {equipe.map((id) => <option key={id} value={id}>{personne(id)}</option>)}
-              </select>
+              <ChoixPour id="e-pour" valeur={pour} nom={pourNom} onValeur={setPour} onNom={setPourNom} equipe={equipe} personne={personne} noms={noms} disabled={projet === PERSO} libelleVide="Personne" prefixe="" classe="field" classeNom="mt-2" />
             </div>
           </div>
           {statut === "done" && (

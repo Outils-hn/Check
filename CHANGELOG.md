@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.66 — 16 novembre 2026
+
+- Nouveauté : dans « Pour », on peut choisir « Autre personne (sans compte)… » et taper le nom d'un collègue qui n'est pas inscrit (les noms déjà saisis sont proposés). La note affiche « Pour Marc », la recherche et le PDF le retrouvent. Nécessite d'exécuter une fois `supabase/check-pour-nom.sql`.
+
 ## 3.65 — 16 novembre 2026
 
 - Correction : une note qu'on vient de marquer « urgent » clignote tout de suite en même temps que les autres notes urgentes, sans qu'il faille actualiser la page.

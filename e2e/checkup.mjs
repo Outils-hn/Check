@@ -229,6 +229,22 @@ try {
   await p.getByLabel("Rechercher une note").fill("bob");
   ok((await lignesNotes(p).count()) >= 1, "recherche « bob » : trouve la note confiée à Bob");
   await p.getByLabel("Rechercher une note").press("Escape");
+  // collegue sans compte : nom libre dans « Pour »
+  await p.getByLabel("Texte de la note").fill("Prévenir le montage pour les consoles");
+  await p.getByLabel("Pour qui").selectOption({ label: "Pour : Autre personne (sans compte)…" });
+  await p.getByLabel("Nom de la personne sans compte").fill("Marc Dupont");
+  await shot(p, "04b-pour-sans-compte");
+  await p.getByLabel("Texte de la note").press("Enter");
+  await p.waitForTimeout(1200);
+  const libre = etat.check_notes.find((x) => x.texte.startsWith("Prévenir"));
+  ok(libre?.pour == null && libre?.pour_nom === "Marc Dupont", "note confiée à un collègue sans compte : nom libre enregistré");
+  ok(await p.getByText("Pour Marc Dupont").isVisible(), "« Pour Marc Dupont » affiché sous la note");
+  await p.getByLabel("Rechercher une note").fill("dupont");
+  ok((await lignesNotes(p).count()) === 1, "recherche « dupont » : trouve la note du collègue sans compte");
+  await p.getByLabel("Rechercher une note").press("Escape");
+  // on retire cette note de test pour que la suite du check-up retrouve ses 3 notes
+  etat.check_notes.splice(etat.check_notes.indexOf(libre), 1);
+  await p.reload({ waitUntil: "networkidle" });
   await shot(p, "04-alice");
 
   // 6. Bob : voit le projet, pas les notes perso d'Alice
