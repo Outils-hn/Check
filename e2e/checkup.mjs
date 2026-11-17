@@ -339,11 +339,16 @@ try {
   await zr.getByLabel("Sujet").fill("Atelier");
   await zr.getByRole("button", { name: "Ajouter", exact: true }).click(); await p.waitForTimeout(400);
   ok(await p.locator("[data-retenir]", { hasText: "Coller le joint" }).isVisible(), "« À retenir » : la fiche d'Alice apparaît");
+  await p.getByRole("button", { name: /Modifier « Coller/ }).click();
+  await p.getByLabel("Modifier l'essentiel en une phrase").fill("Coller le joint avant la pose du capot (corrigé)");
+  await p.getByRole("button", { name: "Enregistrer", exact: true }).click(); await p.waitForTimeout(400);
+  ok(await p.locator("[data-retenir]", { hasText: "(corrigé)" }).isVisible(), "« À retenir » : l'auteur peut modifier sa fiche publiée");
   await shot(p, "08-a-retenir");
   await p2.getByRole("button", { name: /^À retenir/ }).click();
   await p2.locator("[data-retenir]", { hasText: "Coller le joint" }).waitFor({ timeout: 4000 }).catch(() => {});
   ok(await p2.locator("[data-retenir]", { hasText: "Coller le joint" }).isVisible(), "« À retenir » : Bob voit la fiche d'Alice");
   ok((await p2.getByRole("button", { name: /Supprimer « Coller/ }).count()) === 0, "« À retenir » : Bob ne peut pas supprimer la fiche d'Alice");
+  ok((await p2.getByRole("button", { name: /Modifier « Coller/ }).count()) === 0, "« À retenir » : Bob ne peut pas modifier la fiche d'Alice");
   await p2.getByLabel("Rechercher dans À retenir").fill("capot"); ok((await p2.locator("[data-retenir]").count()) === 1, "« À retenir » : recherche");
   await p2.getByRole("button", { name: "Retour à mes notes" }).click();
   await p.getByRole("button", { name: "Retour à mes notes" }).click();

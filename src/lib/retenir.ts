@@ -38,6 +38,7 @@ export function useRetenir() {
   return {
     fiches: q.data ?? [], chargement: q.isLoading, erreur: q.isError,
     ajouter: (f: { titre: string; detail: string; sujet: string }) => run(db.from("check_retenir").insert({ ...f, titre: f.titre.trim(), detail: f.detail.trim(), sujet: f.sujet.trim(), auteur: uid })),
+    modifier: (id: string, f: { titre: string; detail: string; sujet: string }) => run(db.from("check_retenir").update({ titre: f.titre.trim(), detail: f.detail.trim(), sujet: f.sujet.trim(), updated_at: new Date().toISOString() }).eq("id", id)),
     supprimer: (id: string) => run(db.from("check_retenir").delete().eq("id", id)),
   };
 }

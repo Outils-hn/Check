@@ -1,18 +1,27 @@
 import { useState } from "react";
-import { Pin, Search, Trash2 } from "lucide-react";
+import { Pencil, Pin, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { filtrerFiches, useRetenir } from "@/lib/retenir";
 import type { Compte } from "@/lib/notes";
+import type { Fiche } from "@/lib/retenir";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" });
 
 /** Page « À retenir » : ce que tout le bureau doit savoir (retours de l'atelier, « faire plutôt autrement »). */
 export function Retenir({ moi, comptes }: { moi: string; comptes: Compte[] }) {
-  const { fiches, chargement, erreur, ajouter, supprimer } = useRetenir();
+  const { fiches, chargement, erreur, ajouter, modifier, supprimer } = useRetenir();
   const [titre, setTitre] = useState(""), [detail, setDetail] = useState(""), [sujet, setSujet] = useState(""), [q, setQ] = useState("");
   const [aSupprimer, setASupprimer] = useState<string | null>(null);
+  // Edition d'une fiche deja publiee (auteur seulement) : un seul brouillon a la fois
+  const [enEdition, setEnEdition] = useState<string | null>(null);
+  const [brouillon, setBrouillon] = useState({ titre: "", detail: "", sujet: "" });
+  const editer = (f: Fiche) => { setBrouillon({ titre: f.titre, detail: f.detail, sujet: f.sujet }); setEnEdition(f.id); setASupprimer(null); };
+  const enregistrer = async (id: string) => {
+    if (!brouillon.titre.trim()) return;
+    if (await modifier(id, brouillon)) setEnEdition(null);
+  };
   const nomDe = (id: string) => comptes.find((c) => c.id === id)?.nom || "Un collègue";
   const liste = filtrerFiches(fiches, q);
 
@@ -52,6 +61,18 @@ export function Retenir({ moi, comptes }: { moi: string; comptes: Compte[] }) {
         <ul className="space-y-2">
           {liste.map((f) => (
             <li key={f.id} className="panel p-4" data-retenir>
+              {enEdition === f.id ? (
+                <div className="grid gap-2">
+                  <Input value={brouillon.titre} maxLength={120} onChange={(e) => setBrouillon({ ...brouillon, titre: e.target.value })} aria-label="Modifier l'essentiel en une phrase" autoFocus
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void enregistrer(f.id); } if (e.key === "Escape") setEnEdition(null); }} />
+                  <Textarea value={brouillon.detail} maxLength={1500} onChange={(e) => setBrouillon({ ...brouillon, detail: e.target.value })} aria-label="Modifier le détail" rows={2} placeholder="Détail ou pourquoi (facultatif)" />
+                  <div className="flex flex-wrap gap-2">
+                    <Input className="min-w-[160px] flex-1" value={brouillon.sujet} maxLength={60} onChange={(e) => setBrouillon({ ...brouillon, sujet: e.target.value })} aria-label="Modifier le sujet" placeholder="Sujet" />
+                    <Button onClick={() => void enregistrer(f.id)} disabled={!brouillon.titre.trim()}>Enregistrer</Button>
+                    <Button variant="ghost" onClick={() => setEnEdition(null)}>Annuler</Button>
+                  </div>
+                </div>
+              ) : (
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{f.titre}</p>
@@ -61,6 +82,9 @@ export function Retenir({ moi, comptes }: { moi: string; comptes: Compte[] }) {
                     <span>par {nomDe(f.auteur)} · {fmtDate(f.created_at)}</span>
                   </p>
                 </div>
+                {f.auteur === moi && aSupprimer !== f.id && (
+                  <Button size="icon" variant="ghost" className="size-11 md:size-8" aria-label={`Modifier « ${f.titre} »`} onClick={() => editer(f)}><Pencil className="size-4" /></Button>
+                )}
                 {f.auteur === moi && (aSupprimer === f.id ? (
                   <div className="flex gap-1">
                     <Button size="sm" variant="destructive" onClick={() => { void supprimer(f.id); setASupprimer(null); }}>Supprimer</Button>
@@ -70,6 +94,7 @@ export function Retenir({ moi, comptes }: { moi: string; comptes: Compte[] }) {
                   <Button size="icon" variant="ghost" className="size-11 md:size-8" aria-label={`Supprimer « ${f.titre} »`} onClick={() => setASupprimer(f.id)}><Trash2 className="size-4" /></Button>
                 ))}
               </div>
+              )}
             </li>
           ))}
         </ul>

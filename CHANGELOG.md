@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.75 — 17 novembre 2026
+
+- Nouveauté : dans « À retenir », l'auteur peut maintenant modifier sa fiche une fois publiée (crayon à côté de la corbeille), plus seulement la supprimer.
+
 ## 3.74 — 17 novembre 2026
 
 - Nouveauté : l'onglet « Pour moi » disparaît, car « Aujourd'hui » contient déjà toutes les notes qui vous sont confiées. Pour les retrouver (réglées ou non), utilisez « Filtres » puis « Pour » : « Moi ».
