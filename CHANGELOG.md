@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.71 — 17 novembre 2026
+
+- Nouveauté : après l'ajout d'une note, le choix « Pour » reste en place (comme le projet), pour enchaîner plusieurs notes pour la même personne. Il se remet à « Personne » seulement si on change de projet.
+
 ## 3.70 — 17 novembre 2026
 
 - Nouveauté : dans « Filtres », un choix « Pour » (un collègue inscrit ou sans compte) affiche toutes les notes qui lui sont confiées. Le PDF s'intitule alors « Notes pour Marc », prêt à lui remettre.

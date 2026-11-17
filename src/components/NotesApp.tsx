@@ -257,7 +257,7 @@ function Carnet() {
     const projet_id = tag.projetId ?? (formProjet === PERSO ? null : formProjet);
     if (tag.projetId) setFormProjet(tag.projetId);
     const r = await act.ajouterNote({ texte: t, projet_id, statut: formStatut, echeance: formEcheance || null, pour: projet_id && formPour !== AUTRE ? formPour || null : null, ...(projet_id && formPour === AUTRE && formPourNom.trim() ? { pour_nom: formPourNom.trim() } : {}), ordre: ordreEnTete(notes) });
-    if (r) { if (formImages.length) { await act.ajouterImages(r, formImages.map((i) => i.blob)); viderFormImages(); } setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); setFormPour(""); setFormPourNom(""); requestAnimationFrame(() => saisie.current?.focus()); if (window.matchMedia("(max-width: 1023px)").matches) setFormOuvert(false); }
+    if (r) { if (formImages.length) { await act.ajouterImages(r, formImages.map((i) => i.blob)); viderFormImages(); } setVide(false); setTexte(""); setFormEcheance(""); setFormStatut("todo"); // « Pour » reste choisi : on peut enchainer plusieurs notes pour la meme personne requestAnimationFrame(() => saisie.current?.focus()); if (window.matchMedia("(max-width: 1023px)").matches) setFormOuvert(false); }
   };
 
   const supprimer = async (n: Note) => {
