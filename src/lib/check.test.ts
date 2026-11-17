@@ -28,7 +28,7 @@ describe("filtres", () => {
   it("recherche depuis « Actives » : porte aussi sur les archivees, jamais sur la corbeille", () => {
     expect(ids(filtrer(notes, { ...F, q: "archivee" }, moi, nomDe))).toEqual(["e"]);
     expect(ids(filtrer(notes, { ...F, q: "jetee" }, moi, nomDe))).toEqual([]);
-    expect(ids(filtrer(notes, { ...F, pour: moi, q: "fabrication" }, moi, nomDe))).toEqual(["b"]);
+    expect(ids(filtrer(notes, { ...F, vue: "aujourdhui", q: "fabrication" }, moi, nomDe))).toEqual(["b"]);
   });
   it("recherche dans « Archivées » ou « Corbeille » : reste dans cette vue", () => {
     expect(ids(filtrer(notes, { ...F, vue: "archivees", q: "garage" }, moi, nomDe))).toEqual([]);

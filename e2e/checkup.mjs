@@ -279,7 +279,7 @@ try {
   await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
   await p2.getByRole("tab", { name: /Aujourd'hui/ }).click(); await p2.waitForTimeout(300);
   ok((await lignesNotes(p2).count()) >= 1, "« Aujourd'hui » contient la note confiée à Bob");
-  ok(await p2.getByText("par Alice Martin").isVisible(), "auteur affiché (« par Alice Martin »)");
+  ok(await p2.getByText("par Alice Martin").first().isVisible(), "auteur affiché (« par Alice Martin »)");
   await p2.getByRole("button", { name: /Statut : À faire/ }).click(); await p2.waitForTimeout(400);
   await p2.getByRole("button", { name: /Statut : En cours/ }).click(); await p2.waitForTimeout(400);
   await p2.getByRole("button", { name: /Statut : En attente/ }).click(); await p2.waitForTimeout(800);
@@ -298,7 +298,7 @@ try {
   await shot(p, "10b-historique");
   ok(/Bob/.test(await p.locator("[data-histo]").innerText()) || (await p.locator("[data-histo]").innerText()).includes("Statut"), "Historique : la liste des changements s'affiche");
   await p.keyboard.press("Escape"); await p.waitForTimeout(300);
-  await p2.getByRole("tab", { name: "Actives" }).click(); await p2.waitForTimeout(500);
+  await p2.getByRole("tab", { name: "Toutes" }).click(); await p2.waitForTimeout(500);
   ok(await p2.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "la réponse s'affiche sous la note réglée");
   await shot(p2, "05b-reponse");
   await p2.getByRole("button", { name: /^Filtres/ }).click(); await shot(p2, "11-filtres"); await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.keyboard.press("Escape"); await p2.waitForTimeout(400);
@@ -515,7 +515,7 @@ try {
   ok((await lignesNotes(p).count()) === 1, "visible dans la corbeille");
   await p.getByRole("button", { name: "Restaurer la note" }).click(); await p.waitForTimeout(600);
   ok(!etat.check_notes.find((x) => x.texte === "Rendez-vous garage").supprime_le, "restaurée depuis la corbeille");
-  await p.getByRole("tab", { name: "Actives" }).click();
+  await p.getByRole("tab", { name: "Toutes" }).click();
 
   // 8. PDF, sauvegarde, a propos
   const dl = p.waitForEvent("download", { timeout: 15000 });

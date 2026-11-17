@@ -7,6 +7,7 @@ Chaque version qui change quelque chose de visible pour l'équipe a une puce « 
 ## 3.74 — 17 novembre 2026
 
 - Nouveauté : l'onglet « Pour moi » disparaît, car « Aujourd'hui » contient déjà toutes les notes qui vous sont confiées. Pour les retrouver (réglées ou non), utilisez « Filtres » puis « Pour » : « Moi ».
+- Nouveauté : l'onglet « Actives » s'appelle « Toutes » (toutes les notes sauf archivées et corbeille), pour que ce soit plus clair.
 
 ## 3.73 — 17 novembre 2026
 
