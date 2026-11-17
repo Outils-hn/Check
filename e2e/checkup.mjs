@@ -308,6 +308,7 @@ try {
   ok((await lignesNotes(p2).count()) === 1, "filtre « Avec réponse » : 1 note");
   await p2.getByRole("button", { name: /^Filtres/ }).click(); await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
   await p2.getByRole("button", { name: /^Filtres/ }).click();
+  await p2.locator("#filtre-pour").selectOption({ label: "Tout le monde" });
   ok(!(await p2.getByRole("button", { name: /^Réinitialiser/ }).isVisible()), "Filtres : pas de bouton Réinitialiser quand rien n'est filtré");
   await p2.locator("#filtre-tri").selectOption("recent");
   ok(await p2.getByRole("button", { name: /^Réinitialiser/ }).isVisible(), "Filtres : le bouton Réinitialiser apparaît quand un tri est choisi");
