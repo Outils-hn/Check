@@ -216,3 +216,10 @@ describe("atelier / montage", () => {
     expect(ids(filtrer(l, { ...F, pour: "" }, moi, nomDe)).sort()).toEqual(["a", "m", "n"]);
   });
 });
+
+import { couleurSujet } from "./couleurs";
+it("couleurSujet : meme couleur sans accents ni casse, rien si vide", () => {
+  expect(couleurSujet("Étanchéité")).toEqual(couleurSujet("  etancheite "));
+  expect(couleurSujet("")).toBeNull();
+  expect(couleurSujet("Soudure")?.badge).toBeTruthy();
+});

@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.76 — 17 novembre 2026
+
+- Nouveauté : dans « À retenir », chaque sujet (Soudure, Isolation…) a sa propre couleur, sur l'étiquette et le bord de la fiche, pour repérer d'un coup d'œil.
+
 ## 3.75 — 17 novembre 2026
 
 - Nouveauté : dans « À retenir », l'auteur peut maintenant modifier sa fiche une fois publiée (crayon à côté de la corbeille), plus seulement la supprimer.
