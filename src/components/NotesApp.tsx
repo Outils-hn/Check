@@ -577,6 +577,16 @@ function LigneNote(props: {
   const fichier = useRef<HTMLInputElement>(null);
   const [menu, setMenu] = useState(false);
   const { n } = props;
+  const ligne = useRef<HTMLLIElement>(null);
+  const clignote = n.flash && n.statut !== "done" && !n.supprime_le;
+  // Toutes les notes urgentes pulsent ensemble : on cale l'animation sur l'horloge commune de la page (1,6 s, comme le CSS),
+  // y compris pour une note qu'on vient de marquer urgente alors que les autres clignotent deja
+  useEffect(() => {
+    if (!clignote) return;
+    const t = document.timeline.currentTime;
+    if (typeof t !== "number") return;
+    for (const a of ligne.current?.getAnimations() ?? []) a.currentTime = t % 1600;
+  }, [clignote]);
   const ech = etatEcheance(n.echeance);
   const retard = ech === "retard" && n.statut !== "done";
   const proche = ech === "proche" && n.statut !== "done";
@@ -591,8 +601,7 @@ function LigneNote(props: {
       className={cn("group grid grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3 py-2.5 text-sm md:grid-cols-[1.25rem_9rem_6.5rem_minmax(0,1fr)_9.5rem_auto] md:py-2",
         retard && "bg-[color-mix(in_oklab,var(--destructive)_5%,transparent)]", props.enGlisse && "opacity-40", props.survol && "shadow-[inset_0_2px_0_var(--app)]",
         n.flash && n.statut !== "done" && !corbeille && "flash-row")}
-      // pulsation calee sur l'horloge : toutes les notes urgentes clignotent en meme temps, meme celle qu'on vient de marquer
-      style={n.flash && n.statut !== "done" && !corbeille ? { animationDelay: `${-(Date.now() % 1600)}ms` } : undefined}>
+      ref={ligne}>
       <span className={cn("text-muted-foreground/60", props.glisser ? "cursor-grab hover:text-foreground" : "opacity-30")} title={props.glisser ? "Glisser pour réordonner" : "Vue Actives en tri manuel pour réordonner"} aria-hidden="true">
         <GripVertical className="size-3.5" />
       </span>
@@ -619,7 +628,7 @@ function LigneNote(props: {
         )}
       </div>
       <div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs leading-tight tabular-nums text-muted-foreground md:col-span-1 md:flex-col md:items-end md:text-xs">
-        <span className="inline-flex items-center gap-1 transition-opacity md:[@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100" title={`Créée le ${fmtDate(n.created_at)}`}><Clock className="size-3" aria-hidden="true" /> <span className="sr-only">Créée le </span><span className="md:hidden">{fmtCourt(n.created_at)}</span><span className="max-md:hidden">{fmtDate(n.created_at)}</span></span>
+        <span className="inline-flex items-center gap-1 transition-opacity md:[@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-has-[:focus-visible]:opacity-100" title={`Créée le ${fmtDate(n.created_at)}`}><Clock className="size-3" aria-hidden="true" /> <span className="sr-only">Créée le </span><span className="md:hidden">{fmtCourt(n.created_at)}</span><span className="max-md:hidden">{fmtDate(n.created_at)}</span></span>
         {n.statut === "done" && n.regle_le ? (
           <span className="inline-flex items-center gap-1" style={{ color: "var(--st-done)" }}><Check className="size-3" /> Réglée le {fmtDate(n.regle_le)}</span>
         ) : n.echeance ? (
@@ -640,7 +649,7 @@ function LigneNote(props: {
             <button className={btn} onClick={props.onModifier} aria-label="Modifier la note" title="Modifier"><Pencil className="size-3.5" /></button>
             <input ref={fichier} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label="Ajouter une image à la note" onChange={(e) => { props.onAjouterImage([...(e.target.files ?? [])]); e.target.value = ""; }} />
             {/* Ordinateur : les actions rares apparaissent au survol, la corbeille loin de l'archivage */}
-            <span className="flex items-center transition-opacity max-md:hidden md:[@media(hover:hover)]:opacity-0 focus-within:opacity-100 group-hover:opacity-100">
+            <span className="flex items-center transition-opacity max-md:hidden md:[@media(hover:hover)]:opacity-0 has-[:focus-visible]:opacity-100 group-hover:opacity-100">
               {(n.images?.length ?? 0) < MAX_IMAGES && <button className={btn} onClick={() => fichier.current?.click()} aria-label="Ajouter une image" title="Ajouter une photo ou une capture"><ImagePlus className="size-3.5" /></button>}
               <button className={btn} onClick={props.onArchiver} aria-label={n.archive ? "Désarchiver" : "Archiver"} title={n.archive ? "Désarchiver" : "Archiver"}>
                 {n.archive ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
