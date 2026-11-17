@@ -280,6 +280,9 @@ try {
   await p2.getByRole("tab", { name: /Aujourd'hui/ }).click(); await p2.waitForTimeout(300);
   ok((await lignesNotes(p2).count()) >= 1, "« Aujourd'hui » contient la note confiée à Bob");
   ok(await p2.getByText("par Alice Martin").first().isVisible(), "auteur affiché (« par Alice Martin »)");
+  await p2.getByRole("button", { name: /^Filtres/ }).click();
+  await p2.locator("#filtre-pour").selectOption({ label: "Moi" });
+  await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
   await p2.getByRole("button", { name: /Statut : À faire/ }).click(); await p2.waitForTimeout(400);
   await p2.getByRole("button", { name: /Statut : En cours/ }).click(); await p2.waitForTimeout(400);
   await p2.getByRole("button", { name: /Statut : En attente/ }).click(); await p2.waitForTimeout(800);
