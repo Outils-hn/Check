@@ -4,6 +4,11 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.73 — 17 novembre 2026
+
+- Correction : les notes urgentes clignotent vraiment toutes ensemble, y compris celle qu'on vient de marquer urgente (l'animation est calée sur l'horloge de la page).
+- Correction : après un clic (statut, etc.), la date de création, la photo, l'archive et la corbeille se masquent dès que la souris quitte la note, sans qu'il faille cliquer ailleurs. Elles restent visibles au clavier.
+
 ## 3.72 — 17 novembre 2026
 
 - Correction : « Ajouter une réponse » place maintenant le curseur directement dans le champ Réponse (à la fin du texte s'il y en a déjà un), et non au début du texte de la note.
