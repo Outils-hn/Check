@@ -242,6 +242,13 @@ try {
   await p.getByLabel("Rechercher une note").fill("dupont");
   ok((await lignesNotes(p).count()) === 1, "recherche « dupont » : trouve la note du collègue sans compte");
   await p.getByLabel("Rechercher une note").press("Escape");
+  // suggestions de noms deja saisis (liste aux couleurs de l'appli)
+  await p.getByLabel("Pour qui").selectOption({ label: "Pour : Autre personne (sans compte)" });
+  await p.getByLabel("Nom de la personne sans compte").fill("ma");
+  ok(await p.getByRole("option", { name: "Marc Dupont" }).isVisible(), "suggestion : « Marc Dupont » proposé après « ma »");
+  await shot(p, "04c-suggestion-nom");
+  await p.getByRole("option", { name: "Marc Dupont" }).click();
+  ok((await p.getByLabel("Nom de la personne sans compte").inputValue()) === "Marc Dupont", "suggestion : un clic remplit le nom");
   // on retire cette note de test pour que la suite du check-up retrouve ses 3 notes
   etat.check_notes.splice(etat.check_notes.indexOf(libre), 1);
   await p.reload({ waitUntil: "networkidle" });

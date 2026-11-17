@@ -23,6 +23,7 @@ import { Miniatures } from "@/components/check/Miniatures";
 import { MAX_IMAGES, chargerImagesPdf, compresser } from "@/lib/images";
 import { Retenir } from "@/components/check/Retenir";
 import { Atelier } from "@/components/check/Atelier";
+import { ChampNom } from "@/components/check/ChampNom";
 import { Surligne } from "@/components/check/Surligne";
 import { useRetenir } from "@/lib/retenir";
 import { ProjetDialog } from "@/components/check/ProjetDialog";
@@ -520,10 +521,7 @@ function ChoixPour(p: { id?: string; ariaLabel?: string; valeur: string; nom: st
         <option value={AUTRE}>{p.prefixe}Autre personne (sans compte)</option>
       </select>
       {p.valeur === AUTRE && !p.disabled && (
-        <>
-          <Input className={p.classeNom} list="noms-libres" maxLength={60} autoFocus placeholder="Nom de la personne" aria-label="Nom de la personne sans compte" value={p.nom} onChange={(e) => p.onNom(e.target.value)} />
-          <datalist id="noms-libres">{p.noms.map((x) => <option key={x} value={x} />)}</datalist>
-        </>
+        <ChampNom className={p.classeNom} suggestions={p.noms} placeholder="Nom de la personne" ariaLabel="Nom de la personne sans compte" valeur={p.nom} onChange={p.onNom} />
       )}
     </>
   );
