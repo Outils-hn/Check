@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.72 — 17 novembre 2026
+
+- Correction : « Ajouter une réponse » place maintenant le curseur directement dans le champ Réponse (à la fin du texte s'il y en a déjà un), et non au début du texte de la note.
+
 ## 3.71 — 17 novembre 2026
 
 - Nouveauté : après l'ajout d'une note, le choix « Pour » reste en place (comme le projet), pour enchaîner plusieurs notes pour la même personne. Il se remet à « Personne » seulement si on change de projet.
