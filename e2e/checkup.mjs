@@ -268,12 +268,21 @@ try {
   await seConnecter(p2, "bob@exemple.ch");
   ok((await lignesNotes(p2).count()) === 3, "Bob voit les 3 notes du projet");
   ok(!(await p2.getByText("Rendez-vous garage").count()), "Bob ne voit PAS les notes perso d'Alice");
-  ok(await p2.getByRole("tab", { name: /Pour moi · 1/ }).isVisible(), "onglet « Pour moi · 1 » chez Bob");
   ok(await p2.getByRole("tab", { name: /Aujourd'hui · \d/ }).isVisible(), "onglet « Aujourd'hui » avec son compteur chez Bob");
   ok(/^\(\d+\) Check/.test(await p2.title()), `titre de l'onglet avec le nombre à traiter (${await p2.title()})`);
-  await p2.getByRole("tab", { name: /Pour moi/ }).click();
-  ok((await lignesNotes(p2).count()) === 1, "« Pour moi » : la note confiée");
-  ok(await p2.getByText("par Alice Martin").isVisible(), "auteur affiché (« par Alice Martin »)");
+  ok(!(await p2.getByRole("tab", { name: /Pour moi/ }).count()), "plus d'onglet « Pour moi » (doublon avec Aujourd'hui)");
+  await p2.getByRole("button", { name: /^Filtres/ }).click();
+  await p2.locator("#filtre-pour").selectOption({ label: "Moi" });
+  await p2.waitForTimeout(300);
+  ok((await lignesNotes(p2).count()) === 1, "filtre Pour : Moi : la note confiée");
+  await p2.getByRole("button", { name: /^Réinitialiser/ }).click();
+  await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
+  await p2.getByRole("tab", { name: /Aujourd'hui/ }).click(); await p2.waitForTimeout(300);
+  ok((await lignesNotes(p2).count()) >= 1, "« Aujourd'hui » contient la note confiée à Bob");
+  ok(await p2.getByText("par Alice Martin").first().isVisible(), "auteur affiché (« par Alice Martin »)");
+  await p2.getByRole("button", { name: /^Filtres/ }).click();
+  await p2.locator("#filtre-pour").selectOption({ label: "Moi" });
+  await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
   await p2.getByRole("button", { name: /Statut : À faire/ }).click(); await p2.waitForTimeout(400);
   await p2.getByRole("button", { name: /Statut : En cours/ }).click(); await p2.waitForTimeout(400);
   await p2.getByRole("button", { name: /Statut : En attente/ }).click(); await p2.waitForTimeout(800);
@@ -292,13 +301,14 @@ try {
   await shot(p, "10b-historique");
   ok(/Bob/.test(await p.locator("[data-histo]").innerText()) || (await p.locator("[data-histo]").innerText()).includes("Statut"), "Historique : la liste des changements s'affiche");
   await p.keyboard.press("Escape"); await p.waitForTimeout(300);
-  await p2.getByRole("tab", { name: "Actives" }).click(); await p2.waitForTimeout(500);
+  await p2.getByRole("tab", { name: "Toutes" }).click(); await p2.waitForTimeout(500);
   ok(await p2.locator("[data-reponse]", { hasText: "Sikaflex" }).first().isVisible(), "la réponse s'affiche sous la note réglée");
   await shot(p2, "05b-reponse");
   await p2.getByRole("button", { name: /^Filtres/ }).click(); await shot(p2, "11-filtres"); await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.keyboard.press("Escape"); await p2.waitForTimeout(400);
   ok((await lignesNotes(p2).count()) === 1, "filtre « Avec réponse » : 1 note");
   await p2.getByRole("button", { name: /^Filtres/ }).click(); await p2.getByRole("button", { name: "Avec réponse" }).click(); await p2.keyboard.press("Escape"); await p2.waitForTimeout(300);
   await p2.getByRole("button", { name: /^Filtres/ }).click();
+  await p2.locator("#filtre-pour").selectOption({ label: "Tout le monde" });
   ok(!(await p2.getByRole("button", { name: /^Réinitialiser/ }).isVisible()), "Filtres : pas de bouton Réinitialiser quand rien n'est filtré");
   await p2.locator("#filtre-tri").selectOption("recent");
   ok(await p2.getByRole("button", { name: /^Réinitialiser/ }).isVisible(), "Filtres : le bouton Réinitialiser apparaît quand un tri est choisi");
@@ -509,7 +519,7 @@ try {
   ok((await lignesNotes(p).count()) === 1, "visible dans la corbeille");
   await p.getByRole("button", { name: "Restaurer la note" }).click(); await p.waitForTimeout(600);
   ok(!etat.check_notes.find((x) => x.texte === "Rendez-vous garage").supprime_le, "restaurée depuis la corbeille");
-  await p.getByRole("tab", { name: "Actives" }).click();
+  await p.getByRole("tab", { name: "Toutes" }).click();
 
   // 8. PDF, sauvegarde, a propos
   const dl = p.waitForEvent("download", { timeout: 15000 });

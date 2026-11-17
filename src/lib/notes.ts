@@ -28,7 +28,7 @@ export function etatEcheance(iso: string | null, maintenant = new Date()): "aucu
 /** Projet affiche : « 24-118 · Résidence Les Pins » ou le nom seul. */
 export const nomProjet = (p: Projet | undefined | null) => (!p ? "Perso" : p.numero ? `${p.numero} · ${p.nom}` : p.nom);
 
-export type Vue = "aujourdhui" | "actives" | "pour-moi" | "archivees" | "corbeille";
+export type Vue = "aujourdhui" | "actives" | "archivees" | "corbeille";
 export type Tri = "manuel" | "recent" | "echeance";
 export type Filtres = { vue: Vue; projets: string[]; statut: Statut | "tous"; q: string; tri: Tri; avecReponse?: boolean;
   /** Notes confiees a une personne : identifiant d'un compte, ou « nom:Marc » pour un collegue sans compte */ pour?: string };
@@ -57,8 +57,8 @@ export function projetDepuisTexte(texte: string, projets: Projet[]): { texte: st
 
 /** Mots tapes dans la recherche, sans accents ni majuscules. */
 export const motsRecherche = (q: string) => sansAccents(q).split(/\s+/).filter(Boolean);
-/** Des qu'on tape un mot depuis « Actives », « Pour moi » ou « Aujourd'hui », la recherche porte sur toutes les notes (archivees comprises, corbeille exclue). */
-export const rechercheElargie = (f: Pick<Filtres, "vue" | "q">) => motsRecherche(f.q).length > 0 && (f.vue === "actives" || f.vue === "pour-moi" || f.vue === "aujourdhui");
+/** Des qu'on tape un mot depuis « Actives » ou « Aujourd'hui », la recherche porte sur toutes les notes (archivees comprises, corbeille exclue). */
+export const rechercheElargie = (f: Pick<Filtres, "vue" | "q">) => motsRecherche(f.q).length > 0 && (f.vue === "actives" || f.vue === "aujourdhui");
 
 export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: string | null) => string, nomPersonne?: (id: string) => string | null): Note[] {
   const mots = motsRecherche(f.q);
@@ -70,7 +70,6 @@ export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: stri
       if (n.supprime_le) return false;
       if (!partout) {
         if (f.vue === "archivees" ? !n.archive : n.archive) return false;
-        if (f.vue === "pour-moi" && (n.pour !== moi || n.statut === "done")) return false;
         if (f.vue === "aujourdhui" && !pourAujourdhui(n, moi)) return false;
       }
     }
@@ -86,7 +85,7 @@ export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: stri
   });
   const parEcheance = (a: Note, b: Note) =>
     !a.echeance && !b.echeance ? b.created_at.localeCompare(a.created_at) : !a.echeance ? 1 : !b.echeance ? -1 : a.echeance.localeCompare(b.echeance);
-  const tri = f.vue === "pour-moi" || f.vue === "aujourdhui" ? "echeance" : f.tri;
+  const tri = f.vue === "aujourdhui" ? "echeance" : f.tri;
   return res.sort(tri === "manuel" ? (a, b) => a.ordre - b.ordre || b.created_at.localeCompare(a.created_at)
     : tri === "recent" ? (a, b) => b.created_at.localeCompare(a.created_at) : parEcheance);
 }

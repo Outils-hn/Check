@@ -106,7 +106,7 @@ function Carnet() {
   const [f, setF] = useState<Filtres>({ vue: "actives", projets: [], statut: "tous", q: "", tri: "manuel" });
   const maj = (p: Partial<Filtres>) => setF((x) => ({ ...x, ...p }));
   const nomsLibres = useMemo(() => [...new Set(notes.map((n) => n.pour_nom?.trim()).filter((x): x is string => !!x))].sort((a, b) => a.localeCompare(b, "fr")), [notes]);
-  const triFixe = f.vue === "pour-moi" || f.vue === "aujourdhui";
+  const triFixe = f.vue === "aujourdhui";
   const nbFiltres = (f.statut !== "tous" ? 1 : 0) + (f.avecReponse ? 1 : 0) + (f.pour ? 1 : 0) + (!triFixe && f.tri !== "manuel" ? 1 : 0);
 
   // Fenetres
@@ -194,7 +194,6 @@ function Carnet() {
   const affichees = useMemo(() => visibles.slice(0, limite), [visibles, limite]);
   const vivantes = notes.filter((n) => !n.supprime_le && !n.archive && !n.atelier);
   const aujourdhui = vivantes.filter((n) => pourAujourdhui(n, moi)).length;
-  const pourMoi = vivantes.filter((n) => n.pour === moi && n.statut !== "done").length;
   const enRetard = vivantes.filter((n) => n.statut !== "done" && etatEcheance(n.echeance) === "retard").length;
   const compte = (s: Statut) => vivantes.filter((n) => n.statut === s).length;
   const nbProjet = (id: string) => vivantes.filter((n) => (n.projet_id ?? PERSO) === id).length;
@@ -278,8 +277,8 @@ function Carnet() {
   const pdf = async (couleur = false) => {
     if (!visibles.length) return toast.error("Aucune note à exporter.");
     const pourLibelle = f.pour ? personnesPour.find(([c]) => c === f.pour)?.[1] : "";
-    const titre = pourLibelle ? `Notes pour ${pourLibelle}` : f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : f.vue === "pour-moi" ? "Notes pour moi" : "Rapport de suivi";
-    const filtres = [f.projets.length > 1 ? `${f.projets.length} projets` : "", f.vue === "aujourdhui" ? "Aujourd'hui" : f.vue === "archivees" ? "Archivées" : f.vue === "pour-moi" ? "Pour moi" : "", f.statut !== "tous" ? LIBELLE[f.statut] : "", f.q ? `Recherche « ${f.q} »` : ""].filter(Boolean).join(" · ");
+    const titre = pourLibelle ? `Notes pour ${pourLibelle}` : f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : "Rapport de suivi";
+    const filtres = [f.projets.length > 1 ? `${f.projets.length} projets` : "", f.vue === "aujourdhui" ? "Aujourd'hui" : f.vue === "archivees" ? "Archivées" : "", f.statut !== "tous" ? LIBELLE[f.statut] : "", f.q ? `Recherche « ${f.q} »` : ""].filter(Boolean).join(" · ");
     try {
       const { exportNotesPdf } = await import("@/lib/pdf-export");
       const imagesPdf = couleur ? await chargerImagesPdf(visibles.flatMap((n) => n.images ?? [])).catch(() => ({})) : undefined;
@@ -406,7 +405,7 @@ function Carnet() {
       <section className={cn("min-w-0 space-y-4 max-lg:order-2", (retenir || atelier) && "hidden")}>
         <div className="panel flex flex-wrap items-center gap-2 p-3">
           <div role="tablist" aria-label="Vue" className="flex max-w-full overflow-x-auto whitespace-nowrap rounded-md border border-border p-0.5 text-sm">
-            {([["aujourdhui", `Aujourd'hui${aujourdhui ? ` · ${aujourdhui}` : ""}`], ["actives", "Actives"], ["pour-moi", `Pour moi${pourMoi ? ` · ${pourMoi}` : ""}`], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
+            {([["aujourdhui", `Aujourd'hui${aujourdhui ? ` · ${aujourdhui}` : ""}`], ["actives", "Toutes"], ["archivees", "Archivées"], ["corbeille", `Corbeille${nbCorbeille ? ` · ${nbCorbeille}` : ""}`]] as [Vue, string][]).map(([v, l]) => (
               <button key={v} role="tab" aria-selected={f.vue === v} data-state={f.vue === v ? "active" : "inactive"} onClick={() => maj({ vue: v })}
                 className={cn("rounded px-2 py-2 md:py-1", f.vue === v ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
             ))}
@@ -480,7 +479,7 @@ function Carnet() {
         {visibles.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
             <Inbox className="mx-auto mb-2 size-7 opacity-50" />
-            {f.vue === "corbeille" ? "La corbeille est vide. Les notes y restent 30 jours." : f.vue === "pour-moi" ? "Aucune note ne vous est confiée." : f.vue === "aujourdhui" ? "Rien d'urgent aujourd'hui : aucune note en retard, du jour ou confiée à vous." : f.vue === "archivees" ? "Aucune note archivée." : f.q ? `Aucune note ne correspond à « ${f.q} ».` : "Aucune note pour le moment. Utilisez « Nouvelle note » (raccourci N)."}
+            {f.vue === "corbeille" ? "La corbeille est vide. Les notes y restent 30 jours." : f.vue === "aujourdhui" ? "Rien d'urgent aujourd'hui : aucune note en retard, du jour ou confiée à vous." : f.vue === "archivees" ? "Aucune note archivée." : f.q ? `Aucune note ne correspond à « ${f.q} ».` : "Aucune note pour le moment. Utilisez « Nouvelle note » (raccourci N)."}
           </div>
         ) : (
           <ul className="panel divide-y divide-border overflow-hidden">
@@ -602,7 +601,7 @@ function LigneNote(props: {
         retard && "bg-[color-mix(in_oklab,var(--destructive)_5%,transparent)]", props.enGlisse && "opacity-40", props.survol && "shadow-[inset_0_2px_0_var(--app)]",
         n.flash && n.statut !== "done" && !corbeille && "flash-row")}
       ref={ligne}>
-      <span className={cn("text-muted-foreground/60", props.glisser ? "cursor-grab hover:text-foreground" : "opacity-30")} title={props.glisser ? "Glisser pour réordonner" : "Vue Actives en tri manuel pour réordonner"} aria-hidden="true">
+      <span className={cn("text-muted-foreground/60", props.glisser ? "cursor-grab hover:text-foreground" : "opacity-30")} title={props.glisser ? "Glisser pour réordonner" : "Vue Toutes en tri manuel pour réordonner"} aria-hidden="true">
         <GripVertical className="size-3.5" />
       </span>
       <span className="min-w-0 truncate text-xs text-muted-foreground" title={props.projet}>{props.projet}</span>

@@ -4,6 +4,11 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.74 — 17 novembre 2026
+
+- Nouveauté : l'onglet « Pour moi » disparaît, car « Aujourd'hui » contient déjà toutes les notes qui vous sont confiées. Pour les retrouver (réglées ou non), utilisez « Filtres » puis « Pour » : « Moi ».
+- Nouveauté : l'onglet « Actives » s'appelle « Toutes » (toutes les notes sauf archivées et corbeille), pour que ce soit plus clair.
+
 ## 3.73 — 17 novembre 2026
 
 - Correction : les notes urgentes clignotent vraiment toutes ensemble, y compris celle qu'on vient de marquer urgente (l'animation est calée sur l'horloge de la page).

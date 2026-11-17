@@ -28,7 +28,7 @@ describe("filtres", () => {
   it("recherche depuis « Actives » : porte aussi sur les archivees, jamais sur la corbeille", () => {
     expect(ids(filtrer(notes, { ...F, q: "archivee" }, moi, nomDe))).toEqual(["e"]);
     expect(ids(filtrer(notes, { ...F, q: "jetee" }, moi, nomDe))).toEqual([]);
-    expect(ids(filtrer(notes, { ...F, vue: "pour-moi", q: "fabrication" }, moi, nomDe))).toEqual(["b"]);
+    expect(ids(filtrer(notes, { ...F, vue: "aujourdhui", q: "fabrication" }, moi, nomDe))).toEqual(["b"]);
   });
   it("recherche dans « Archivées » ou « Corbeille » : reste dans cette vue", () => {
     expect(ids(filtrer(notes, { ...F, vue: "archivees", q: "garage" }, moi, nomDe))).toEqual([]);
@@ -38,7 +38,10 @@ describe("filtres", () => {
     const nomPers = (id: string) => (id === autre ? "Marc" : null);
     expect(ids(filtrer(notes, { ...F, q: "marc" }, moi, nomDe, nomPers))).toEqual(["b"]);
   });
-  it("« Pour moi » : confiees a moi, non reglees", () => expect(ids(filtrer(notes, { ...F, vue: "pour-moi" }, moi, nomDe))).toEqual(["a"]));
+  it("filtre « Pour » = moi : les notes confiees a moi, et « Aujourd'hui » les contient tant qu'elles ne sont pas reglees", () => {
+    expect(ids(filtrer(notes, { ...F, pour: moi }, moi, nomDe))).toContain("a");
+    expect(ids(filtrer(notes, { ...F, vue: "aujourdhui" }, moi, nomDe))).toContain("a");
+  });
   it("filtre Perso et projet", () => {
     expect(ids(filtrer(notes, { ...F, projets: [PERSO] }, moi, nomDe))).toEqual(["c"]);
     expect(ids(filtrer(notes, { ...F, projets: ["p1"], statut: "in_progress" }, moi, nomDe))).toEqual(["b"]);
@@ -172,7 +175,7 @@ describe("atelier / montage", () => {
   });
   it("les questions n'apparaissent dans aucune liste de notes, ni dans « Nettoyer »", () => {
     const toutes = [...liste, q({ id: "q10", statut: "done", tache: "5", regle_le: "2026-10-01T08:00:00Z" })];
-    for (const vue of ["actives", "pour-moi", "aujourdhui", "archivees", "corbeille"] as const) expect(ids(filtrer(toutes, { ...F, vue }, moi, nomDe)).filter((i) => i.startsWith("q") && i !== "q8")).toEqual([]);
+    for (const vue of ["actives", "aujourdhui", "archivees", "corbeille"] as const) expect(ids(filtrer(toutes, { ...F, vue }, moi, nomDe)).filter((i) => i.startsWith("q") && i !== "q8")).toEqual([]);
     expect(ids(aNettoyer(toutes))).toEqual([]);
   });
   it("reprend le nom de la tache depuis ses questions", () => {
