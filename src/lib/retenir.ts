@@ -42,3 +42,4 @@ export function useRetenir() {
     supprimer: (id: string) => run(db.from("check_retenir").delete().eq("id", id)),
   };
 }
+

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Pencil, Pin, Search, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { couleurSujet } from "@/lib/couleurs";
 import { filtrerFiches, useRetenir } from "@/lib/retenir";
 import type { Compte } from "@/lib/notes";
 import type { Fiche } from "@/lib/retenir";
@@ -60,7 +62,7 @@ export function Retenir({ moi, comptes }: { moi: string; comptes: Compte[] }) {
       ) : (
         <ul className="space-y-2">
           {liste.map((f) => (
-            <li key={f.id} className="panel p-4" data-retenir>
+            <li key={f.id} className={cn("panel p-4", couleurSujet(f.sujet) && `border-l-4 ${couleurSujet(f.sujet)!.bord}`)} data-retenir>
               {enEdition === f.id ? (
                 <div className="grid gap-2">
                   <Input value={brouillon.titre} maxLength={120} onChange={(e) => setBrouillon({ ...brouillon, titre: e.target.value })} aria-label="Modifier l'essentiel en une phrase" autoFocus
@@ -78,7 +80,7 @@ export function Retenir({ moi, comptes }: { moi: string; comptes: Compte[] }) {
                   <p className="font-medium">{f.titre}</p>
                   {f.detail && <p className="mt-1 whitespace-pre-wrap text-sm text-foreground/80">{f.detail}</p>}
                   <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                    {f.sujet && <span className="rounded-full border border-border px-2 py-0.5">{f.sujet}</span>}
+                    {f.sujet && <span className={cn("rounded-full border px-2 py-0.5 font-medium", couleurSujet(f.sujet)?.badge)}>{f.sujet}</span>}
                     <span>par {nomDe(f.auteur)} · {fmtDate(f.created_at)}</span>
                   </p>
                 </div>
