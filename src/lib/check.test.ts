@@ -201,4 +201,15 @@ describe("atelier / montage", () => {
     expect(ordreApres(g, "a", "b")).toBe(4);
   });
   it("compte les questions sans reponse", () => expect(nbQuestionsAtelier(liste)).toBe(3));
+
+  it("filtre « Pour » : un compte, ou un nom libre sans tenir compte des accents", () => {
+    const l: Note[] = [
+      base({ id: "a", texte: "pour Alice", pour: "u-alice", projet_id: "p1" }),
+      base({ id: "m", texte: "pour Marc", pour_nom: "Marc Dupont", projet_id: "p1" }),
+      base({ id: "n", texte: "pour personne", projet_id: "p1" }),
+    ];
+    expect(ids(filtrer(l, { ...F, pour: "u-alice" }, moi, nomDe))).toEqual(["a"]);
+    expect(ids(filtrer(l, { ...F, pour: "nom:marc dupont" }, moi, nomDe))).toEqual(["m"]);
+    expect(ids(filtrer(l, { ...F, pour: "" }, moi, nomDe)).sort()).toEqual(["a", "m", "n"]);
+  });
 });

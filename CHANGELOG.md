@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.70 — 17 novembre 2026
+
+- Nouveauté : dans « Filtres », un choix « Pour » (un collègue inscrit ou sans compte) affiche toutes les notes qui lui sont confiées. Le PDF s'intitule alors « Notes pour Marc », prêt à lui remettre.
+
 ## 3.69 — 17 novembre 2026
 
 - Nouveauté : les suggestions de noms (« Autre personne (sans compte) ») s'affichent dans une liste aux couleurs de l'appli, navigable au clavier, au lieu de la boîte grise du navigateur.

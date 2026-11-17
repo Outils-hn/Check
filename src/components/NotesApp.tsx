@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { useCompte } from "@/lib/compte";
 import { useActions, useComptes, useDirect, useDonnees } from "@/lib/donnees";
 import {
-  LIBELLE, PERSO, STATUTS, aNettoyer, nbQuestionsAtelier, ordreEnQueue, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, motsRecherche, rechercheElargie, nomProjet, ordreAvant, ordreEnTete, suivant,
+  LIBELLE, PERSO, STATUTS, aNettoyer, nbQuestionsAtelier, ordreEnQueue, pourAujourdhui, projetDepuisTexte, reponseDe, etatEcheance, filtrer, motsRecherche, sansAccents, rechercheElargie, nomProjet, ordreAvant, ordreEnTete, suivant,
   type Filtres, type Note, type Projet, type Statut, type Tri, type Vue,
 } from "@/lib/notes";
 import { ANCIENNES_NOTES, REPRISE_FAITE, lireAnciennes } from "@/lib/reprise";
@@ -107,7 +107,7 @@ function Carnet() {
   const maj = (p: Partial<Filtres>) => setF((x) => ({ ...x, ...p }));
   const nomsLibres = useMemo(() => [...new Set(notes.map((n) => n.pour_nom?.trim()).filter((x): x is string => !!x))].sort((a, b) => a.localeCompare(b, "fr")), [notes]);
   const triFixe = f.vue === "pour-moi" || f.vue === "aujourdhui";
-  const nbFiltres = (f.statut !== "tous" ? 1 : 0) + (f.avecReponse ? 1 : 0) + (!triFixe && f.tri !== "manuel" ? 1 : 0);
+  const nbFiltres = (f.statut !== "tous" ? 1 : 0) + (f.avecReponse ? 1 : 0) + (f.pour ? 1 : 0) + (!triFixe && f.tri !== "manuel" ? 1 : 0);
 
   // Fenetres
   const [edition, setEdition] = useState<Note | null>(null);
@@ -134,6 +134,18 @@ function Carnet() {
   const projetDe = useMemo(() => new Map(projets.map((p) => [p.id, p])), [projets]);
   const nomDe = (id: string | null) => nomProjet(id ? projetDe.get(id) : null);
   const personne = (id: string | null) => (id ? (id === moi ? "moi" : comptes.find((c) => c.id === id)?.nom ?? "un collègue") : null);
+  // personnes a qui des notes sont confiees (comptes et noms libres) : choix du filtre « Pour »
+  const personnesPour = useMemo(() => {
+    const m = new Map<string, string>(), vus = new Set<string>();
+    for (const n of notes) {
+      if (n.supprime_le || n.atelier) continue;
+      if (n.pour) m.set(n.pour, personne(n.pour) === "moi" ? "Moi" : personne(n.pour) ?? "");
+      else if (n.pour_nom?.trim() && !vus.has(sansAccents(n.pour_nom.trim()))) { vus.add(sansAccents(n.pour_nom.trim())); m.set(`nom:${n.pour_nom.trim()}`, n.pour_nom.trim()); }
+    }
+    if (f.pour && !m.has(f.pour)) m.set(f.pour, f.pour.startsWith("nom:") ? f.pour.slice(4) : personne(f.pour) ?? "");
+    return [...m].sort((a, b) => a[1].localeCompare(b[1], "fr"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notes, comptes, f.pour]);
   const equipeDe = (pid: string | null) => (pid && pid !== PERSO ? membres.filter((m) => m.projet_id === pid).map((m) => m.user_id) : []);
   const actifs = projets.filter((p) => !p.archive);
   const archives = projets.filter((p) => p.archive);
@@ -265,7 +277,8 @@ function Carnet() {
 
   const pdf = async (couleur = false) => {
     if (!visibles.length) return toast.error("Aucune note à exporter.");
-    const titre = f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : f.vue === "pour-moi" ? "Notes pour moi" : "Rapport de suivi";
+    const pourLibelle = f.pour ? personnesPour.find(([c]) => c === f.pour)?.[1] : "";
+    const titre = pourLibelle ? `Notes pour ${pourLibelle}` : f.projets.length === 1 ? nomDe(f.projets[0] === PERSO ? null : f.projets[0]) : f.vue === "pour-moi" ? "Notes pour moi" : "Rapport de suivi";
     const filtres = [f.projets.length > 1 ? `${f.projets.length} projets` : "", f.vue === "aujourdhui" ? "Aujourd'hui" : f.vue === "archivees" ? "Archivées" : f.vue === "pour-moi" ? "Pour moi" : "", f.statut !== "tous" ? LIBELLE[f.statut] : "", f.q ? `Recherche « ${f.q} »` : ""].filter(Boolean).join(" · ");
     try {
       const { exportNotesPdf } = await import("@/lib/pdf-export");
@@ -417,6 +430,13 @@ function Carnet() {
                   {STATUTS.map((s) => <option key={s} value={s}>{LIBELLE[s]}</option>)}
                 </select>
               </div>
+              <div className="space-y-1">
+                <Label htmlFor="filtre-pour" className="text-xs text-muted-foreground">Pour</Label>
+                <select id="filtre-pour" className="field w-full" value={f.pour ?? ""} onChange={(e) => maj({ pour: e.target.value })}>
+                  <option value="">Tout le monde</option>
+                  {personnesPour.map(([cle, nom]) => <option key={cle} value={cle}>{nom}</option>)}
+                </select>
+              </div>
               <button type="button" aria-pressed={!!f.avecReponse} title="Seulement les notes avec une réponse" onClick={() => maj({ avecReponse: !f.avecReponse })}
                 className={cn("flex min-h-9 w-full items-center gap-1.5 rounded-md border border-border px-2.5 text-sm hover:bg-muted", f.avecReponse && "bg-muted font-medium text-foreground")}>
                 <MessageSquareText className="size-3.5" aria-hidden="true" />Avec réponse
@@ -431,7 +451,7 @@ function Carnet() {
               </div>
               {nbFiltres > 0 && (
                 <Button type="button" variant="ghost" size="sm" className="-mb-1 h-8 w-full gap-1.5 text-muted-foreground"
-                  onClick={() => maj({ statut: "tous", avecReponse: false, ...(triFixe ? {} : { tri: "manuel" as Tri }) })}>
+                  onClick={() => maj({ statut: "tous", avecReponse: false, pour: "", ...(triFixe ? {} : { tri: "manuel" as Tri }) })}>
                   <RotateCcw className="size-3.5" aria-hidden="true" />Réinitialiser les filtres et le tri
                 </Button>
               )}

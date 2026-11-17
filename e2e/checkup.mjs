@@ -249,6 +249,14 @@ try {
   await shot(p, "04c-suggestion-nom");
   await p.getByRole("option", { name: "Marc Dupont" }).click();
   ok((await p.getByLabel("Nom de la personne sans compte").inputValue()) === "Marc Dupont", "suggestion : un clic remplit le nom");
+  // filtre « Pour » : toutes les notes d'un collegue sans compte
+  await p.getByRole("button", { name: /^Filtres/ }).click();
+  await p.locator("#filtre-pour").selectOption({ label: "Marc Dupont" });
+  await p.waitForTimeout(300);
+  ok((await lignesNotes(p).count()) === 1, "filtre Pour : seules les notes de Marc Dupont");
+  await shot(p, "04d-filtre-pour");
+  await p.getByRole("button", { name: /^Réinitialiser/ }).click();
+  await p.keyboard.press("Escape"); await p.waitForTimeout(300);
   // on retire cette note de test pour que la suite du check-up retrouve ses 3 notes
   etat.check_notes.splice(etat.check_notes.indexOf(libre), 1);
   await p.reload({ waitUntil: "networkidle" });
