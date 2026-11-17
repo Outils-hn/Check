@@ -689,7 +689,13 @@ function EditionDialog({ note, projets, equipeDe, personne, noms, onClose, onSav
   const nomDuProjet = (id: string | null) => { const p = projets.find((x) => x.id === id); return id ? (p ? nomProjet(p) : "un projet") : "Perso"; };
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg" onOpenAutoFocus={(e) => {
+        // « Ajouter une réponse » : le curseur va directement dans le champ Réponse (a la fin du texte deja ecrit), pas dans le texte de la note
+        if (!versReponse) return;
+        e.preventDefault();
+        const place = () => { const r = document.getElementById("e-reponse") as HTMLTextAreaElement | null; if (r && document.activeElement !== r) { r.focus(); r.setSelectionRange(r.value.length, r.value.length); } };
+        place(); setTimeout(place, 120);
+      }}>
         <DialogHeader>
           <DialogTitle>Modifier la note</DialogTitle>
           <DialogDescription className="sr-only">Texte, projet, statut, échéance et personne</DialogDescription>
