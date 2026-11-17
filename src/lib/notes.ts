@@ -30,7 +30,8 @@ export const nomProjet = (p: Projet | undefined | null) => (!p ? "Perso" : p.num
 
 export type Vue = "aujourdhui" | "actives" | "pour-moi" | "archivees" | "corbeille";
 export type Tri = "manuel" | "recent" | "echeance";
-export type Filtres = { vue: Vue; projets: string[]; statut: Statut | "tous"; q: string; tri: Tri; avecReponse?: boolean };
+export type Filtres = { vue: Vue; projets: string[]; statut: Statut | "tous"; q: string; tri: Tri; avecReponse?: boolean;
+  /** Notes confiees a une personne : identifiant d'un compte, ou « nom:Marc » pour un collegue sans compte */ pour?: string };
 /** Identifiant de la boite « Perso » dans les filtres de projets. */
 export const PERSO = "__perso__";
 
@@ -74,6 +75,7 @@ export function filtrer(notes: Note[], f: Filtres, moi: string, nomDe: (id: stri
       }
     }
     if (f.projets.length && !f.projets.includes(n.projet_id ?? PERSO)) return false;
+    if (f.pour && (f.pour.startsWith("nom:") ? sansAccents(n.pour_nom ?? "") !== sansAccents(f.pour.slice(4)) : n.pour !== f.pour)) return false;
     if (f.statut !== "tous" && n.statut !== f.statut) return false;
     if (f.avecReponse && !reponseDe(n)) return false;
     if (mots.length) {
