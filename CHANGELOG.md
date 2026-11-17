@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.69 — 17 novembre 2026
+
+- Nouveauté : les suggestions de noms (« Autre personne (sans compte) ») s'affichent dans une liste aux couleurs de l'appli, navigable au clavier, au lieu de la boîte grise du navigateur.
+
 ## 3.68 — 17 novembre 2026
 
 - Nouveauté : dans le choix « Pour », « Moi » et « Personne » prennent une majuscule.
