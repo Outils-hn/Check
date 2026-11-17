@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.68 — 17 novembre 2026
+
+- Nouveauté : dans le choix « Pour », « Moi » et « Personne » prennent une majuscule.
+
 ## 3.67 — 16 novembre 2026
 
 - Nouveauté : l'option de « Pour » s'appelle « Autre personne (sans compte) », sans les points de suspension.

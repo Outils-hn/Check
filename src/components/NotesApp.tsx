@@ -327,7 +327,7 @@ function Carnet() {
               </select>
               <Input type="date" aria-label="Échéance" value={formEcheance} onChange={(e) => setFormEcheance(e.target.value)} />
               <ChoixPour ariaLabel="Pour qui" valeur={formPour} nom={formPourNom} onValeur={setFormPour} onNom={setFormPourNom} equipe={equipeForm} personne={personne} noms={nomsLibres}
-                disabled={formProjet === PERSO} title={formProjet === PERSO ? "Une note perso reste pour vous" : undefined} libelleVide="Pour : personne" prefixe="Pour : " classe="field col-span-2" classeNom="col-span-2" />
+                disabled={formProjet === PERSO} title={formProjet === PERSO ? "Une note perso reste pour vous" : undefined} libelleVide="Pour : Personne" prefixe="Pour : " classe="field col-span-2" classeNom="col-span-2" />
             </div>
             <Button type="submit" className="w-full" disabled={!texte.trim()}>Ajouter</Button>
           </form>
@@ -516,7 +516,7 @@ function ChoixPour(p: { id?: string; ariaLabel?: string; valeur: string; nom: st
     <>
       <select id={p.id} className={p.classe} aria-label={p.ariaLabel} value={p.valeur} disabled={p.disabled} title={p.title} onChange={(e) => p.onValeur(e.target.value)}>
         <option value="">{p.libelleVide}</option>
-        {p.equipe.map((id) => <option key={id} value={id}>{p.prefixe}{p.personne(id)}</option>)}
+        {p.equipe.map((id) => <option key={id} value={id}>{p.prefixe}{(p.personne(id) ?? "").replace(/^./, (c) => c.toUpperCase())}</option>)}
         <option value={AUTRE}>{p.prefixe}Autre personne (sans compte)</option>
       </select>
       {p.valeur === AUTRE && !p.disabled && (
