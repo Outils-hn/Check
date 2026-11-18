@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.78 — 18 novembre 2026
+
+- Nouveauté : l'image téléchargée depuis une note est maintenant un fichier JPEG (`check-image.jpg`), qui s'ouvre avec n'importe quel logiciel, au lieu du WebP.
+
 ## 3.77 — 18 novembre 2026
 
 - Nouveauté : dans l'image agrandie d'une note, on peut passer en taille réelle (clic sur l'image ou bouton « Taille réelle ») pour zoomer, et la télécharger avec le bouton « Télécharger ».

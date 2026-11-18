@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { extension, useUrlsImages } from "@/lib/images";
+import { useUrlsImages } from "@/lib/images";
 
 /** Images jointes a une note : miniatures cliquables, agrandies dans une fenetre (avec « Retirer » si on peut modifier). */
 export function Miniatures({ chemins, modifiable, onRetirer }: { chemins: string[]; modifiable: boolean; onRetirer: (chemin: string) => void }) {
@@ -12,12 +12,20 @@ export function Miniatures({ chemins, modifiable, onRetirer }: { chemins: string
   const [ouverte, setOuverte] = useState<string | null>(null);
   const [zoom, setZoom] = useState(false); // false : image entiere dans la fenetre ; true : taille reelle, a faire defiler
   useEffect(() => { setZoom(false); }, [ouverte]);
-  // Le lien de l'image est sur un autre domaine : l'attribut « download » serait ignore, on passe par un blob.
+  // Le lien est sur un autre domaine (l'attribut « download » serait ignore) et l'image est stockee en WebP, que beaucoup
+  // de logiciels n'ouvrent pas : on la recupere en blob puis on la reencode en JPEG avant de la telecharger.
   const telecharger = async (chemin: string) => {
     try {
-      const blob = await (await fetch(urls[chemin])).blob();
+      const source = await createImageBitmap(await (await fetch(urls[chemin])).blob());
+      const c = document.createElement("canvas");
+      c.width = source.width; c.height = source.height;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height); // fond blanc si l'image est transparente
+      ctx.drawImage(source, 0, 0);
+      const jpg = await new Promise<Blob | null>((r) => c.toBlob(r, "image/jpeg", 0.95));
+      if (!jpg) throw new Error("conversion");
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob); a.download = `check-image.${extension(blob)}`;
+      a.href = URL.createObjectURL(jpg); a.download = "check-image.jpg";
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
     } catch { toast.error("L'image n'a pas pu être téléchargée."); }
