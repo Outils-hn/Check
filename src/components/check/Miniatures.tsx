@@ -1,12 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Download, ZoomIn, ZoomOut } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useUrlsImages } from "@/lib/images";
+import { cn } from "@/lib/utils";
+import { extension, useUrlsImages } from "@/lib/images";
 
 /** Images jointes a une note : miniatures cliquables, agrandies dans une fenetre (avec « Retirer » si on peut modifier). */
 export function Miniatures({ chemins, modifiable, onRetirer }: { chemins: string[]; modifiable: boolean; onRetirer: (chemin: string) => void }) {
   const urls = useUrlsImages(chemins);
   const [ouverte, setOuverte] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(false); // false : image entiere dans la fenetre ; true : taille reelle, a faire defiler
+  useEffect(() => { setZoom(false); }, [ouverte]);
+  // Le lien de l'image est sur un autre domaine : l'attribut « download » serait ignore, on passe par un blob.
+  const telecharger = async (chemin: string) => {
+    try {
+      const blob = await (await fetch(urls[chemin])).blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = `check-image.${extension(blob)}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+    } catch { toast.error("L'image n'a pas pu être téléchargée."); }
+  };
   if (!chemins.length) return null;
   return (
     <>
@@ -20,10 +35,21 @@ export function Miniatures({ chemins, modifiable, onRetirer }: { chemins: string
         ))}
       </ul>
       <Dialog open={!!ouverte} onOpenChange={(o) => !o && setOuverte(null)}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className={cn("max-w-3xl", zoom && "max-w-6xl")}>
           <DialogHeader><DialogTitle>Image jointe</DialogTitle><DialogDescription className="sr-only">Image de la note, en grand</DialogDescription></DialogHeader>
-          {ouverte && urls[ouverte] && <img src={urls[ouverte]} alt="Image jointe à la note, en grand" className="mx-auto max-h-[70vh] w-auto max-w-full rounded-md object-contain" />}
-          {modifiable && ouverte && <DialogFooter><Button variant="destructive" onClick={() => { onRetirer(ouverte); setOuverte(null); }}>Retirer l'image</Button></DialogFooter>}
+          {ouverte && urls[ouverte] && (
+            <div className="max-h-[70vh] overflow-auto rounded-md">
+              <img src={urls[ouverte]} alt="Image jointe à la note, en grand" onClick={() => setZoom((z) => !z)} title={zoom ? "Clic pour réduire" : "Clic pour voir en taille réelle"}
+                className={cn("mx-auto rounded-md", zoom ? "max-w-none cursor-zoom-out" : "max-h-[70vh] w-auto max-w-full cursor-zoom-in object-contain")} />
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:justify-between">
+            <div className="flex gap-2">
+              <Button variant="outline" aria-pressed={zoom} onClick={() => setZoom((z) => !z)}>{zoom ? <ZoomOut className="size-4" aria-hidden="true" /> : <ZoomIn className="size-4" aria-hidden="true" />}{zoom ? "Réduire" : "Taille réelle"}</Button>
+              <Button variant="outline" onClick={() => ouverte && void telecharger(ouverte)}><Download className="size-4" aria-hidden="true" />Télécharger</Button>
+            </div>
+            {modifiable && ouverte && <Button variant="destructive" onClick={() => { onRetirer(ouverte); setOuverte(null); }}>Retirer l'image</Button>}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

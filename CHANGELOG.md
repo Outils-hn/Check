@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.77 — 18 novembre 2026
+
+- Nouveauté : dans l'image agrandie d'une note, on peut passer en taille réelle (clic sur l'image ou bouton « Taille réelle ») pour zoomer, et la télécharger avec le bouton « Télécharger ».
+
 ## 3.76 — 17 novembre 2026
 
 - Nouveauté : dans « À retenir », chaque sujet (Soudure, Isolation…) a sa propre couleur, sur l'étiquette et le bord de la fiche, pour repérer d'un coup d'œil.
