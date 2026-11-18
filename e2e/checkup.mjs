@@ -505,6 +505,12 @@ try {
   const nImg = etat.check_notes.find((x) => x.texte === "Note avec photo");
   ok(!!nImg && nImg.images.length === 1 && fichiers.length === 1 && fichiers[0].startsWith(nImg.id + "/"), "image : envoyée et rattachée à la note");
   ok(await p.locator("[data-note]", { hasText: "Note avec photo" }).locator("[data-images] img").first().isVisible(), "image : miniature affichée sur la note");
+  await p.locator("[data-note]", { hasText: "Note avec photo" }).getByRole("button", { name: "Agrandir l'image" }).click(); await p.waitForTimeout(400);
+  await p.getByRole("button", { name: "Taille réelle" }).click(); await p.waitForTimeout(200);
+  ok(await p.getByRole("button", { name: "Réduire" }).isVisible(), "image : zoom en taille réelle");
+  const [tel] = await Promise.all([p.waitForEvent("download", { timeout: 5000 }).catch(() => null), p.getByRole("button", { name: "Télécharger" }).click()]);
+  ok(!!tel && /^check-image\./.test(tel.suggestedFilename()), "image : téléchargement du fichier");
+  await p.keyboard.press("Escape"); await p.waitForTimeout(300);
   await shot(p, "09-image");
   // la note d'essai disparait de la base simulée, puis la page est rechargée (le reste du parcours repart de l'état d'avant)
   etat.check_notes = etat.check_notes.filter((x) => x !== nImg); fichiers.length = 0;
