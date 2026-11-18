@@ -509,7 +509,7 @@ try {
   await p.getByRole("button", { name: "Taille réelle" }).click(); await p.waitForTimeout(200);
   ok(await p.getByRole("button", { name: "Réduire" }).isVisible(), "image : zoom en taille réelle");
   const [tel] = await Promise.all([p.waitForEvent("download", { timeout: 5000 }).catch(() => null), p.getByRole("button", { name: "Télécharger" }).click()]);
-  ok(!!tel && /^check-image\./.test(tel.suggestedFilename()), "image : téléchargement du fichier");
+  ok(!!tel && /^check-image\.jpg$/.test(tel.suggestedFilename()), "image : téléchargement en JPEG");
   await p.keyboard.press("Escape"); await p.waitForTimeout(300);
   await shot(p, "09-image");
   // la note d'essai disparait de la base simulée, puis la page est rechargée (le reste du parcours repart de l'état d'avant)
