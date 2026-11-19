@@ -56,6 +56,32 @@ export async function exportNotesPdf(notes: NotePdf[], titre = "Rapport de suivi
   if (opt.couleur) rendreCouleur(ctx, res, titre, date, jour, opt);
   else rendreSobre(ctx, res, titre, date, jour, opt);
 
+  // Rappels : remarques a ne pas oublier, sur une page a part (titre « Rappels », sans repeter la tache quand il n'y en a qu'une).
+  // Une case (cochee si c'est fait), pas de lignes de reponse.
+  const avecRappels = taches.filter((t) => t.rappels?.length);
+  if (avecRappels.length) {
+    const seulsLesRappels = !taches.some((t) => t.questions.length || t.reglees?.length);
+    if (!seulsLesRappels) {
+      doc.addPage(); y = top;
+      doc.setFont("PlexSans", "bold"); doc.setFontSize(20); doc.setTextColor(...NOIR);
+      doc.text("Rappels", mx, y);
+      y += 30;
+    }
+    for (const t of avecRappels) {
+      if (seulsLesRappels || avecRappels.length > 1) enteteTache(t);
+      for (const r of t.rappels ?? []) {
+        doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
+        const lignes: string[] = doc.splitTextToSize(r.texte, cw - 24);
+        const h = lignes.length * 14 + 6;
+        if (y + h > H - bottom) { doc.addPage(); y = top; }
+        doc.setDrawColor(...NOIR); doc.setLineWidth(1); doc.rect(mx, y - 9, 10, 10);
+        if (r.fait) { doc.line(mx + 2, y - 4, mx + 4.5, y - 1); doc.line(mx + 4.5, y - 1, mx + 8.5, y - 8); }
+        doc.setTextColor(...(r.fait ? GRIS : NOIR)); doc.text(lignes, mx + 24, y);
+        y += h + 6;
+      }
+      y += 14;
+    }
+  }
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
@@ -262,7 +288,7 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
   doc.setFont("PlexSans", "bold"); doc.setFontSize(20); doc.setTextColor(...NOIR);
   doc.text(opt.titre ?? "Questions Tâches", mx, y);
   y += 30;
-  for (const t of taches) {
+  const enteteTache = (t: TachePdf) => {
     if (y + 90 > H - bottom) { doc.addPage(); y = top; }
     doc.setFont("PlexSans", "bold"); doc.setFontSize(12); doc.setTextColor(...NOIR);
     const titre = (t.tache ? `Tâche ${t.tache}` : "Sans numéro de tâche") + (t.nom ? ` · ${t.nom}` : "");
@@ -272,6 +298,10 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
     y += 6;
     doc.setDrawColor(...NOIR); doc.setLineWidth(0.8); doc.line(mx, y, W - mx, y);
     y += 20;
+  };
+  for (const t of taches) {
+    if (!t.questions.length && !t.reglees?.length) continue; // une tache qui n'a que des rappels : ils sont sur la page « Rappels »
+    enteteTache(t);
     for (const qu of t.questions) {
       const q = typeof qu === "string" ? qu : qu.texte;
       const dest = typeof qu === "string" ? "" : qu.dest;
@@ -293,20 +323,6 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
       if (y + 50 > H - bottom) { doc.addPage(); y = top; }
       doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS); doc.text(titre.toUpperCase(), mx, y - 1, { charSpace: 0.8 }); y += 14;
     };
-    // Rappels : remarques a ne pas oublier ; une case (cochee si c'est fait), pas de lignes de reponse
-    if (t.rappels?.length) {
-      etiquette("Rappels");
-      for (const r of t.rappels) {
-        doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
-        const lignes: string[] = doc.splitTextToSize(r.texte, cw - 24);
-        const h = lignes.length * 14 + 6;
-        if (y + h > H - bottom) { doc.addPage(); y = top; }
-        doc.setDrawColor(...NOIR); doc.setLineWidth(1); doc.rect(mx, y - 9, 10, 10);
-        if (r.fait) { doc.line(mx + 2, y - 4, mx + 4.5, y - 1); doc.line(mx + 4.5, y - 1, mx + 8.5, y - 8); }
-        doc.setTextColor(...(r.fait ? GRIS : NOIR)); doc.text(lignes, mx + 24, y);
-        y += h + 6;
-      }
-    }
     // Questions deja reglees : case cochee, la reponse prend la place des lignes
     if (t.reglees?.length) etiquette("Déjà réglées");
     for (const r of t.reglees ?? []) {
