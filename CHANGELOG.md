@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.82 — 19 novembre 2026
+
+- Nouveauté : sur le PDF d'une tâche, les rappels s'ajoutent simplement sous les questions, avec une petite étiquette « Rappels » (comme « Déjà réglées »), sans titre supplémentaire.
+
 ## 3.81 — 19 novembre 2026
 
 - Nouveauté : sur le PDF d'une tâche, « Rappels » est un chapitre à part (titre et filet, comme « Déjà réglées »). Les rappels déjà faits y restent, cochés, au lieu de se mêler aux questions réglées.

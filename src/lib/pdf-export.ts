@@ -287,16 +287,15 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
       doc.line(mx + 24, ly, W - mx, ly); ly += 22;
       y = ly + 4;
     }
-    // Chapitre a part : titre en gras, filet fin, puis les lignes. Meme style pour « Rappels » et « Déjà réglées ».
-    const chapitre = (titre: string) => {
-      y += 8;
-      if (y + 60 > H - bottom) { doc.addPage(); y = top; }
-      doc.setFont("PlexSans", "bold"); doc.setFontSize(12); doc.setTextColor(...NOIR); doc.text(titre, mx, y);
-      y += 6; doc.setDrawColor(...GRIS); doc.setLineWidth(0.5); doc.line(mx, y, W - mx, y); y += 20;
+    // Simple etiquette grise (comme le destinataire d'une question) : pas de nouveau titre de tache ni de chapitre
+    const etiquette = (titre: string) => {
+      y += 6;
+      if (y + 50 > H - bottom) { doc.addPage(); y = top; }
+      doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS); doc.text(titre.toUpperCase(), mx, y - 1, { charSpace: 0.8 }); y += 14;
     };
     // Rappels : remarques a ne pas oublier ; une case (cochee si c'est fait), pas de lignes de reponse
     if (t.rappels?.length) {
-      chapitre("Rappels");
+      etiquette("Rappels");
       for (const r of t.rappels) {
         doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
         const lignes: string[] = doc.splitTextToSize(r.texte, cw - 24);
@@ -309,7 +308,7 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
       }
     }
     // Questions deja reglees : case cochee, la reponse prend la place des lignes
-    if (t.reglees?.length) chapitre("Déjà réglées");
+    if (t.reglees?.length) etiquette("Déjà réglées");
     for (const r of t.reglees ?? []) {
       doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
       const lignes: string[] = doc.splitTextToSize(r.question, cw - 24);
