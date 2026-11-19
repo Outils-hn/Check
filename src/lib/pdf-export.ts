@@ -303,6 +303,10 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
       y += 6;
     }
     // Questions deja reglees : case cochee, la reponse prend la place des lignes
+    if (t.reglees?.length) {
+      if (y + 50 > H - bottom) { doc.addPage(); y = top; }
+      doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS); doc.text("DÉJÀ RÉGLÉES", mx, y - 1, { charSpace: 0.8 }); y += 14;
+    }
     for (const r of t.reglees ?? []) {
       doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
       const lignes: string[] = doc.splitTextToSize(r.question, cw - 24);
