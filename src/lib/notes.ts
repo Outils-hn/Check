@@ -127,10 +127,12 @@ export function joursRetard(echeance: string | null, jour = jourIso()): number {
 }
 
 /** A qui s'adresse une question de tache. Sans destinataire (anciennes questions) : l'atelier. */
-export type Dest = "atelier" | "montage" | "fournisseur";
-export const DESTS: Dest[] = ["atelier", "montage", "fournisseur"];
-export const LIBELLE_DEST: Record<Dest, string> = { atelier: "Atelier", montage: "Montage", fournisseur: "Fournisseur" };
-export const destDe = (n: Pick<Note, "destinataire">): Dest => (n.destinataire === "montage" || n.destinataire === "fournisseur" ? n.destinataire : "atelier");
+export type Dest = "atelier" | "montage" | "fournisseur" | "rappel";
+export const DESTS: Dest[] = ["atelier", "montage", "fournisseur", "rappel"];
+export const LIBELLE_DEST: Record<Dest, string> = { atelier: "Atelier", montage: "Montage", fournisseur: "Fournisseur", rappel: "Rappel" };
+export const destDe = (n: Pick<Note, "destinataire">): Dest => (n.destinataire === "montage" || n.destinataire === "fournisseur" || n.destinataire === "rappel" ? n.destinataire : "atelier");
+/** « Rappel » : une remarque liee a une tache (« Ne pas oublier de commander les vis »). Pas de reponse attendue : on la coche « Fait ». */
+export const estRappel = (n: Pick<Note, "destinataire">) => destDe(n) === "rappel";
 /** « Fournisseur · Schüco » ou « Atelier ». */
 export const etiquetteDest = (n: Pick<Note, "destinataire" | "fournisseur">) => LIBELLE_DEST[destDe(n)] + (destDe(n) === "fournisseur" && n.fournisseur?.trim() ? ` · ${n.fournisseur.trim()}` : "");
 

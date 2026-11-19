@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { destDe, etiquetteDest, filtrerDest, groupesAtelier, nbQuestionsAtelier, joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreApres, ordreAvant, ordreEnQueue, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
+import { destDe, estRappel, etiquetteDest, filtrerDest, groupesAtelier, nbQuestionsAtelier, joursRetard, PERSO, aNettoyer, pourAujourdhui, projetDepuisTexte, type Projet, reponseDe, etatEcheance, filtrer, nomProjet, ordreApres, ordreAvant, ordreEnQueue, ordreEnTete, suivant, type Filtres, type Note } from "./notes";
 import { choixParDefaut, exporter, lireAnciennes, planImport } from "./reprise";
 
 const moi = "u-moi", autre = "u-marc";
@@ -204,6 +204,17 @@ describe("atelier / montage", () => {
     expect(ordreApres(g, "a", "b")).toBe(4);
   });
   it("compte les questions sans reponse", () => expect(nbQuestionsAtelier(liste)).toBe(3));
+  it("rappel : reconnu, passe après les questions, filtrable", () => {
+    const l = [q({ id: "r", tache: "7", destinataire: "rappel", ordre: 1 }), q({ id: "a", tache: "7", destinataire: "atelier", ordre: 1 }), q({ id: "f", tache: "7", destinataire: "fournisseur", ordre: 1 })];
+    expect(destDe(l[0])).toBe("rappel");
+    expect(estRappel(l[0])).toBe(true);
+    expect(estRappel(l[1])).toBe(false);
+    expect(etiquetteDest(l[0])).toBe("Rappel");
+    const g = groupesAtelier(l, nomDe);
+    expect(ids(g[0].enAttente)).toEqual(["a", "f", "r"]);
+    expect(ids(filtrerDest(g, "rappel")[0].enAttente)).toEqual(["r"]);
+    expect(nbQuestionsAtelier(l)).toBe(3);
+  });
 
   it("filtre « Pour » : un compte, ou un nom libre sans tenir compte des accents", () => {
     const l: Note[] = [

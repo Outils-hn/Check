@@ -5,15 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DESTS, LIBELLE_DEST, destDe, etiquetteDest, filtrerDest, groupesAtelier, nomProjet, ordreApres, ordreAvant, sansAccents, type Dest, type GroupeAtelier, type Note, type Projet } from "@/lib/notes";
+import { DESTS, LIBELLE_DEST, destDe, estRappel, etiquetteDest, filtrerDest, groupesAtelier, nomProjet, ordreApres, ordreAvant, sansAccents, type Dest, type GroupeAtelier, type Note, type Projet } from "@/lib/notes";
 
 const CLE_REPLIS = "check:taches-ouvertes";
 const libelleTache = (t: string) => (t ? `Tâche ${t}` : "Sans numéro de tâche");
 const titreTache = (g: { tache: string; nom: string }) => libelleTache(g.tache) + (g.nom ? ` · ${g.nom}` : "");
 /** Titre du PDF d'une tâche : les destinataires réellement présents (« atelier et montage », « atelier, montage et fournisseur »…). */
 const titreSelonDest = (g: GroupeAtelier) => {
-  const presents = DESTS.filter((d) => [...g.enAttente, ...g.reglees].some((n) => destDe(n) === d)).map((d) => LIBELLE_DEST[d].toLowerCase());
-  return `Questions ${presents.length > 1 ? `${presents.slice(0, -1).join(", ")} et ${presents[presents.length - 1]}` : presents[0] ?? "Tâches"}`;
+  const toutes = [...g.enAttente, ...g.reglees];
+  const presents = DESTS.filter((d) => d !== "rappel" && toutes.some((n) => destDe(n) === d)).map((d) => LIBELLE_DEST[d].toLowerCase());
+  if (!presents.length) return "Rappels";
+  return `Questions ${presents.length > 1 ? `${presents.slice(0, -1).join(", ")} et ${presents[presents.length - 1]}` : presents[0]}`;
+};
+/** « 2 questions en attente (dont 1 posée) · 1 rappel · 3 réglées » */
+const resume = (g: GroupeAtelier) => {
+  const q = g.enAttente.filter((n) => !estRappel(n)), r = g.enAttente.length - q.length, posees = q.filter((n) => n.statut === "in_progress").length;
+  const parts = [q.length ? `${plur(q.length, "question")} en attente${posees ? ` (dont ${posees} posée${posees > 1 ? "s" : ""})` : ""}` : "", r ? plur(r, "rappel") : "", !g.enAttente.length ? "Tout est réglé" : "", g.reglees.length ? plur(g.reglees.length, "réglée") : ""].filter(Boolean);
+  return parts.join(" · ");
 };
 const plur = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 const lireEtat = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(CLE_REPLIS) ?? "{}") ?? {}; } catch { return {}; } };
@@ -90,8 +98,10 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
     if (!liste.length) return toast.error("Aucune question à exporter.");
     try {
       const { exportQuestionsPdf } = await import("@/lib/pdf-export");
-      await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, nom: g.nom, questions: g.enAttente.map((n) => ({ texte: n.texte, dest: etiquetteDest(n) })),
-        reglees: avecReglees ? g.reglees.map((n) => ({ question: `${n.texte}  (${etiquetteDest(n)})`, reponse: n.reponse ?? "" })) : [] })), { auteur, titre: avecReglees ? titreSelonDest(liste[0]) : "Questions Tâches" });
+      await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, nom: g.nom,
+        questions: g.enAttente.filter((n) => !estRappel(n)).map((n) => ({ texte: n.texte, dest: etiquetteDest(n) })),
+        rappels: g.enAttente.filter(estRappel).map((n) => n.texte),
+        reglees: avecReglees ? g.reglees.map((n) => ({ question: estRappel(n) ? `${n.texte}  (Rappel)` : `${n.texte}  (${etiquetteDest(n)})`, reponse: estRappel(n) ? "" : n.reponse ?? "" })) : [] })), { auteur, titre: avecReglees ? titreSelonDest(liste[0]) : "Questions Tâches" });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 
@@ -133,11 +143,11 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
               </select>
               {dest === "fournisseur"
                 ? <Input value={fournisseur} maxLength={60} onChange={(e) => setFournisseur(e.target.value)} placeholder="Chez qui ? (ex. Schüco)" aria-label="Nom du fournisseur" />
-                : <p className="self-center text-xs text-muted-foreground">{dest === "atelier" ? "À demander à l'atelier" : "À demander aux monteurs"}</p>}
+                : <p className="self-center text-xs text-muted-foreground">{dest === "atelier" ? "À demander à l'atelier" : dest === "montage" ? "À demander aux monteurs" : "Remarque à ne pas oublier, sans réponse attendue"}</p>}
             </div>
             <div className="flex gap-2 sm:col-span-3">
-              <Input className="min-w-0 flex-1" value={texte} maxLength={500} onChange={(e) => setTexte(e.target.value)} placeholder="Votre question, Entrée pour ajouter" aria-label="Votre question" />
-              <Button type="submit" disabled={!texte.trim()}>Ajouter la question</Button>
+              <Input className="min-w-0 flex-1" value={texte} maxLength={500} onChange={(e) => setTexte(e.target.value)} placeholder={dest === "rappel" ? "Votre rappel, Entrée pour ajouter" : "Votre question, Entrée pour ajouter"} aria-label={dest === "rappel" ? "Votre rappel" : "Votre question"} />
+              <Button type="submit" disabled={!texte.trim()}>{dest === "rappel" ? "Ajouter le rappel" : "Ajouter la question"}</Button>
             </div>
           </form>
         )}
@@ -182,7 +192,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                 {o ? <ChevronDown className="size-4 shrink-0" aria-hidden="true" /> : <ChevronRight className="size-4 shrink-0" aria-hidden="true" />}
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold">{titreTache(g)} <span className="font-normal text-muted-foreground">· {nomDe(g.projet_id)}</span></span>
-                  <span className="block text-xs text-muted-foreground">{g.enAttente.length ? `${plur(g.enAttente.length, "question")} en attente${g.enAttente.some((n) => n.statut === "in_progress") ? ` (dont ${g.enAttente.filter((n) => n.statut === "in_progress").length} posée${g.enAttente.filter((n) => n.statut === "in_progress").length > 1 ? "s" : ""})` : ""}` : "Tout est réglé"}{g.reglees.length ? ` · ${plur(g.reglees.length, "réglée")}` : ""}</span>
+                  <span className="block text-xs text-muted-foreground">{resume(g)}</span>
                 </span>
               </button>
               <Button size="sm" variant="outline" className="w-[7.5rem] shrink-0 gap-1.5" onClick={() => void pdf([g], true)} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
@@ -198,13 +208,13 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                     onDragEnd={() => { setGlisse(null); setSurvol(null); }}
                     onDrop={(e) => { e.preventDefault(); if (glisse && glisse !== n.id && g.enAttente.some((x) => x.id === glisse)) { const d = g.enAttente.find((x) => x.id === glisse); if (d) onDeplacer(d, ordreAvant(g.enAttente, n.id, d.id)); } setGlisse(null); setSurvol(null); }}>
                     <span className="mt-1 flex shrink-0 cursor-grab text-muted-foreground/60 hover:text-foreground" title="Glisser pour réordonner" aria-hidden="true"><GripVertical className="size-4" /></span>
-                    <button type="button" aria-pressed={n.statut === "in_progress"} onClick={() => onPosee(n)} aria-label={n.statut === "in_progress" ? "Question posée, j'attends la réponse (cliquer pour annuler)" : "Marquer la question comme posée"}
+                    {estRappel(n) ? <span className="size-6 shrink-0" aria-hidden="true" /> : <button type="button" aria-pressed={n.statut === "in_progress"} onClick={() => onPosee(n)} aria-label={n.statut === "in_progress" ? "Question posée, j'attends la réponse (cliquer pour annuler)" : "Marquer la question comme posée"}
                       title={n.statut === "in_progress" ? "Posée : j'attends la réponse" : "Marquer comme posée (j'attends la réponse)"}
                       className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded border ${n.statut === "in_progress" ? "border-[var(--st-progress)] bg-[var(--st-progress)] text-white" : "border-border hover:bg-muted"}`}>
                       {n.statut === "in_progress" && <Check className="size-4" aria-hidden="true" />}
-                    </button>
+                    </button>}
                     <div className="min-w-0 flex-1">
-                      <span className={`mb-0.5 inline-block rounded-full border px-2 text-xs font-medium uppercase tracking-wide ${destDe(n) === "fournisseur" ? "border-[var(--st-waiting)]/40 text-[var(--st-waiting)]" : destDe(n) === "montage" ? "border-[var(--st-progress)]/40 text-[var(--st-progress)]" : "border-border text-muted-foreground"}`} data-dest={destDe(n)}>{etiquetteDest(n)}</span>
+                      <span className={`mb-0.5 inline-block rounded-full border px-2 text-xs font-medium uppercase tracking-wide ${destDe(n) === "rappel" ? "border-violet-400/50 bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200" : destDe(n) === "fournisseur" ? "border-[var(--st-waiting)]/40 text-[var(--st-waiting)]" : destDe(n) === "montage" ? "border-[var(--st-progress)]/40 text-[var(--st-progress)]" : "border-border text-muted-foreground"}`} data-dest={destDe(n)}>{etiquetteDest(n)}</span>
                       <p className="whitespace-pre-wrap break-words">{n.texte}</p>
                       {n.statut === "in_progress" && <p className="text-xs text-muted-foreground">Posée · j'attends la réponse</p>}
                     </div>
@@ -212,7 +222,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                       <button type="button" disabled={i === 0} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Monter la question" title="Monter" onClick={() => onDeplacer(n, ordreAvant(g.enAttente, g.enAttente[i - 1].id, n.id))}><ArrowUp className="size-3.5" /></button>
                       <button type="button" disabled={i === g.enAttente.length - 1} className="inline-flex h-5 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 max-md:h-6 max-md:w-10" aria-label="Descendre la question" title="Descendre" onClick={() => onDeplacer(n, ordreApres(g.enAttente, g.enAttente[i + 1].id, n.id))}><ArrowDown className="size-3.5" /></button>
                     </span>
-                    <Button size="sm" variant="outline" className="w-[7.5rem] shrink-0 gap-1.5" onClick={() => repondre(n)}><Check className="size-3.5" aria-hidden="true" />Répondre</Button>
+                    <Button size="sm" variant="outline" className="w-[7.5rem] shrink-0 gap-1.5" onClick={() => (estRappel(n) ? onRepondre(n, "") : repondre(n))}><Check className="size-3.5" aria-hidden="true" />{estRappel(n) ? "Fait" : "Répondre"}</Button>
                     <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => editer(n)} aria-label="Modifier la question" title="Modifier la question"><Pencil className="size-3.5" /></button>
                     <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
                   </li>
@@ -222,7 +232,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1"><span className="mb-0.5 inline-block rounded-full border border-border px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{etiquetteDest(n)}</span><p className="whitespace-pre-wrap break-words text-muted-foreground line-through">{n.texte}</p></div>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => editer(n)} aria-label="Modifier la question" title="Modifier la question"><Pencil className="size-3.5" /></button>
-                      <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => repondre(n)} aria-label="Modifier la réponse" title="Modifier la réponse"><Pencil className="size-3.5" /></button>
+                      {!estRappel(n) && <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => repondre(n)} aria-label="Modifier la réponse" title="Modifier la réponse"><Pencil className="size-3.5" /></button>}
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => onRouvrir(n)} aria-label="Rouvrir la question" title="Rouvrir : la question repasse en attente"><RotateCcw className="size-3.5" /></button>
                       <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => onSupprimer(n)} aria-label="Supprimer la question" title="Supprimer la question"><Trash2 className="size-3.5" /></button>
                     </div>
