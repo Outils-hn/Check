@@ -362,6 +362,17 @@ try {
   await za.getByLabel("Votre question").fill("Cale de 3 ou de 5 ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
   await za.getByLabel("Numéro de tâche").fill("200");
   await za.getByLabel("Votre question").fill("Autre tâche : longueur du fer plat ?"); await za.getByLabel("Votre question").press("Enter"); await p.waitForTimeout(500);
+  // Rappel : remarque liee a la tache, sans reponse ; « Fait » la regle, puis on la supprime pour ne pas fausser les comptes qui suivent
+  await za.getByLabel("Destinataire", { exact: true }).selectOption({ label: "Rappel" });
+  await za.getByLabel("Votre rappel").fill("Ne pas oublier de commander les vis"); await za.getByLabel("Votre rappel").press("Enter"); await p.waitForTimeout(500);
+  const rappel = p.locator('[data-tache="200"] [data-question]', { hasText: "commander les vis" });
+  ok((await rappel.count()) === 1 && (await rappel.getByRole("button", { name: /posée/ }).count()) === 0 && (await rappel.getByRole("button", { name: "Fait" }).isVisible()), "rappel : rangé sous la tâche, bouton « Fait » sans case « posée »");
+  await shot(p, "07c-rappel");
+  await rappel.getByRole("button", { name: "Fait" }).click(); await p.waitForTimeout(500);
+  const rappelFait = p.locator('[data-tache="200"] [data-reglee]', { hasText: "commander les vis" });
+  ok((await rappelFait.count()) === 1 && (await rappelFait.locator("[data-reponse]").count()) === 0, "rappel : « Fait » le règle sans réponse à saisir");
+  await rappelFait.getByRole("button", { name: "Supprimer la question" }).click(); await p.waitForTimeout(500);
+  await za.getByLabel("Destinataire", { exact: true }).selectOption({ label: "Atelier" });
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 2 && (await p.locator('[data-tache="200"] [data-question]').count()) === 1, "questions rangées sous leur tâche (1234 : 2, 200 : 1)");
   ok(etat.check_notes.filter((x) => x.atelier && x.projet_id === projet.id).length === 3, "questions enregistrées comme notes de projet");
   // Réordonner les questions d'une tâche (flèches) : la nouvelle question arrive en fin de liste

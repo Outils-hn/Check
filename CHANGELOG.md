@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.79 — 19 novembre 2026
+
+- Nouveauté : dans « Questions Tâches », un nouveau type « Rappel » pour les remarques liées à une tâche (« Ne pas oublier de commander les vis »). Il se range sous la tâche, se coche « Fait » sans réponse à saisir, a sa couleur et son filtre, et figure dans une section « Rappels » du PDF.
+
 ## 3.78 — 18 novembre 2026
 
 - Nouveauté : l'image téléchargée depuis une note est maintenant un fichier JPEG (`check-image.jpg`), qui s'ouvre avec n'importe quel logiciel, au lieu du WebP.

@@ -18,6 +18,6 @@ alter table public.check_notes add constraint check_notes_tache_nom_longueur che
 alter table public.check_notes add column if not exists destinataire text;
 alter table public.check_notes add column if not exists fournisseur text;
 alter table public.check_notes drop constraint if exists check_notes_destinataire_valeur;
-alter table public.check_notes add constraint check_notes_destinataire_valeur check (destinataire is null or destinataire in ('atelier', 'montage', 'fournisseur'));
+alter table public.check_notes add constraint check_notes_destinataire_valeur check (destinataire is null or destinataire in ('atelier', 'montage', 'fournisseur', 'rappel'));
 alter table public.check_notes drop constraint if exists check_notes_fournisseur_longueur;
 alter table public.check_notes add constraint check_notes_fournisseur_longueur check (fournisseur is null or length(fournisseur) <= 60);
