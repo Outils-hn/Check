@@ -373,6 +373,7 @@ try {
   ok((await rappelFait.count()) === 1 && (await rappelFait.locator("[data-reponse]").count()) === 0, "rappel : « Fait » le règle sans réponse à saisir");
   await rappelFait.getByRole("button", { name: "Supprimer la question" }).click(); await p.waitForTimeout(500);
   await za.getByLabel("Destinataire", { exact: true }).selectOption({ label: "Atelier" });
+  etat.check_notes.splice(etat.check_notes.findIndex((x) => (x.texte ?? "").includes("commander les vis")), 1); // supprimee : on la retire de la base simulee pour les comptes suivants
   ok((await p.locator('[data-tache="1234"] [data-question]').count()) === 2 && (await p.locator('[data-tache="200"] [data-question]').count()) === 1, "questions rangées sous leur tâche (1234 : 2, 200 : 1)");
   ok(etat.check_notes.filter((x) => x.atelier && x.projet_id === projet.id).length === 3, "questions enregistrées comme notes de projet");
   // Réordonner les questions d'une tâche (flèches) : la nouvelle question arrive en fin de liste
