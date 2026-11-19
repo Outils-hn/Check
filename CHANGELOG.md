@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.85 — 19 novembre 2026
+
+- Nouveauté : les étiquettes de « Questions Tâches » se distinguent mieux : Atelier en rose (le vert ressemblait trop aux réponses), Montage en bleu, Fournisseur en violet et Rappel en orange.
+
 ## 3.84 — 19 novembre 2026
 
 - Nouveauté : l'étiquette « Atelier » des questions de tâche est maintenant verte, pour la distinguer d'un coup d'œil de Montage (bleu), Fournisseur et Rappel (violets).
