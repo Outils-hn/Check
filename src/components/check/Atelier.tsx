@@ -100,8 +100,8 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
       const { exportQuestionsPdf } = await import("@/lib/pdf-export");
       await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, nom: g.nom,
         questions: g.enAttente.filter((n) => !estRappel(n)).map((n) => ({ texte: n.texte, dest: etiquetteDest(n) })),
-        rappels: g.enAttente.filter(estRappel).map((n) => n.texte),
-        reglees: avecReglees ? g.reglees.map((n) => ({ question: estRappel(n) ? `${n.texte}  (Rappel)` : `${n.texte}  (${etiquetteDest(n)})`, reponse: estRappel(n) ? "" : n.reponse ?? "" })) : [] })), { auteur, titre: avecReglees ? titreSelonDest(liste[0]) : "Questions Tâches" });
+        rappels: [...g.enAttente.filter(estRappel).map((n) => ({ texte: n.texte })), ...(avecReglees ? g.reglees.filter(estRappel).map((n) => ({ texte: n.texte, fait: true })) : [])],
+        reglees: avecReglees ? g.reglees.filter((n) => !estRappel(n)).map((n) => ({ question: `${n.texte}  (${etiquetteDest(n)})`, reponse: n.reponse ?? "" })) : [] })), { auteur, titre: avecReglees ? titreSelonDest(liste[0]) : "Questions Tâches" });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 

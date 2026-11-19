@@ -247,7 +247,7 @@ function rendreCouleur({ doc, W, H, mx, top, bottom }: Ctx, res: Resume, titre: 
 }
 
 /** Feuille a emporter a l'atelier ou au montage : une case a cocher et deux lignes pour la reponse sous chaque question. */
-export type TachePdf = { projet: string; tache: string; nom?: string; questions: (string | { texte: string; dest: string })[]; rappels?: string[]; reglees?: { question: string; reponse: string }[] };
+export type TachePdf = { projet: string; tache: string; nom?: string; questions: (string | { texte: string; dest: string })[]; rappels?: { texte: string; fait?: boolean }[]; reglees?: { question: string; reponse: string }[] };
 
 export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: string; titre?: string } = {}) {
   const { jsPDF } = await import("jspdf");
@@ -287,26 +287,29 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
       doc.line(mx + 24, ly, W - mx, ly); ly += 22;
       y = ly + 4;
     }
-    // Rappels : remarques a ne pas oublier, une case a cocher, pas de lignes de reponse
+    // Chapitre a part : titre en gras, filet fin, puis les lignes. Meme style pour « Rappels » et « Déjà réglées ».
+    const chapitre = (titre: string) => {
+      y += 8;
+      if (y + 60 > H - bottom) { doc.addPage(); y = top; }
+      doc.setFont("PlexSans", "bold"); doc.setFontSize(12); doc.setTextColor(...NOIR); doc.text(titre, mx, y);
+      y += 6; doc.setDrawColor(...GRIS); doc.setLineWidth(0.5); doc.line(mx, y, W - mx, y); y += 20;
+    };
+    // Rappels : remarques a ne pas oublier ; une case (cochee si c'est fait), pas de lignes de reponse
     if (t.rappels?.length) {
-      if (y + 40 > H - bottom) { doc.addPage(); y = top; }
-      doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS); doc.text("RAPPELS", mx, y - 1, { charSpace: 0.8 }); y += 14;
+      chapitre("Rappels");
       for (const r of t.rappels) {
         doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
-        const lignes: string[] = doc.splitTextToSize(r, cw - 24);
+        const lignes: string[] = doc.splitTextToSize(r.texte, cw - 24);
         const h = lignes.length * 14 + 6;
         if (y + h > H - bottom) { doc.addPage(); y = top; }
         doc.setDrawColor(...NOIR); doc.setLineWidth(1); doc.rect(mx, y - 9, 10, 10);
-        doc.setTextColor(...NOIR); doc.text(lignes, mx + 24, y);
+        if (r.fait) { doc.line(mx + 2, y - 4, mx + 4.5, y - 1); doc.line(mx + 4.5, y - 1, mx + 8.5, y - 8); }
+        doc.setTextColor(...(r.fait ? GRIS : NOIR)); doc.text(lignes, mx + 24, y);
         y += h + 6;
       }
-      y += 6;
     }
     // Questions deja reglees : case cochee, la reponse prend la place des lignes
-    if (t.reglees?.length) {
-      if (y + 50 > H - bottom) { doc.addPage(); y = top; }
-      doc.setFont("PlexSans", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS); doc.text("DÉJÀ RÉGLÉES", mx, y - 1, { charSpace: 0.8 }); y += 14;
-    }
+    if (t.reglees?.length) chapitre("Déjà réglées");
     for (const r of t.reglees ?? []) {
       doc.setFont("PlexSans", "bold"); doc.setFontSize(11);
       const lignes: string[] = doc.splitTextToSize(r.question, cw - 24);
