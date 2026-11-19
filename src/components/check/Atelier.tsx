@@ -214,7 +214,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                       {n.statut === "in_progress" && <Check className="size-4" aria-hidden="true" />}
                     </button>}
                     <div className="min-w-0 flex-1">
-                      <span className={`mb-0.5 inline-block rounded-full border px-2 text-xs font-medium uppercase tracking-wide ${destDe(n) === "rappel" ? "border-orange-400/60 bg-orange-100 text-orange-900 dark:border-orange-500/50 dark:bg-orange-950 dark:text-orange-200" : destDe(n) === "fournisseur" ? "border-[var(--st-waiting)]/40 text-[var(--st-waiting)]" : destDe(n) === "montage" ? "border-[var(--st-progress)]/40 text-[var(--st-progress)]" : "border-emerald-500/40 text-emerald-700 dark:text-emerald-400"}`} data-dest={destDe(n)}>{etiquetteDest(n)}</span>
+                      <span className={`mb-0.5 inline-block rounded-full border px-2 text-xs font-medium uppercase tracking-wide ${destDe(n) === "rappel" ? "border-orange-400/60 bg-orange-100 text-orange-900 dark:border-orange-500/50 dark:bg-orange-950 dark:text-orange-200" : destDe(n) === "fournisseur" ? "border-[var(--st-waiting)]/40 text-[var(--st-waiting)]" : destDe(n) === "montage" ? "border-[var(--st-progress)]/40 text-[var(--st-progress)]" : "border-pink-500/50 text-pink-700 dark:text-pink-300"}`} data-dest={destDe(n)}>{etiquetteDest(n)}</span>
                       <p className="whitespace-pre-wrap break-words">{n.texte}</p>
                       {n.statut === "in_progress" && <p className="text-xs text-muted-foreground">Posée · j'attends la réponse</p>}
                     </div>

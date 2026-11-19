@@ -6,7 +6,7 @@ Chaque version qui change quelque chose de visible pour l'équipe a une puce « 
 
 ## 3.85 — 19 novembre 2026
 
-- Nouveauté : l'étiquette « Rappel » est maintenant orange, pour ne plus la confondre avec « Fournisseur » (violet).
+- Nouveauté : les étiquettes de « Questions Tâches » se distinguent mieux : Atelier en rose (le vert ressemblait trop aux réponses), Montage en bleu, Fournisseur en violet et Rappel en orange.
 
 ## 3.84 — 19 novembre 2026
 
