@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.84 — 19 novembre 2026
+
+- Nouveauté : l'étiquette « Atelier » des questions de tâche est maintenant verte, pour la distinguer d'un coup d'œil de Montage (bleu), Fournisseur et Rappel (violets).
+
 ## 3.83 — 19 novembre 2026
 
 - Nouveauté : sur le PDF, les rappels ont maintenant leur propre page « Rappels » (les questions restent comme d'habitude sur les pages d'avant). Le numéro de tâche n'y est pas répété quand le PDF ne concerne qu'une tâche.
