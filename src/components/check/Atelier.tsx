@@ -117,7 +117,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="card-title flex items-center gap-1.5"><ListChecks className="size-4" aria-hidden="true" />Questions Tâches</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Questions pour l'atelier, les monteurs ou un fournisseur, par tâche. Exportez en PDF, cochez la case une fois la question posée, puis saisissez la réponse.</p>
+            <p className="mt-1 text-xs text-muted-foreground" style={{ textWrap: "balance" }}>Questions pour l'atelier, les monteurs ou un fournisseur, par tâche. Exportez en PDF, cochez la case une fois la question posée, puis saisissez la réponse.</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             <Button size="sm" className="gap-1.5" disabled={!listeGlobale.length} title="Questions en attente pour l'atelier et le montage, et rappels" onClick={() => void pdf(listeGlobale, inclureReglees)}><FileDown className="size-4" aria-hidden="true" />PDF</Button>

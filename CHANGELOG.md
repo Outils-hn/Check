@@ -4,6 +4,10 @@ Le numéro de version se met à jour dans `src/lib/version.ts` (pied de page et 
 
 Chaque version qui change quelque chose de visible pour l'équipe a une puce « Nouveauté : … », en langage courant : c'est la seule phrase affichée sur la page « Nouveautés » de l'Accueil.
 
+## 3.88 — 20 novembre 2026
+
+- Nouveauté : le texte d'aide de « Questions Tâches » se répartit sur ses lignes sans laisser un mot seul à la fin.
+
 ## 3.87 — 20 novembre 2026
 
 - Nouveauté : le PDF de toutes les tâches a une case « Inclure les questions déjà réglées » (avec leur réponse, rappels faits compris). Quand il ne contient que des rappels, il s'intitule « Rappels ».
