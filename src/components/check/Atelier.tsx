@@ -82,6 +82,11 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
   const existante = tache.trim() ? toutes.find((g) => g.projet_id === projet && sansAccents(g.tache) === sansAccents(tache.trim())) : undefined;
   // PDF global : seulement les questions a poser sur place (atelier, montage) ; celles des fournisseurs se reglent par telephone ou mail
   const enAttente = filtrerDest(toutes, "tous").map((g) => ({ ...g, enAttente: g.enAttente.filter((n) => destDe(n) !== "fournisseur") })).filter((g) => g.enAttente.length);
+  // Option du PDF global : y ajouter les questions deja reglees (avec leur reponse), toutes destinations confondues
+  const [inclureReglees, setInclureReglees] = useState(false);
+  const listeGlobale = inclureReglees
+    ? filtrerDest(toutes, "tous").map((g) => ({ ...g, enAttente: g.enAttente.filter((n) => destDe(n) !== "fournisseur") })).filter((g) => g.enAttente.length || g.reglees.length)
+    : enAttente;
   // Ouverte par defaut tant qu'il reste des questions sans reponse, repliee quand tout est regle ; le choix de chacun est retenu sur ce poste
   const ouvert = (g: GroupeAtelier) => (q.trim() ? true : ouverts[g.cle] ?? g.enAttente.length > 0);
   const regler = (etat: Record<string, boolean>) => { setOuverts(etat); try { localStorage.setItem(CLE_REPLIS, JSON.stringify(etat)); } catch { /* stockage bloque */ } };
@@ -94,14 +99,15 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
   };
 
   /** « Tout » : seulement les questions en attente, a emporter. Une tache seule : toutes ses questions, les reglees avec leur reponse. */
-  const pdf = async (liste: GroupeAtelier[], avecReglees = false) => {
+  const pdf = async (liste: GroupeAtelier[], avecReglees = false, titrePdf?: string) => {
     if (!liste.length) return toast.error("Aucune question à exporter.");
     try {
       const { exportQuestionsPdf } = await import("@/lib/pdf-export");
+      const sansQuestions = !liste.some((g) => g.enAttente.some((n) => !estRappel(n)) || (avecReglees && g.reglees.some((n) => !estRappel(n))));
       await exportQuestionsPdf(liste.map((g) => ({ projet: nomDe(g.projet_id), tache: g.tache, nom: g.nom,
         questions: g.enAttente.filter((n) => !estRappel(n)).map((n) => ({ texte: n.texte, dest: etiquetteDest(n) })),
         rappels: [...g.enAttente.filter(estRappel).map((n) => ({ texte: n.texte })), ...(avecReglees ? g.reglees.filter(estRappel).map((n) => ({ texte: n.texte, fait: true })) : [])],
-        reglees: avecReglees ? g.reglees.filter((n) => !estRappel(n)).map((n) => ({ question: `${n.texte}  (${etiquetteDest(n)})`, reponse: n.reponse ?? "" })) : [] })), { auteur, titre: avecReglees ? titreSelonDest(liste[0]) : "Questions Tâches" });
+        reglees: avecReglees ? g.reglees.filter((n) => !estRappel(n)).map((n) => ({ question: `${n.texte}  (${etiquetteDest(n)})`, reponse: n.reponse ?? "" })) : [] })), { auteur, titre: titrePdf ?? (sansQuestions ? "Rappels" : "Questions Tâches") });
     } catch { toast.error("Le PDF n'a pas pu être créé (polices non chargées)."); }
   };
 
@@ -113,7 +119,10 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
             <h2 className="card-title flex items-center gap-1.5"><ListChecks className="size-4" aria-hidden="true" />Questions Tâches</h2>
             <p className="mt-1 text-xs text-muted-foreground">Questions pour l'atelier, les monteurs ou un fournisseur, par tâche. Exportez en PDF, cochez la case une fois la question posée, puis saisissez la réponse.</p>
           </div>
-          <Button size="sm" className="gap-1.5" disabled={!enAttente.length} title="Questions en attente pour l'atelier et le montage" onClick={() => void pdf(enAttente)}><FileDown className="size-4" aria-hidden="true" />PDF</Button>
+          <div className="flex flex-col items-end gap-1.5">
+            <Button size="sm" className="gap-1.5" disabled={!listeGlobale.length} title="Questions en attente pour l'atelier et le montage, et rappels" onClick={() => void pdf(listeGlobale, inclureReglees)}><FileDown className="size-4" aria-hidden="true" />PDF</Button>
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"><input type="checkbox" className="size-3.5 accent-[var(--primary)]" checked={inclureReglees} onChange={(e) => setInclureReglees(e.target.checked)} />Inclure les questions déjà réglées</label>
+          </div>
         </div>
         {projets.length === 0 ? (
           <p className="note-check mt-3">Créez d'abord un projet (« + Nouveau projet ») : les questions sont rangées par projet et par tâche.</p>
@@ -195,7 +204,7 @@ export function Atelier({ notes, projets, projetInitial, nomDe, auteur, onAjoute
                   <span className="block text-xs text-muted-foreground">{resume(g)}</span>
                 </span>
               </button>
-              <Button size="sm" variant="outline" className="w-[7.5rem] shrink-0 gap-1.5" onClick={() => void pdf([g], true)} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
+              <Button size="sm" variant="outline" className="w-[7.5rem] shrink-0 gap-1.5" onClick={() => void pdf([g], true, titreSelonDest(g))} aria-label={`PDF de ${libelleTache(g.tache)}`}><FileDown className="size-3.5" aria-hidden="true" />PDF</Button>
               <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => { setARenommer(g); setNomSaisi(g.nom); setNumeroSaisi(g.tache); }} aria-label={`Modifier ${libelleTache(g.tache)}`} title="Modifier le numéro ou le nom de la tâche"><PencilLine className="size-3.5" /></button>
               <button type="button" className="inline-flex size-10 shrink-0 md:size-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => setASupprimer(g)} aria-label={`Supprimer ${libelleTache(g.tache)} et ses questions`} title="Supprimer la tâche et ses questions"><Trash2 className="size-3.5" /></button>
             </header>

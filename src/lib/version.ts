@@ -1,7 +1,7 @@
 // Point unique de verite pour l'identite de l'application.
 // Mettre a jour la version ICI uniquement : pied de page et fenetre « À propos » lisent ces constantes.
 export const APP_NAME = "Check";
-export const APP_VERSION = "3.86";
+export const APP_VERSION = "3.87";
 export const APP_AUTHOR = "Hugo N.";
 export const APP_YEAR = "2026";
 export const APP_UPDATED = "19 novembre 2026";
