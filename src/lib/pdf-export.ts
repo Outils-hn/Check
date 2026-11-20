@@ -315,16 +315,18 @@ export async function exportQuestionsPdf(taches: TachePdf[], opt: { auteur?: str
     }
     y += 14;
   }
-  // Rappels : remarques a ne pas oublier, sur une page a part (titre « Rappels », sans repeter la tache quand il n'y en a qu'une).
+  // Rappels : remarques a ne pas oublier, a la suite des questions (titre « Rappels », sans repeter la tache quand il n'y en a qu'une).
   // Une case (cochee si c'est fait), pas de lignes de reponse.
   const avecRappels = taches.filter((t) => t.rappels?.length);
   if (avecRappels.length) {
     const seulsLesRappels = !taches.some((t) => t.questions.length || t.reglees?.length);
     if (!seulsLesRappels) {
-      doc.addPage(); y = top;
-      doc.setFont("PlexSans", "bold"); doc.setFontSize(20); doc.setTextColor(...NOIR);
+      // A la suite des questions, sur la meme page s'il reste la place (titre + un rappel), sinon page suivante
+      y += 28;
+      if (y + 80 > H - bottom) { doc.addPage(); y = top; }
+      doc.setFont("PlexSans", "bold"); doc.setFontSize(16); doc.setTextColor(...NOIR);
       doc.text("Rappels", mx, y);
-      y += 30;
+      y += 26;
     }
     for (const t of avecRappels) {
       if (seulsLesRappels || avecRappels.length > 1) enteteTache(t);
