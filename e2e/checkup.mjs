@@ -391,6 +391,11 @@ try {
   const pdfq = await dlq;
   await pdfq.saveAs(`${out}/questions-tache.pdf`);
   ok(/^check-questions-taches-\d{4}-\d{2}-\d{2}\.pdf$/.test(pdfq.suggestedFilename()) && fs.statSync(await pdfq.path()).size > 1500, `export PDF des questions (${pdfq.suggestedFilename()})`);
+  // PDF global, avec la case « Inclure les questions déjà réglées »
+  { const box = p.getByLabel("Inclure les questions déjà réglées"); await box.check();
+    const dlg2 = p.waitForEvent("download", { timeout: 15000 });
+    await p.getByRole("button", { name: "PDF", exact: true }).first().click();
+    const g2 = await dlg2; ok(fs.statSync(await g2.path()).size > 1500, "PDF global avec les questions réglées"); await box.uncheck(); }
   await p2.reload({ waitUntil: "networkidle" }); // le direct est simule : on recharge pour voir ce qu'Alice vient d'ajouter
   ok(!(await p2.getByText("Quel jeu sous la lisse").count()) && !(await p2.getByText("Cale de 3 ou de 5").count()), "les questions n'apparaissent pas dans la liste des notes");
   await p2.getByRole("button", { name: /^Questions Tâches/ }).click();
